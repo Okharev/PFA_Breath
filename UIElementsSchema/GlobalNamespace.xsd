@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="UnityEngine.UIElements.xsd" namespace="UnityEngine.UIElements" />
+  <xs:complexType name="RadialOxygenBarType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q1="UnityEngine.UIElements" base="q1:VisualElementType">
+        <xs:choice />
+        <xs:attribute default="1" name="progress" type="xs:float" />
+        <xs:attribute default="8" name="thickness" type="xs:float" />
+        <xs:attribute default="rgba(26, 26, 26, 0.5)" name="track-color" type="xs:string" />
+        <xs:attribute default="rgb(51, 204, 51)" name="fill-color" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="RadialOxygenBar" xmlns:q2="UnityEngine.UIElements" substitutionGroup="q2:VisualElement" type="RadialOxygenBarType" />
+</xs:schema>

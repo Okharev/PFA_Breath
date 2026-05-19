@@ -1,0 +1,21 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/UI/OxygenUI.uss?fileID=7433441132597879392&amp;guid=8779cdc8fb3443b7a3fb909bb00511a9&amp;type=3#OxygenUI"/>
+    
+
+
+        <ui:VisualElement name="OxygenContainer" class="oxygen-container">
+        
+            <ui:VisualElement class="oxygen-pivot">
+            
+                <RadialOxygenBar name="RadialFill" 
+                                 class="oxygen-radial-fill" 
+                                 progress="1" 
+                                 thickness="8" 
+                                 track-color="rgba(0, 0, 0, 0.4)" 
+                                 fill-color="rgba(57, 255, 220, 1)" />
+                             
+            </ui:VisualElement>
+        
+        </ui:VisualElement>
+
+</ui:UXML>
