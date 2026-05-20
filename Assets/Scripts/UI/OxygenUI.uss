@@ -1,25 +1,23 @@
-﻿/* The main container moved by the C# script */
-.oxygen-container {
+﻿/* floating-container moved by the C# script */
+.floating-container {
     position: absolute;
     top: 0;
     left: 0;
     opacity: 1;
-    /* Smooth fade in/out taking 0.4 seconds */
     transition-property: opacity;
     transition-duration: 0.4s;
     transition-timing-function: ease-in-out;
 }
 
-/* This centers the UI exactly over the tracked point */
-.oxygen-pivot {
-    /* Shifts the UI up and left by half its size so the origin is in the dead center */
+/* Centers the UI exactly over the tracked point */
+.bar-pivot {
     translate: -50% -50%;
     align-items: center;
     justify-content: center;
 }
 
 /* The actual size of the custom Vector API element */
-.oxygen-radial-fill {
+.radial-fill {
     width: 60px;
     height: 60px;
 }

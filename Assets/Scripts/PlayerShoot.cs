@@ -1,66 +1,87 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// Handles player shooting mechanics, integrated with the TimeTick and Oxygen systems.
-/// </summary>
 [RequireComponent(typeof(PlayerOxygen))]
 public class PlayerShooting : MonoBehaviour
 {
-    [Header("Shooting Settings")]
+    [Header("Shooting Settings")] 
     public int shootingOxygenCost = 15;
-    public float actionTimeCost = 0.5f;
-    
-    [Header("References")]
-    [Tooltip("The prefab to spawn when shooting.")]
+    public int actionTurnCost = 1; 
+    public float maxShootDistance = 15f;
+
+    [Header("References")] 
     public GameObject projectilePrefab;
     public Transform firePoint;
+    public ActionVisualizer actionVisualizer; // Inject the visualizer
 
     private PlayerOxygen oxygen;
+    private Camera mainCam;
 
     private void Start()
     {
         oxygen = GetComponent<PlayerOxygen>();
+        mainCam = Camera.main;
     }
 
     private void Update()
     {
         if (Mouse.current == null) return;
 
-        // Only allow shooting if time is paused/ready for a new action
-        if (!TimeTickManager.Instance.IsTimeFlowing())
+        // Only allow aiming/shooting if turns are not currently executing
+        if (!TurnManager.Instance.IsExecuting)
         {
-            // Example input: Right Click to shoot
+            HandleAimingPreview();
+
             if (Mouse.current.rightButton.wasPressedThisFrame)
             {
                 AttemptShot();
             }
         }
+        else
+        {
+            actionVisualizer.Hide(); // Ensure it hides during turn execution
+        }
+    }
+
+    private void HandleAimingPreview()
+    {
+        // Simple Raycast to mouse position for aiming
+        Ray ray = mainCam.ScreenPointToRay(Mouse.current.position.ReadValue());
+        
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            Vector3 target = new Vector3(hit.point.x, firePoint.position.y, hit.point.z);
+            Vector3 direction = target - firePoint.position;
+
+            // Clamp line to max shooting distance
+            if (direction.magnitude > maxShootDistance)
+            {
+                target = firePoint.position + (direction.normalized * maxShootDistance);
+            }
+
+            // Draw the shader-based shooting line
+            actionVisualizer.DrawIntent(firePoint.position, target, ActionVisualizer.IntentType.Shooting);
+        }
     }
 
     private void AttemptShot()
     {
-        // 1. GATEKEEPER: Ask the Oxygen system if we can afford the shot
         if (oxygen.TryConsume(shootingOxygenCost))
         {
-            // 2. Execute the shot
+            actionVisualizer.Hide(); // Hide upon firing
             FireProjectile();
-
-            // 3. Trigger the time flow
-            TimeTickManager.Instance.TriggerActionTick(actionTimeCost);
+            TurnManager.Instance.ExecuteTurns(actionTurnCost);
         }
         else
         {
             Debug.Log("Cannot shoot: Insufficient Oxygen.");
-            // Optional: Trigger a "dry fire" sound effect here
         }
     }
 
     private void FireProjectile()
     {
-        if (projectilePrefab is not null && firePoint is not null)
+        if (projectilePrefab != null && firePoint != null)
         {
-            // Instantiate the projectile (Consider using an Object Pool here for production code)
             Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
         }
     }

@@ -19,7 +19,8 @@ GameObject:
   - component: {fileID: 2293698169202067251}
   - component: {fileID: 3955124832136619161}
   - component: {fileID: 7368009749926953877}
-  m_Layer: 0
+  - component: {fileID: 5681027109302336312}
+  m_Layer: 11
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -115,7 +116,7 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
@@ -136,9 +137,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerShoot
   shootingOxygenCost: 15
-  actionTimeCost: 0.5
+  actionTurnCost: 1
+  maxShootDistance: 15
   projectilePrefab: {fileID: 1171659284125416050, guid: 6dd6eec1398c3704782464a79721a453, type: 3}
   firePoint: {fileID: 7452408521043480656}
+  actionVisualizer: {fileID: 2293698169202067251}
 --- !u!54 &7272611450858167394
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -178,7 +181,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af1c6adb002dce648bc39c21ad05941d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  actionTimeCost: 1
+  actionTurnCost: 1
   moveSpeed: 5
   maxMoveDistance: 5
   moveVisualizer: {fileID: 2293698169202067251}
@@ -208,7 +211,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 8d599cb134ef7e14c8be20bb022510dc, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -242,22 +245,13 @@ LineRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.20567322
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
         outWeight: 0.33333334
-      - serializedVersion: 3
-        time: 0.89994174
-        value: 0.016084492
-        inSlope: Infinity
-        outSlope: Infinity
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -313,6 +307,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9b59dd72157ece4486e5e8b70281abb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ActionVisualizer
+  movementMaterial: {fileID: 2100000, guid: 8d599cb134ef7e14c8be20bb022510dc, type: 2}
+  shootingMaterial: {fileID: 2100000, guid: 8d599cb134ef7e14c8be20bb022510dc, type: 2}
 --- !u!114 &3955124832136619161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -340,6 +336,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRotation
   rotationSpeed: 20
+--- !u!114 &5681027109302336312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3029938191028018037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e5a71c79d640db9a50b3ad5d299931, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealthComponent
+  maxHealth: 100
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTakeDamage:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHealed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDie:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &3079381061294999465
 GameObject:
   m_ObjectHideFlags: 0
@@ -349,7 +370,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7452408521043480656}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: FirePoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -382,7 +403,7 @@ GameObject:
   - component: {fileID: 4056771651522577816}
   - component: {fileID: 7437674656621155201}
   - component: {fileID: 5379113339167941596}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: r
   m_TagString: Untagged
   m_Icon: {fileID: 0}

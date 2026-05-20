@@ -3,8 +3,10 @@ using UnityEngine;
 
 public class TimeTickManager : MonoBehaviour
 {
-    [Header("Time Settings")] 
-    public float transitionDuration = 0.2f;
+    [Header("Time Settings")] public float transitionDuration = 0.2f;
+
+    // Cache the default physics step (usually 0.02f)
+    private float defaultFixedDeltaTime;
 
     private bool isTimeFlowing;
     public static TimeTickManager Instance { get; private set; }
@@ -12,11 +14,8 @@ public class TimeTickManager : MonoBehaviour
     // Debug Variables
     public string CurrentPhase { get; private set; } = "Paused";
     public float CurrentTimeScale => Time.timeScale;
-    public float ActionProgress { get; private set; } 
+    public float ActionProgress { get; private set; }
     public float TotalActionDuration { get; private set; }
-
-    // Cache the default physics step (usually 0.02f)
-    private float defaultFixedDeltaTime;
 
     private void Awake()
     {
@@ -81,12 +80,12 @@ public class TimeTickManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Safely synchronizes the physics engine's tick rate with the visual time scale.
+    ///     Safely synchronizes the physics engine's tick rate with the visual time scale.
     /// </summary>
     private void SetTime(float targetTimeScale)
     {
         Time.timeScale = targetTimeScale;
-        
+
         // Clamp at a very low value to prevent divide-by-zero physics errors when paused
         Time.fixedDeltaTime = Mathf.Clamp(defaultFixedDeltaTime * targetTimeScale, 0.00001f, defaultFixedDeltaTime);
     }

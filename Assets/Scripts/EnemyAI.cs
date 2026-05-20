@@ -1,45 +1,42 @@
 ﻿using UnityEngine;
 
-/// <summary>
-///     Controls enemy AI behavior using a simple Finite State Machine.
-///     Respects the TimeTickManager seamlessly via Time.deltaTime and FixedUpdate.
-/// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyAI : MonoBehaviour
 {
-    public enum AIState
-    {
-        Chasing,
-        Attacking
-    }
+    public enum AIState { Chasing, Attacking }
 
-    [Header("AI Settings")]
-    [Tooltip("The state machine's current phase.")]
+    [Header("AI Settings")] 
     public AIState currentState = AIState.Chasing;
     public Transform target;
-    
-    [Header("Movement")]
+
+    [Header("Movement")] 
     public float moveSpeed = 3.5f;
     public float rotationSpeed = 10f;
-    
-    [Header("Combat")]
+
+    [Header("Combat")] 
     public float attackRange = 8f;
-    [Tooltip("Minimum real-game seconds between shots.")]
-    public float fireCooldown = 1.5f;
+    public int attackCooldownTurns = 2; 
     public GameObject projectilePrefab;
     public Transform firePoint;
 
-    private Rigidbody rb;
-    private float shootTimer;
-    
+    [Header("Visuals")] 
+    public ActionVisualizer aimVisualizer;
+
+    private bool isAimLocked;
     private Vector3 lockedAimPosition;
-    private bool isAimLocked = false;
+    private Rigidbody rb;
+    private int currentCooldownTurns = 0;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        
-        // Cache the target reference. Avoid using GameObject.Find() in Update!
+
+        // --- KINEMATIC SETUP ---
+        rb.isKinematic = false; 
+        rb.useGravity = false;
+        rb.interpolation = RigidbodyInterpolation.Interpolate; 
+        // -----------------------
+
         if (target is null)
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -48,99 +45,82 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    [Header("Visuals")]
-    public ActionVisualizer aimVisualizer;
+    private void OnEnable() => TurnManager.OnTurnTicked += HandleTurnTicked;
+    private void OnDisable() => TurnManager.OnTurnTicked -= HandleTurnTicked;
+
+    private void HandleTurnTicked(int currentTurn)
+    {
+        if (currentCooldownTurns > 0) currentCooldownTurns--;
+    }
 
     private void Update()
     {
         if (target is null) return;
-
-        // 1. Cooldown Management
-        if (shootTimer > 0f) shootTimer -= Time.deltaTime;
 
         float distanceToTarget = Vector3.Distance(transform.position, target.position);
 
         if (distanceToTarget <= attackRange)
         {
             currentState = AIState.Attacking;
-            
-            // 2. Lock Aim ONLY when time is paused.
-            // This forces the enemy to wait until you stop moving to draw their laser,
-            // guaranteeing you have a chance to react before they fire.
-            if (shootTimer <= 0f && !isAimLocked && !TimeTickManager.Instance.IsTimeFlowing())
+
+            if (currentCooldownTurns <= 0 && !isAimLocked && !TurnManager.Instance.IsExecuting)
             {
                 lockedAimPosition = new Vector3(target.position.x, firePoint.position.y, target.position.z);
                 isAimLocked = true;
             }
 
-            // 3. Draw Telegraph Line
             if (isAimLocked && aimVisualizer is not null)
+                aimVisualizer.DrawIntent(firePoint.position, lockedAimPosition, ActionVisualizer.IntentType.Shooting);
+            else
             {
-                aimVisualizer.DrawIntent(firePoint.position, lockedAimPosition);
+                aimVisualizer?.Hide();
             }
-            else if (aimVisualizer is not null)
-            {
-                // The line is hidden while the enemy is reloading
-                aimVisualizer.Hide(); 
-            }
-            
-            // 4. Fire Weapon
-            if (isAimLocked && TimeTickManager.Instance.IsTimeFlowing())
-            {
+
+            if (isAimLocked && TurnManager.Instance.IsExecuting) 
                 Shoot(lockedAimPosition);
-            }
         }
         else
         {
             currentState = AIState.Chasing;
-            
-            isAimLocked = false; 
+            isAimLocked = false;
             if (aimVisualizer is not null) aimVisualizer.Hide();
         }
-    }
-    // Notice we now pass the locked target position into the Shoot method
-    private void Shoot(Vector3 targetPos)
-    {
-        // Reset timers and break the lock so they have to re-aim next time
-        shootTimer = fireCooldown;
-        isAimLocked = false; 
-
-        // Calculate direction towards the locked position
-        Vector3 shootDirection = (targetPos - firePoint.position).normalized;
-
-        Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(shootDirection));
-        
-        // Hide the laser exactly as the bullet is fired
-        aimVisualizer?.Hide();
     }
 
     private void FixedUpdate()
     {
-        if (target is null) return;
+        if (target is null || !TurnManager.Instance.IsExecuting) return;
 
-        // FixedUpdate stops firing when Time.timeScale == 0, 
-        // locking the physics body perfectly in place.
         Vector3 directionToTarget = (target.position - rb.position).normalized;
-        directionToTarget.y = 0; // Keep movement locked to the XZ plane
+        directionToTarget.y = 0;
 
         switch (currentState)
         {
             case AIState.Chasing:
                 HandleMovement(directionToTarget);
                 break;
-
             case AIState.Attacking:
-                HandleRotation(directionToTarget); // Just look at player while attacking
+                HandleRotation(directionToTarget);
                 break;
         }
     }
 
+    private void Shoot(Vector3 targetPos)
+    {
+        currentCooldownTurns = attackCooldownTurns;
+        isAimLocked = false;
+
+        Vector3 shootDirection = (targetPos - firePoint.position).normalized;
+        Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(shootDirection));
+
+        aimVisualizer?.Hide();
+    }
+
     private void HandleMovement(Vector3 direction)
     {
-        // Move towards target
+        // rb.MovePosition works identically on Kinematic bodies, but bypasses collision bouncing
         Vector3 newPos = rb.position + direction * (moveSpeed * Time.fixedDeltaTime);
         rb.MovePosition(newPos);
-
         HandleRotation(direction);
     }
 
@@ -149,22 +129,8 @@ public class EnemyAI : MonoBehaviour
         if (direction != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
+            // rb.MoveRotation ensures rotation interpolates cleanly
             rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
         }
-    }
-
-    private void Shoot()
-    {
-        shootTimer = fireCooldown;
-
-        // Aim strictly towards the player's core/feet based on firePoint height
-        Vector3 targetPoint = new Vector3(target.position.x, firePoint.position.y, target.position.z);
-        Vector3 shootDirection = (targetPoint - firePoint.position).normalized;
-
-        Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(shootDirection));
-        
-        // Note: The AI DOES NOT call TimeTickManager.Instance.TriggerActionTick().
-        // In a Chronosphere clone, AI actions react to the player's time flow, 
-        // they don't instigate it.
     }
 }

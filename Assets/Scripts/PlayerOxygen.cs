@@ -2,22 +2,15 @@
 using UnityEngine;
 
 /// <summary>
-/// Manages the player's integer-based oxygen resource.
-/// Broadcasts granular state changes via events to keep external systems decoupled.
+///     Manages the player's integer-based oxygen resource.
+///     Broadcasts granular state changes via events to keep external systems decoupled.
 /// </summary>
 public class PlayerOxygen : MonoBehaviour
 {
-    [Header("Resource Settings")]
-    [Tooltip("The maximum amount of oxygen the player can hold.")]
-    [SerializeField] private int maxOxygen = 100;
-    
-    [SerializeField] private int currentOxygen;
+    [Header("Resource Settings")] [Tooltip("The maximum amount of oxygen the player can hold.")] [SerializeField]
+    private int maxOxygen = 100;
 
-    // Granular Observer Events
-    public event Action<int, int> OnOxygenChanged; // Passes (currentOxygen, maxOxygen)
-    public event Action<int> OnOxygenLost;         // Passes (amount lost)
-    public event Action<int> OnOxygenGained;       // Passes (amount gained)
-    public event Action OnOxygenDepleted;          // Triggers when oxygen reaches 0
+    [SerializeField] private int currentOxygen;
 
     private void Awake()
     {
@@ -31,8 +24,14 @@ public class PlayerOxygen : MonoBehaviour
         OnOxygenChanged?.Invoke(currentOxygen, maxOxygen);
     }
 
+    // Granular Observer Events
+    public event Action<int, int> OnOxygenChanged; // Passes (currentOxygen, maxOxygen)
+    public event Action<int> OnOxygenLost; // Passes (amount lost)
+    public event Action<int> OnOxygenGained; // Passes (amount gained)
+    public event Action OnOxygenDepleted; // Triggers when oxygen reaches 0
+
     /// <summary>
-    /// Checks if the requested amount of oxygen is available. O(1) complexity.
+    ///     Checks if the requested amount of oxygen is available. O(1) complexity.
     /// </summary>
     public bool CanAfford(int amount)
     {
@@ -40,28 +39,25 @@ public class PlayerOxygen : MonoBehaviour
     }
 
     /// <summary>
-    /// Attempts to consume oxygen. Returns true if successful, false if not enough oxygen.
+    ///     Attempts to consume oxygen. Returns true if successful, false if not enough oxygen.
     /// </summary>
     public bool TryConsume(int amount)
     {
         if (!CanAfford(amount)) return false;
 
         currentOxygen -= amount;
-        
+
         // Fire the specific loss event, then the general change event
         OnOxygenLost?.Invoke(amount);
         OnOxygenChanged?.Invoke(currentOxygen, maxOxygen);
 
-        if (currentOxygen <= 0)
-        {
-            OnOxygenDepleted?.Invoke();
-        }
+        if (currentOxygen <= 0) OnOxygenDepleted?.Invoke();
 
         return true;
     }
 
     /// <summary>
-    /// Adds oxygen, clamped to the maximum. 
+    ///     Adds oxygen, clamped to the maximum.
     /// </summary>
     public void Replenish(int amount)
     {
