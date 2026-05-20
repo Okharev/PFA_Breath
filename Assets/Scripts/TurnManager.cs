@@ -3,29 +3,20 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Manages discrete turns in the game. Implements the Singleton and Observer patterns.
+///     Manages discrete turns in the game. Implements the Singleton and Observer patterns.
 /// </summary>
 [DefaultExecutionOrder(-50)]
 public class TurnManager : MonoBehaviour
 {
     private static readonly int GlobalUnscaledTime = Shader.PropertyToID("_GlobalUnscaledTime");
-    public static TurnManager Instance { get; private set; }
 
-    [Header("Turn Settings")]
-    [Tooltip("Real-time seconds one turn takes to execute.")]
+    [Header("Turn Settings")] [Tooltip("Real-time seconds one turn takes to execute.")]
     public float secondsPerTurn = 1.0f;
 
-    // Observer Pattern: Broadcasts when a turn finishes
-    public static event Action<int> OnTurnTicked;
-
     private float defaultFixedDeltaTime;
+    public static TurnManager Instance { get; private set; }
     public bool IsExecuting { get; private set; }
     public int CurrentTurn { get; private set; }
-
-    private void Update()
-    {
-        Shader.SetGlobalFloat(GlobalUnscaledTime, Time.unscaledTime);
-    }
 
     private void Awake()
     {
@@ -36,15 +27,20 @@ public class TurnManager : MonoBehaviour
         SetTimeScale(0f); // Start paused
     }
 
+    private void Update()
+    {
+        Shader.SetGlobalFloat(GlobalUnscaledTime, Time.unscaledTime);
+    }
+
+    // Observer Pattern: Broadcasts when a turn finishes
+    public static event Action<int> OnTurnTicked;
+
     /// <summary>
-    /// Queues the execution of a set number of turns.
+    ///     Queues the execution of a set number of turns.
     /// </summary>
     public void ExecuteTurns(int turnCost)
     {
-        if (!IsExecuting && turnCost > 0)
-        {
-            StartCoroutine(ExecuteTurnsRoutine(turnCost));
-        }
+        if (!IsExecuting && turnCost > 0) StartCoroutine(ExecuteTurnsRoutine(turnCost));
     }
 
     private IEnumerator ExecuteTurnsRoutine(int turnCost)
@@ -55,7 +51,7 @@ public class TurnManager : MonoBehaviour
         for (int i = 0; i < turnCost; i++)
         {
             float elapsed = 0f;
-            
+
             // Wait for exactly 'secondsPerTurn'
             while (elapsed < secondsPerTurn)
             {

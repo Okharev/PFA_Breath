@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: LoS
+  m_Name: LoSSpread
   m_Shader: {fileID: -6465566751694194690, guid: efa145a09ffb5294490292c4a323831b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -42,13 +42,11 @@ Material:
     - _DashRatio: 0.5
     - _Dim_Ratio: 0.46
     - _Float: 0
-    - _IntersectionWidth: 0
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Speed: -2
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _IntersectionColor: {r: 0.509434, g: 0, b: 0, a: 1}
+    - _Color: {r: 0.4566037, g: 0.4566037, b: 0.4566037, a: 0.1254902}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &372124930428420064
