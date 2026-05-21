@@ -820,6 +820,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -1199617615353420736, guid: 8957f3ab60c455641a10a3bd5fa9cad9, type: 3}
+      propertyPath: explorationSpeed
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -1199617615353420736, guid: 8957f3ab60c455641a10a3bd5fa9cad9, type: 3}
       propertyPath: dashSpeedMultiplier
       value: 1.5
       objectReference: {fileID: 0}
@@ -845,7 +849,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 8957f3ab60c455641a10a3bd5fa9cad9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.82
+      value: 1.77
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 8957f3ab60c455641a10a3bd5fa9cad9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -853,7 +857,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 8957f3ab60c455641a10a3bd5fa9cad9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -27.48
+      value: -26.78
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 8957f3ab60c455641a10a3bd5fa9cad9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1366,7 +1370,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshSurface
   m_SerializedVersion: 0
   m_AgentTypeID: 0
-  m_CollectObjects: 0
+  m_CollectObjects: 2
   m_Size: {x: 10, y: 10, z: 10}
   m_Center: {x: 0, y: 2, z: 0}
   m_LayerMask:
@@ -1538,7 +1542,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a64e71c4bb5846fd9e630ee1b679423e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomCombatTrigger
-  triggerOnlyOnce: 1
+  isCleared: 0
+  autoClearOnEnemiesDefeated: 1
 --- !u!1 &1065907004
 GameObject:
   m_ObjectHideFlags: 0

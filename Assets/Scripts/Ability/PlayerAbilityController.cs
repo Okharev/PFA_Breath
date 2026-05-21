@@ -89,19 +89,20 @@ namespace Ability
 
         private void HandleModeSwitching()
         {
+            // Disable hotkeys for combat abilities when freely exploring.
+            if (GameModeManager.Instance.CurrentMode == GameMode.Exploration) return;
+
             if (Keyboard.current.tabKey.wasPressedThisFrame)
             {
                 ActiveWeaponAbility = (ActiveWeaponAbility == primaryAbility) ? secondaryAbility : primaryAbility;
                 Debug.Log($"Switched weapon to: {ActiveWeaponAbility.AbilityId}");
-                
-                // Optional: You could fire an event here to tell the UI to instantly highlight the new active weapon
             }
-        
+
             if (Keyboard.current.rKey.wasPressedThisFrame)
             {
                 AttemptAbility(specialAbility, GetMouseWorldPosition());
             }
-            
+    
             if (Keyboard.current.leftShiftKey.wasPressedThisFrame)
             {
                 AttemptAbility(dashAbility, GetMouseWorldPosition());
@@ -111,7 +112,8 @@ namespace Ability
         private void HandleAimingAndExecution()
         {
             Vector3? mouseTarget = GetMouseWorldPosition();
-        
+            bool isExploration = GameModeManager.Instance.CurrentMode == GameMode.Exploration;
+
             AbilityContext context = new AbilityContext
             {
                 Caster = gameObject,
@@ -120,27 +122,51 @@ namespace Ability
                 Visualizer = actionVisualizer
             };
 
-            movementAbility.DrawPreview(context);
-            ActiveWeaponAbility.DrawPreview(context);
-
-            if (mouseTarget.HasValue)
+            if (!isExploration)
             {
-                physicsController.LookAtTarget(mouseTarget.Value);
+                // Only draw previews and force rotation in combat mode
+                movementAbility.DrawPreview(context);
+                ActiveWeaponAbility?.DrawPreview(context);
+        
+                if (mouseTarget.HasValue)
+                {
+                    physicsController.LookAtTarget(mouseTarget.Value);
+                }
             }
 
+            // --- INPUT ROUTING ---
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                AttemptAbility(movementAbility, mouseTarget);
+                if (isExploration)
+                {
+                    // BYPASS ABILITY SYSTEM: 
+                    // Feed the raw, unclamped mouse click directly to the NavMeshAgent.
+                    if (mouseTarget.HasValue)
+                    {
+                        physicsController.StartMovement(mouseTarget.Value);
+                    }
+                }
+                else
+                {
+                    // TACTICAL COMBAT:
+                    // Route through AttemptAbility to apply distance clamping and Turn/Oxygen costs.
+                    AttemptAbility(movementAbility, mouseTarget);
+                }
             }
-            else if (Mouse.current.rightButton.wasPressedThisFrame)
+            else if (Mouse.current.rightButton.wasPressedThisFrame && !isExploration)
             {
+                // Weapon firing is locked out in Exploration mode
                 AttemptAbility(ActiveWeaponAbility, mouseTarget);
             }
         }
 
         private void AttemptAbility(IAbility ability, Vector3? targetPos)
         {
-            if (ability.RequiresTargeting && !targetPos.HasValue) return;
+            if (ability.RequiresTargeting && !targetPos.HasValue)
+            {
+                Debug.LogWarning($"[Movement Debug] {ability.AbilityId} aborted: targetPos is null. The mouse raycast did not hit the Floor Mask!");
+                return;
+            }
 
             AbilityContext context = new AbilityContext
             {
@@ -149,22 +175,30 @@ namespace Ability
                 MouseWorldPosition = targetPos,
                 Visualizer = actionVisualizer
             };
-    
+
             if (!ability.CanExecute(context))
             {
-                Debug.Log($"{ability.AbilityId} is not ready or target is invalid!");
+                Debug.LogWarning($"[Movement Debug] {ability.AbilityId} cannot execute (CanExecute returned false).");
                 return;
             }
+
+            bool isExploration = GameModeManager.Instance.CurrentMode == GameMode.Exploration;
 
             if (oxygen.TryConsume(ability.OxygenCost))
             {
                 actionVisualizer?.Hide();
                 ability.Execute(context);
-                TurnManager.Instance.ExecuteTurns(ability.TurnCost);
+        
+                Debug.Log($"[Movement Debug] Successfully executed {ability.AbilityId} at {targetPos.Value}");
+
+                if (!isExploration)
+                {
+                    TurnManager.Instance.ExecuteTurns(ability.TurnCost);
+                }
             }
             else
             {
-                Debug.Log($"Not enough oxygen for {ability.AbilityId}!");
+                Debug.LogWarning($"[Movement Debug] Not enough oxygen for {ability.AbilityId}! (Cost: {ability.OxygenCost})");
             }
         }
         

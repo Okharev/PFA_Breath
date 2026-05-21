@@ -25,6 +25,13 @@ public class GameModeManager : MonoBehaviour
         if (!Instance) Instance = this;
         else Destroy(gameObject);
     }
+    
+    private void Start()
+    {
+        // Broadcast the initial state to all listeners (TurnManager, PlayerController, etc.)
+        // This ensures timeScale is set to 1f and NavMesh is enabled right as the game begins.
+        OnGameModeChanged?.Invoke(CurrentMode);
+    }
 
     public void SwitchToCombat()
     {

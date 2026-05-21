@@ -24,7 +24,6 @@ public class TurnManager : MonoBehaviour
         else Destroy(gameObject);
 
         defaultFixedDeltaTime = Time.fixedDeltaTime;
-        SetTimeScale(0f); // Start paused
     }
 
     private void OnEnable()
@@ -68,13 +67,14 @@ public class TurnManager : MonoBehaviour
     private IEnumerator ExecuteTurnsRoutine(int turnCost)
     {
         IsExecuting = true;
-        SetTimeScale(1f); // Resume time
+    
+        // Always ensure time is flowing while processing a turn
+        SetTimeScale(1f); 
 
         for (int i = 0; i < turnCost; i++)
         {
             float elapsed = 0f;
 
-            // Wait for exactly 'secondsPerTurn'
             while (elapsed < secondsPerTurn)
             {
                 elapsed += Time.deltaTime;
@@ -82,10 +82,17 @@ public class TurnManager : MonoBehaviour
             }
 
             CurrentTurn++;
-            OnTurnTicked?.Invoke(CurrentTurn); // Notify all listeners that a turn completed
+            OnTurnTicked?.Invoke(CurrentTurn); // Notify listeners
         }
 
-        SetTimeScale(0f); // Pause time
+        // --- THE FIX ---
+        // Only pause time if we are actively in strategic combat.
+        // Otherwise, let time flow normally for exploration!
+        if (GameModeManager.Instance.CurrentMode == GameMode.Combat)
+        {
+            SetTimeScale(0f); 
+        }
+    
         IsExecuting = false;
     }
 

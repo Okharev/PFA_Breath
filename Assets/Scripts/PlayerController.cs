@@ -1,93 +1,132 @@
 using UnityEngine;
+using UnityEngine.AI;
 
-[RequireComponent(typeof(Rigidbody))]
-public class PlayerController : MonoBehaviour
+public interface IPlayerMovementState
 {
-    [Header("Movement Settings")] 
-    public float moveSpeed = 5f;
-    public float rotationSpeed = 30f;
+    void EnterState();
+    void ExitState();
+    void Update();
+    void FixedUpdate();
+    void StartMovement(Vector3 target);
+    void StopMovement();
+}
 
-    [Header("Dash Settings")]
-    public float dashSpeedMultiplier = 3f;
-    [Tooltip("The name of the layer the player switches to while dashing to dodge bullets.")]
-    public string dashLayerName = "Dashing";
+public class ExplorationMovementState : IPlayerMovementState
+{
+    private readonly PlayerController context;
+    private readonly NavMeshAgent agent;
+    private readonly Rigidbody rb;
 
-    public bool IsInvincible { get; private set; }
-
-    private bool isMoving;
-    private bool isDashing;
-    private Rigidbody rb;
-    private Vector3 targetPosition;
-    private UnityEngine.AI.NavMeshAgent agent;
-    
-    // ---   Layer Tracking ---
-    private int originalLayer;
-    private int dashLayerIndex;
-
-    private const RigidbodyInterpolation DefaultInterpolation = RigidbodyInterpolation.Interpolate;
-
-    private void Start()
+    public ExplorationMovementState(PlayerController context, NavMeshAgent agent, Rigidbody rb)
     {
-        rb = GetComponent<Rigidbody>();
-        rb.isKinematic = true;
-        rb.useGravity = false;
-        rb.interpolation = DefaultInterpolation; 
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-
-        // Cache the layer index for performance
-        dashLayerIndex = LayerMask.NameToLayer(dashLayerName);
-        if (dashLayerIndex == -1)
-        {
-            Debug.LogWarning($"[PlayerController] Layer '{dashLayerName}' does not exist! Please create it in the top right of the Unity Editor.");
-        }
-        
-        GameModeManager.Instance.SwitchToExploration();
+        this.context = context;
+        this.agent = agent;
+        this.rb = rb;
     }
-    
+
+    public void EnterState()
+    {
+        // 1. Put the Rigidbody into a complete coma
+        rb.isKinematic = true;
+        rb.interpolation = RigidbodyInterpolation.None; // CRITICAL: Prevents physics stutter
+
+        // 2. Hand the keys to the NavMeshAgent
+        agent.enabled = true;
+        agent.updatePosition = true; // Agent directly moves the Transform
+        agent.updateRotation = false; // We still handle rotation manually for smoothness
+        
+        // Snappy movement settings
+        agent.speed = context.explorationSpeed;
+        agent.acceleration = 100f;
+        agent.stoppingDistance = 0.1f;
+        agent.autoBraking = true;
+    }
+
+    public void ExitState()
+    {
+        if (agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.enabled = false;
+        }
+
+        // Wake the Rigidbody back up for Combat State
+        rb.interpolation = RigidbodyInterpolation.Interpolate; 
+    }
+
+    public void Update()
+    {
+        // Smooth rotational logic looking at the next path corner
+        if (context.IsMoving && agent.enabled && agent.hasPath)
+        {
+            Vector3 directionToTarget = agent.steeringTarget - rb.position;
+            if (directionToTarget.sqrMagnitude > 0.01f)
+            {
+                context.LookAtTarget(agent.steeringTarget);
+            }
+            
+            // Check if we arrived at the destination
+            if (agent.remainingDistance <= agent.stoppingDistance && !agent.pathPending)
+            {
+                context.StopMovement();
+            }
+        }
+    }
+
+    public void FixedUpdate()
+    {
+        // Completely empty. The Agent handles positional movement in Update.
+    }
+
     public void StartMovement(Vector3 target)
     {
-        // BUG FIX: If we were dashing and got interrupted by a normal move, 
-        // we must revert the layer BEFORE starting the new movement.
-        ResetDashState(); 
-        
-        targetPosition = target;
-        isMoving = true;
-    }
-    
-    public void StartDash(Vector3 target)
-    {
-        targetPosition = target;
-        isMoving = true;
-        
-        if (!isDashing) 
+        if (agent.enabled && agent.isOnNavMesh)
         {
-            originalLayer = gameObject.layer;
-            if (dashLayerIndex != -1) gameObject.layer = dashLayerIndex;
+            context.IsMoving = true;
+            agent.isStopped = false;
+            agent.SetDestination(target); 
         }
-
-        isDashing = true;
-        IsInvincible = true; 
     }
 
-    /// <summary>
-    /// Safely teleports the player, cancelling any active movement or dashes
-    /// and ensuring the Rigidbody physics don't glitch out.
-    /// </summary>
-    public void TeleportTo(Vector3 newPosition)
+    public void StopMovement()
     {
-        // 1. Cancel any active walking or dashing states
+        context.IsMoving = false;
+        if (agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+        }
+    }
+}
+
+public class CombatMovementState : IPlayerMovementState
+{
+    private readonly PlayerController context;
+    private readonly Rigidbody rb;
+    private Vector3 targetPosition;
+
+    public CombatMovementState(PlayerController context, Rigidbody rb)
+    {
+        this.context = context;
+        this.rb = rb;
+    }
+
+    public void EnterState()
+    {
+        context.IsMoving = false;
+        // Start with interpolation OFF so we can aim smoothly while time is paused
+        rb.interpolation = RigidbodyInterpolation.None; 
+    }
+
+    public void ExitState()
+    {
         StopMovement();
-
-        // 2. Snap both the Transform and the Kinematic Rigidbody
-        transform.position = newPosition;
-        rb.position = newPosition;
-        
-        // 3. Force the physics engine to update immediately
-        Physics.SyncTransforms();
+        rb.interpolation = RigidbodyInterpolation.None;
     }
-    
-    private void Update()
+
+    public void Update() 
     {
+        // --- THE FIX: Re-introduced your dynamic interpolation toggle ---
         if (!TurnManager.Instance.IsExecuting)
         {
             if (rb.interpolation != RigidbodyInterpolation.None)
@@ -95,8 +134,169 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            if (rb.interpolation != DefaultInterpolation)
-                rb.interpolation = DefaultInterpolation;
+            if (rb.interpolation != RigidbodyInterpolation.Interpolate)
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+        }
+    }
+
+    public void FixedUpdate()
+    {
+        if (context.IsMoving && TurnManager.Instance.IsExecuting)
+        {
+            Vector3 direction = (targetPosition - rb.position).normalized;
+            float currentSpeed = context.IsDashing ? (context.moveSpeed * context.dashSpeedMultiplier) : context.moveSpeed;
+            float distanceThisFrame = currentSpeed * Time.fixedDeltaTime;
+
+            if (rb.SweepTest(direction, out RaycastHit hit, distanceThisFrame + 0.05f))
+            {
+                Vector3 safePos = rb.position + direction * Mathf.Max(0, hit.distance - 0.05f);
+                rb.MovePosition(safePos);
+                context.StopMovement(); 
+            }
+            else
+            {
+                Vector3 newPos = Vector3.MoveTowards(rb.position, targetPosition, distanceThisFrame);
+                rb.MovePosition(newPos);
+            }
+
+            if (Vector3.Distance(rb.position, targetPosition) < 0.05f)
+            {
+                context.StopMovement(); 
+            }
+        }
+    }
+
+    public void StartMovement(Vector3 target)
+    {
+        context.ResetDashState();
+        targetPosition = target;
+        context.IsMoving = true;
+    }
+
+    public void StopMovement()
+    {
+        context.ResetDashState();
+        context.IsMoving = false;
+    }
+}
+
+[RequireComponent(typeof(Rigidbody), typeof(NavMeshAgent))]
+public class PlayerController : MonoBehaviour
+{
+    [Header("Movement Settings")] public float moveSpeed = 5f;
+
+    public float rotationSpeed = 30f;
+    public float explorationSpeed = 6f;
+
+    [Header("Dash Settings")] public float dashSpeedMultiplier = 3f;
+
+    public string dashLayerName = "Dashing";
+    private NavMeshAgent agent;
+    private CombatMovementState combatState;
+    private IPlayerMovementState currentState;
+    private int dashLayerIndex;
+    private ExplorationMovementState explorationState;
+
+    private int originalLayer;
+
+    private Rigidbody rb;
+
+    // Public properties for states to read/write
+    public bool IsInvincible { get; private set; }
+    public bool IsMoving { get; set; }
+    public bool IsDashing { get; private set; }
+
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        agent = GetComponent<NavMeshAgent>();
+
+        rb.isKinematic = true;
+        rb.useGravity = false;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+
+        dashLayerIndex = LayerMask.NameToLayer(dashLayerName);
+
+        // Initialize States
+        explorationState = new ExplorationMovementState(this, agent, rb);        combatState = new CombatMovementState(this, rb);
+
+        GameModeManager.OnGameModeChanged += HandleGameModeChanged;
+        HandleGameModeChanged(GameModeManager.Instance.CurrentMode);
+    }
+
+    private void Update()
+    {
+        currentState?.Update();
+    }
+
+    private void FixedUpdate()
+    {
+        currentState?.FixedUpdate();
+    }
+
+    private void OnDestroy()
+    {
+        GameModeManager.OnGameModeChanged -= HandleGameModeChanged;
+    }
+
+    private void HandleGameModeChanged(GameMode mode)
+    {
+        if (mode == GameMode.Exploration)
+            ChangeState(explorationState);
+        else
+            ChangeState(combatState);
+    }
+
+    private void ChangeState(IPlayerMovementState newState)
+    {
+        currentState?.ExitState();
+        currentState = newState;
+        currentState?.EnterState();
+    }
+
+    public void StartMovement(Vector3 target)
+    {
+        currentState?.StartMovement(target);
+    }
+
+    public void StopMovement()
+    {
+        currentState?.StopMovement();
+    }
+
+    public void TeleportTo(Vector3 newPosition)
+    {
+        StopMovement();
+        if (agent.enabled && agent.isOnNavMesh) agent.Warp(newPosition);
+
+        transform.position = newPosition;
+        rb.position = newPosition;
+        Physics.SyncTransforms();
+    }
+
+    public void StartDash(Vector3 target)
+    {
+        // Dash logic remains shared, but movement relies on the active state
+        IsMoving = true;
+
+        if (!IsDashing)
+        {
+            originalLayer = gameObject.layer;
+            if (dashLayerIndex != -1) gameObject.layer = dashLayerIndex;
+        }
+
+        IsDashing = true;
+        IsInvincible = true;
+        currentState?.StartMovement(target);
+    }
+
+    public void ResetDashState()
+    {
+        if (IsDashing)
+        {
+            if (dashLayerIndex != -1) gameObject.layer = originalLayer;
+            IsDashing = false;
+            IsInvincible = false;
         }
     }
 
@@ -108,59 +308,9 @@ public class PlayerController : MonoBehaviour
         if (lookDirection.sqrMagnitude > 0.01f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
-            if (rotationSpeed <= 0f) 
-                transform.rotation = targetRotation;
-            else 
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.unscaledDeltaTime);
+            transform.rotation = rotationSpeed <= 0f
+                ? targetRotation
+                : Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.unscaledDeltaTime);
         }
-    }
-
-    private void FixedUpdate()
-    {
-        if (isMoving && TurnManager.Instance.IsExecuting)
-        {
-            Vector3 direction = (targetPosition - rb.position).normalized;
-            float currentSpeed = isDashing ? (moveSpeed * dashSpeedMultiplier) : moveSpeed;
-            float distanceThisFrame = currentSpeed * Time.fixedDeltaTime;
-
-            if (rb.SweepTest(direction, out RaycastHit hit, distanceThisFrame + 0.05f))
-            {
-                Vector3 safePos = rb.position + direction * Mathf.Max(0, hit.distance - 0.05f);
-                rb.MovePosition(safePos);
-                StopMovement(); 
-            }
-            else
-            {
-                Vector3 newPos = Vector3.MoveTowards(rb.position, targetPosition, distanceThisFrame);
-                rb.MovePosition(newPos);
-            }
-
-            if (Vector3.Distance(rb.position, targetPosition) < 0.05f)
-            {
-                StopMovement(); 
-            }
-        }
-    }
-    
-    private void ResetDashState()
-    {
-        if (isDashing)
-        {
-            if (dashLayerIndex != -1)
-            {
-                gameObject.layer = originalLayer;
-            }
-            isDashing = false;
-            IsInvincible = false;
-        }
-    }
-
-    private void StopMovement()
-    {
-        // BUG FIX: Use the centralized cleanup
-        ResetDashState(); 
-
-        isMoving = false;
-        rb.interpolation = RigidbodyInterpolation.None;
     }
 }
