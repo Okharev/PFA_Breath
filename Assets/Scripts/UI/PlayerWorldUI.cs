@@ -42,6 +42,7 @@ namespace UI
             }
 
             // 2. Position Health Bar (Left Side)
+            // 
             if (healthContainer != null && healthContainer.resolvedStyle.opacity > 0)
             {
                 Vector2 hpScreenPos = RuntimePanelUtils.CameraTransformWorldToPanel(

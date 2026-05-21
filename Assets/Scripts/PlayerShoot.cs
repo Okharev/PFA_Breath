@@ -6,16 +6,25 @@ public class PlayerShooting : MonoBehaviour
 {
     [Header("Shooting Settings")] 
     public int shootingOxygenCost = 15;
-    public int actionTurnCost = 1; 
+    public int actionTurnCost = 1;
     public float maxShootDistance = 15f;
+    
+    [Header("Weapon Spread")]
+    [Tooltip("Maximum angle of deviation in degrees (0 = perfect accuracy).")]
+    [Range(0f, 45f)]
+    public float spreadAngle = 2.5f;
+
+    [Header("Aiming Settings")]
+    [Tooltip("Must match the Floor Mask in PlayerController to prevent aiming desync.")]
+    public LayerMask floorMask;
 
     [Header("References")] 
     public GameObject projectilePrefab;
     public Transform firePoint;
-    public ActionVisualizer actionVisualizer; // Inject the visualizer
-
-    private PlayerOxygen oxygen;
+    public ActionVisualizer actionVisualizer; 
+    
     private Camera mainCam;
+    private PlayerOxygen oxygen;
 
     private void Start()
     {
@@ -25,51 +34,59 @@ public class PlayerShooting : MonoBehaviour
 
     private void Update()
     {
-        if (Mouse.current == null) return;
+        if (Mouse.current == null || mainCam == null) return;
 
-        // Only allow aiming/shooting if turns are not currently executing
+        // Gatekeeper: Only evaluate when awaiting input
         if (!TurnManager.Instance.IsExecuting)
         {
-            HandleAimingPreview();
+            Vector3? targetPos = GetAimTarget();
 
-            if (Mouse.current.rightButton.wasPressedThisFrame)
+            if (targetPos.HasValue)
             {
-                AttemptShot();
+                // We draw the preview every frame while aiming
+                actionVisualizer.DrawIntent(firePoint.position, targetPos.Value, ActionVisualizer.IntentType.Shooting, spreadAngle);
+                
+                // Commit to the shot
+                if (Mouse.current.rightButton.wasPressedThisFrame) 
+                {
+                    AttemptShot(targetPos.Value);
+                }
             }
         }
         else
         {
-            actionVisualizer.Hide(); // Ensure it hides during turn execution
+            // Only hide if we are currently executing
+            actionVisualizer?.Hide(); 
         }
     }
 
-    private void HandleAimingPreview()
+    private Vector3? GetAimTarget()
     {
-        // Simple Raycast to mouse position for aiming
         Ray ray = mainCam.ScreenPointToRay(Mouse.current.position.ReadValue());
-        
-        if (Physics.Raycast(ray, out RaycastHit hit))
+
+        // Raycast against the floor to match locomotion aiming.
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, floorMask))
         {
             Vector3 target = new Vector3(hit.point.x, firePoint.position.y, hit.point.z);
             Vector3 direction = target - firePoint.position;
 
-            // Clamp line to max shooting distance
+            // Clamp to max distance
             if (direction.magnitude > maxShootDistance)
             {
-                target = firePoint.position + (direction.normalized * maxShootDistance);
+                target = firePoint.position + direction.normalized * maxShootDistance;
             }
 
-            // Draw the shader-based shooting line
-            actionVisualizer.DrawIntent(firePoint.position, target, ActionVisualizer.IntentType.Shooting);
+            return target;
         }
+        return null;
     }
 
-    private void AttemptShot()
+    private void AttemptShot(Vector3 targetPosition)
     {
         if (oxygen.TryConsume(shootingOxygenCost))
         {
-            actionVisualizer.Hide(); // Hide upon firing
-            FireProjectile();
+            actionVisualizer?.Hide(); 
+            FireProjectile(targetPosition);
             TurnManager.Instance.ExecuteTurns(actionTurnCost);
         }
         else
@@ -78,11 +95,28 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
-    private void FireProjectile()
+    private void FireProjectile(Vector3 targetPosition)
     {
         if (projectilePrefab != null && firePoint != null)
         {
-            Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+            // Calculate the pure, 100% accurate trajectory
+            Vector3 baseShootDirection = (targetPosition - firePoint.position).normalized;
+            
+            // --- THE SPREAD LOGIC ---
+            // Generate a random angle between negative and positive spreadAngle
+            float randomYaw = Random.Range(-spreadAngle, spreadAngle);
+            
+            // Create a rotation around the Y axis
+            Quaternion spreadRotation = Quaternion.Euler(0f, randomYaw, 0f);
+            
+            // Multiply the Quaternion by the Vector3 to rotate the vector
+            Vector3 finalShootDirection = spreadRotation * baseShootDirection;
+            
+            // Only instantiate if we have a valid direction
+            if (finalShootDirection.sqrMagnitude > 0.01f)
+            {
+                Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(finalShootDirection));
+            }
         }
     }
 }
