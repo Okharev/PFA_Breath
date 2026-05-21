@@ -27,6 +27,28 @@ public class TurnManager : MonoBehaviour
         SetTimeScale(0f); // Start paused
     }
 
+    private void OnEnable()
+    {
+        GameModeManager.OnGameModeChanged += HandleGameModeChanged;
+    }
+
+    private void OnDisable()
+    {
+        GameModeManager.OnGameModeChanged -= HandleGameModeChanged;
+    }
+    
+    private void HandleGameModeChanged(GameMode mode)
+    {
+        if (mode == GameMode.Exploration)
+        {
+            SetTimeScale(1f); // Free movement, real-time
+        }
+        else if (mode == GameMode.Combat)
+        {
+            SetTimeScale(0f); // Pause time, await turn commands
+        }
+    }
+    
     private void Update()
     {
         Shader.SetGlobalFloat(GlobalUnscaledTime, Time.unscaledTime);

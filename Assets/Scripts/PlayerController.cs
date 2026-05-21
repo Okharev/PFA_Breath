@@ -18,8 +18,9 @@ public class PlayerController : MonoBehaviour
     private bool isDashing;
     private Rigidbody rb;
     private Vector3 targetPosition;
+    private UnityEngine.AI.NavMeshAgent agent;
     
-    // --- NEW: Layer Tracking ---
+    // ---   Layer Tracking ---
     private int originalLayer;
     private int dashLayerIndex;
 
@@ -39,6 +40,8 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogWarning($"[PlayerController] Layer '{dashLayerName}' does not exist! Please create it in the top right of the Unity Editor.");
         }
+        
+        GameModeManager.Instance.SwitchToExploration();
     }
     
     public void StartMovement(Vector3 target)
