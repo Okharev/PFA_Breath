@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Displays real-time information about the game's discrete turn state.
+///     Displays real-time information about the game's discrete turn state.
 /// </summary>
 public class TurnDebugUI : MonoBehaviour
 {
-    private readonly Rect debugWindowRect = new Rect(10, 10, 250, 120);
+    private readonly Rect debugWindowRect = new(10, 10, 250, 120);
 
     private void OnGUI()
     {
@@ -18,7 +18,7 @@ public class TurnDebugUI : MonoBehaviour
 
         GUI.Box(debugWindowRect, "Turn Manager Debug");
 
-        GUIStyle textStyle = new GUIStyle(GUI.skin.label)
+        GUIStyle textStyle = new(GUI.skin.label)
         {
             fontSize = 14,
             normal =
@@ -35,7 +35,7 @@ public class TurnDebugUI : MonoBehaviour
             $"Time Scale: {currentScale:F2}x\n" +
             $"Time Per Turn: {TurnManager.Instance.secondsPerTurn}s";
 
-        Rect textRect = new Rect(20, 35, 230, 80);
+        Rect textRect = new(20, 35, 230, 80);
         GUI.Label(textRect, debugText, textStyle);
     }
 }
