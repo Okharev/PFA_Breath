@@ -20,24 +20,20 @@ namespace Ability
         string AbilityId { get; }
         int TurnCost { get; }
         int OxygenCost { get; }
-
-        /// <summary>
-        ///     If true, the ability requires a ground target (e.g., Shooting, Teleport).
-        ///     If false, it executes instantly without aiming (e.g., Self-Heal, Nova).
-        /// </summary>
         bool RequiresTargeting { get; }
 
+        // --- Standardized State Exposure ---
+        int CurrentCooldown { get; }
+        int MaxCooldown { get; }
+        int CurrentChannelTime { get; }
+        int RequiredChannelTime { get; }
+        
+        // Expose state for UI/AI evaluation
+        bool IsChanneling { get; }
+        bool IsReady { get; } 
+
         bool CanExecute(AbilityContext context);
-
-        /// <summary>
-        ///     Called every frame while the player is aiming.
-        ///     The ability decides how it wants to be visualized.
-        /// </summary>
         void DrawPreview(AbilityContext context);
-
-        /// <summary>
-        ///     The actual execution logic of the ability.
-        /// </summary>
         void Execute(AbilityContext context);
     }
 }

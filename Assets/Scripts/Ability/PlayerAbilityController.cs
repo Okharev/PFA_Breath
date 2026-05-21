@@ -1,63 +1,74 @@
 ﻿using System;
+using System.Collections.Generic; // Added for the loadout list
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Ability
 {
-    /// <summary>
-    ///     The central input and state manager for the player.
-    ///     Determines what ability is active, polls for user input, draws UI previews,
-    ///     and deducts global resources (Oxygen/Time) before executing an ability.
-    /// </summary>
     [RequireComponent(typeof(PlayerOxygen), typeof(PlayerController))]
     public class PlayerAbilityController : MonoBehaviour
     {
-        [Header("Aiming Settings")] [Tooltip("Must match the floor layer so mouse raycasts ignore walls/enemies.")]
+        [Header("Aiming Settings")] 
+        [Tooltip("Must match the floor layer so mouse raycasts ignore walls/enemies.")]
         public LayerMask floorMask;
 
-        [Header("References")] public Transform firePoint;
-
+        [Header("References")] 
+        public Transform firePoint;
         public ActionVisualizer actionVisualizer;
-        public GameObject defaultProjectile; // Placeholder for demo purposes
-        public GameObject sniperProjectile; // Placeholder for demo purposes
+        public GameObject defaultProjectile; 
+        public GameObject sniperProjectile; 
 
-        // State Tracking
-        private IAbility activeWeaponAbility;
+        // --- Expose active weapon for UI styling (e.g., highlighting the active slot) ---
+        public IAbility ActiveWeaponAbility { get; private set; }
 
         // Core Dependencies
         private Camera mainCam;
-
-        // --- ABILITY SLOTS (The Strategy Pattern) ---
-        private IAbility movementAbility;
         private PlayerOxygen oxygen;
         private PlayerController physicsController;
+
+        // Ability Slots
+        private IAbility movementAbility;
+        private IAbility dashAbility;
         private IAbility primaryAbility;
         private IAbility secondaryAbility;
         private IAbility specialAbility;
 
-        private void Start()
+        private void Awake() 
         {
             oxygen = GetComponent<PlayerOxygen>();
             physicsController = GetComponent<PlayerController>();
             mainCam = Camera.main;
 
-            // Initialize Loadout (In the future, a Skill Tree/Inventory manager injects these)
+            // Now, these are guaranteed to exist before the UI asks for them in Start()
             movementAbility = new MovementAbility(physicsController, 5f);
             primaryAbility = new ShotgunAbility(defaultProjectile, firePoint, 6, 12f);
             secondaryAbility = new SniperAbility(sniperProjectile, firePoint);
-            specialAbility = new TeleportAbility(15f);
+            specialAbility = new TeleportAbility(physicsController, 15f);
+            dashAbility = new DashAbility(physicsController, 8f); // 8 units dash range
 
-            // Default starting state
-            activeWeaponAbility = primaryAbility;
-            
+            ActiveWeaponAbility = primaryAbility;
+        }
+
+        // --- Public API for the UI Controller ---
+        /// <summary>
+        /// Returns the player's current loadout so the UI Toolkit can dynamically build the Action Bar.
+        /// </summary>
+        public List<IAbility> GetLoadout()
+        {
+            return new List<IAbility> 
+            { 
+                movementAbility, 
+                primaryAbility, 
+                secondaryAbility, 
+                dashAbility,
+                specialAbility 
+            };
         }
 
         private void Update()
         {
-            // Safety check for critical dependencies
             if (Mouse.current == null || Keyboard.current == null || mainCam == null) return;
 
-            // --- PHASE 1: PLANNING PHASE (Time is paused, awaiting input) ---
             if (!TurnManager.Instance.IsExecuting)
             {
                 HandleModeSwitching();
@@ -65,42 +76,38 @@ namespace Ability
             }
             else
             {
-                // --- PHASE 2: EXECUTION PHASE (Time is flowing) ---
                 actionVisualizer?.Hide();
             }
         }
 
         private void OnDestroy()
         {
-            // CRITICAL: Ensure any stateful abilities (like Sniper) unsubscribe from TurnManager
             if (secondaryAbility is IDisposable disposableSecondary) disposableSecondary.Dispose();
             if (specialAbility is IDisposable disposableSpecial) disposableSpecial.Dispose();
+            if (dashAbility is IDisposable disposableDash) disposableDash.Dispose();
         }
 
-        /// <summary>
-        ///     Handles swapping which ability is currently bound to Left-Click.
-        ///     Because abilities are abstracted, switching them is an O(1) operation with zero GC allocation.
-        /// </summary>
         private void HandleModeSwitching()
         {
-            // Tab swaps between Primary and Secondary
             if (Keyboard.current.tabKey.wasPressedThisFrame)
             {
-                activeWeaponAbility = (activeWeaponAbility == primaryAbility) ? secondaryAbility : primaryAbility;
-                Debug.Log($"Switched weapon to: {activeWeaponAbility.AbilityId}");
+                ActiveWeaponAbility = (ActiveWeaponAbility == primaryAbility) ? secondaryAbility : primaryAbility;
+                Debug.Log($"Switched weapon to: {ActiveWeaponAbility.AbilityId}");
+                
+                // Optional: You could fire an event here to tell the UI to instantly highlight the new active weapon
             }
         
-            // R instantly executes the Special Ability 
             if (Keyboard.current.rKey.wasPressedThisFrame)
             {
                 AttemptAbility(specialAbility, GetMouseWorldPosition());
             }
+            
+            if (Keyboard.current.leftShiftKey.wasPressedThisFrame)
+            {
+                AttemptAbility(dashAbility, GetMouseWorldPosition());
+            }
         }
 
-        /// <summary>
-        ///     Calculates the mouse position, asks the active ability to draw its UI preview,
-        ///     and listens for the execution trigger.
-        /// </summary>
         private void HandleAimingAndExecution()
         {
             Vector3? mouseTarget = GetMouseWorldPosition();
@@ -113,34 +120,24 @@ namespace Ability
                 Visualizer = actionVisualizer
             };
 
-            // 1. Draw Previews
-            // Because they are decoupled, you can preview both where you will walk 
-            // AND where your gun is aiming simultaneously!
             movementAbility.DrawPreview(context);
-            activeWeaponAbility.DrawPreview(context);
+            ActiveWeaponAbility.DrawPreview(context);
 
             if (mouseTarget.HasValue)
             {
                 physicsController.LookAtTarget(mouseTarget.Value);
             }
 
-            // 2. Listen for Inputs strictly mapped to their dedicated abilities
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                // LEFT CLICK IS STRICTLY MOVEMENT
                 AttemptAbility(movementAbility, mouseTarget);
             }
             else if (Mouse.current.rightButton.wasPressedThisFrame)
             {
-                // RIGHT CLICK IS STRICTLY THE EQUIPPED WEAPON
-                AttemptAbility(activeWeaponAbility, mouseTarget);
+                AttemptAbility(ActiveWeaponAbility, mouseTarget);
             }
         }
 
-        /// <summary>
-        ///     Centralized gatekeeper for all abilities. Validates targeting, deducts Oxygen,
-        ///     executes the ability logic, and charges the TurnManager.
-        /// </summary>
         private void AttemptAbility(IAbility ability, Vector3? targetPos)
         {
             if (ability.RequiresTargeting && !targetPos.HasValue) return;
@@ -164,7 +161,6 @@ namespace Ability
                 actionVisualizer?.Hide();
                 ability.Execute(context);
                 TurnManager.Instance.ExecuteTurns(ability.TurnCost);
-
             }
             else
             {
@@ -172,9 +168,6 @@ namespace Ability
             }
         }
         
-        /// <summary>
-        ///     Raycasts from the screen to the 3D floor to find the tactical grid position.
-        /// </summary>
         private Vector3? GetMouseWorldPosition()
         {
             Ray ray = mainCam.ScreenPointToRay(Mouse.current.position.ReadValue());

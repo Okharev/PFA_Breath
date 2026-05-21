@@ -1,74 +1,102 @@
 using UnityEngine;
 
-/// <summary>
-/// Handles the physical execution of movement and rotation.
-/// It receives commands from the PlayerAbilityController and executes them safely
-/// using the Rigidbody during the TurnManager's execution phase.
-/// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : MonoBehaviour
 {
-    [Header("Action Settings")] 
+    [Header("Movement Settings")] 
     public float moveSpeed = 5f;
     public float rotationSpeed = 30f;
 
-    // State Tracking
+    [Header("Dash Settings")]
+    public float dashSpeedMultiplier = 3f;
+    [Tooltip("The name of the layer the player switches to while dashing to dodge bullets.")]
+    public string dashLayerName = "Dashing";
+
+    public bool IsInvincible { get; private set; }
+
     private bool isMoving;
+    private bool isDashing;
     private Rigidbody rb;
     private Vector3 targetPosition;
     
-    // Cache the default interpolation to prevent visual stuttering when time pauses/resumes
-    private RigidbodyInterpolation defaultInterpolation = RigidbodyInterpolation.Interpolate;
+    // --- NEW: Layer Tracking ---
+    private int originalLayer;
+    private int dashLayerIndex;
+
+    private const RigidbodyInterpolation DefaultInterpolation = RigidbodyInterpolation.Interpolate;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-
-        // --- STRICT KINEMATIC SETUP ---
-        // We use kinematic rigidbodies so we have absolute mathematical control over
-        // the grid/tactical movement, while still respecting collision via SweepTest.
         rb.isKinematic = true;
         rb.useGravity = false;
-        rb.interpolation = defaultInterpolation; 
+        rb.interpolation = DefaultInterpolation; 
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-    }
 
-    /// <summary>
-    /// Public API called by the MovementAbility to queue a movement execution.
-    /// </summary>
+        // Cache the layer index for performance
+        dashLayerIndex = LayerMask.NameToLayer(dashLayerName);
+        if (dashLayerIndex == -1)
+        {
+            Debug.LogWarning($"[PlayerController] Layer '{dashLayerName}' does not exist! Please create it in the top right of the Unity Editor.");
+        }
+    }
+    
     public void StartMovement(Vector3 target)
+    {
+        // BUG FIX: If we were dashing and got interrupted by a normal move, 
+        // we must revert the layer BEFORE starting the new movement.
+        ResetDashState(); 
+        
+        targetPosition = target;
+        isMoving = true;
+    }
+    
+    public void StartDash(Vector3 target)
     {
         targetPosition = target;
         isMoving = true;
-        // You can delete the interpolation logic that was here!
+        
+        if (!isDashing) 
+        {
+            originalLayer = gameObject.layer;
+            if (dashLayerIndex != -1) gameObject.layer = dashLayerIndex;
+        }
+
+        isDashing = true;
+        IsInvincible = true; 
+    }
+
+    /// <summary>
+    /// Safely teleports the player, cancelling any active movement or dashes
+    /// and ensuring the Rigidbody physics don't glitch out.
+    /// </summary>
+    public void TeleportTo(Vector3 newPosition)
+    {
+        // 1. Cancel any active walking or dashing states
+        StopMovement();
+
+        // 2. Snap both the Transform and the Kinematic Rigidbody
+        transform.position = newPosition;
+        rb.position = newPosition;
+        
+        // 3. Force the physics engine to update immediately
+        Physics.SyncTransforms();
     }
     
     private void Update()
     {
-        // CRITICAL FIX: Rigidbody Visual Desync
-        // When time is paused (Planning Phase), we MUST disable interpolation.
-        // Otherwise, modifying transform.rotation for aiming will not visually update.
         if (!TurnManager.Instance.IsExecuting)
         {
             if (rb.interpolation != RigidbodyInterpolation.None)
-            {
                 rb.interpolation = RigidbodyInterpolation.None;
-            }
         }
         else
         {
-            // Re-enable interpolation during the Execution Phase so movement is smooth
-            if (rb.interpolation != defaultInterpolation)
-            {
-                rb.interpolation = defaultInterpolation;
-            }
+            if (rb.interpolation != DefaultInterpolation)
+                rb.interpolation = DefaultInterpolation;
         }
     }
 
-    /// <summary>
-    /// Handles rotating the player model globally. 
-    /// Can be called by aiming abilities to make the character face the mouse.
-    /// </summary>
     public void LookAtTarget(Vector3 targetPos)
     {
         Vector3 lookDirection = targetPos - transform.position;
@@ -77,8 +105,6 @@ public class PlayerController : MonoBehaviour
         if (lookDirection.sqrMagnitude > 0.01f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
-            
-            // Instant snap vs smooth rotation
             if (rotationSpeed <= 0f) 
                 transform.rotation = targetRotation;
             else 
@@ -88,36 +114,50 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // --- EXECUTION PHASE MOVEMENT ---
-        // Only move the Rigidbody if we have a target AND the global time is flowing.
         if (isMoving && TurnManager.Instance.IsExecuting)
         {
             Vector3 direction = (targetPosition - rb.position).normalized;
-            float distanceThisFrame = moveSpeed * Time.fixedDeltaTime;
+            float currentSpeed = isDashing ? (moveSpeed * dashSpeedMultiplier) : moveSpeed;
+            float distanceThisFrame = currentSpeed * Time.fixedDeltaTime;
 
-            // SweepTest projects the Rigidbody forward to check for walls before moving.
             if (rb.SweepTest(direction, out RaycastHit hit, distanceThisFrame + 0.05f))
             {
-                // Wall detected! Move right up to the wall and stop.
                 Vector3 safePos = rb.position + direction * Mathf.Max(0, hit.distance - 0.05f);
                 rb.MovePosition(safePos);
-                isMoving = false;
+                StopMovement(); 
             }
             else
             {
-                // Path is clear. Move normally.
                 Vector3 newPos = Vector3.MoveTowards(rb.position, targetPosition, distanceThisFrame);
                 rb.MovePosition(newPos);
             }
 
-            // Snap to grid/target if we are close enough
             if (Vector3.Distance(rb.position, targetPosition) < 0.05f)
             {
-                isMoving = false;
-                
-                // Turn off interpolation when stopped to prevent sliding visuals when time pauses
-                rb.interpolation = RigidbodyInterpolation.None;
+                StopMovement(); 
             }
         }
+    }
+    
+    private void ResetDashState()
+    {
+        if (isDashing)
+        {
+            if (dashLayerIndex != -1)
+            {
+                gameObject.layer = originalLayer;
+            }
+            isDashing = false;
+            IsInvincible = false;
+        }
+    }
+
+    private void StopMovement()
+    {
+        // BUG FIX: Use the centralized cleanup
+        ResetDashState(); 
+
+        isMoving = false;
+        rb.interpolation = RigidbodyInterpolation.None;
     }
 }
