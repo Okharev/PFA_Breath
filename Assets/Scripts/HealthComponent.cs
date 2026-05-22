@@ -13,7 +13,7 @@ public class HealthComponent : MonoBehaviour
 
     public  event Action<float> OnTakeDamage; // Passes (Damage Amount)
     public  event Action<float> OnHealed; // Passes (Heal Amount)
-    public event Action<HealthComponent> OnDeath;
+    public event Action<GameObject> OnDeath;
     
     private float currentHealth;
 
@@ -54,7 +54,7 @@ public class HealthComponent : MonoBehaviour
     private void Die()
     {
         isDead = true;
-        OnDeath?.Invoke(this);
+        OnDeath?.Invoke(gameObject);
 
         // You can handle destroying the object via the UnityEvent in the Inspector,
         // or just Destroy it here directly.
