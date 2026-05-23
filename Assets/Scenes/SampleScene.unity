@@ -840,7 +840,7 @@ GameObject:
   - component: {fileID: 580263211}
   - component: {fileID: 580263210}
   - component: {fileID: 580263209}
-  - component: {fileID: 580263208}
+  - component: {fileID: 580263212}
   m_Layer: 6
   m_Name: Floor
   m_TagString: Untagged
@@ -848,28 +848,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
   m_IsActive: 1
---- !u!64 &580263208
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 580263207}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &580263209
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -942,6 +920,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1002349613}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &580263212
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 580263207}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 10, y: 2.220446e-16, z: 10}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &630205625
 GameObject:
   m_ObjectHideFlags: 0
@@ -1119,7 +1118,7 @@ MonoBehaviour:
   m_PanelSettings: {fileID: 11400000, guid: 6d3dcb92f44d134419edc03964f02eaa, type: 2}
   m_ParentUI: {fileID: 0}
   sourceAsset: {fileID: 0}
-  m_SortingOrder: 5
+  m_SortingOrder: 2
   m_Position: 0
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920
@@ -2254,12 +2253,13 @@ GameObject:
   - component: {fileID: 1680149056}
   - component: {fileID: 1680149057}
   - component: {fileID: 1680149058}
+  - component: {fileID: 1680149059}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1680149054
 Transform:
@@ -2270,7 +2270,7 @@ Transform:
   m_GameObject: {fileID: 1680149051}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalPosition: {x: -0, y: 19.16, z: -28}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2326,6 +2326,42 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Skills.SkillTreeManager
   genericPoints: 0
+--- !u!114 &1680149059
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1680149051}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5407f01f129f62247a7caf927aadfcbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidsManager
+  boidsCompute: {fileID: 7200000, guid: cceb64b1de6972d41b4d389cac87bddb, type: 3}
+  fishMesh: {fileID: 4300000, guid: 1cfa4408f005b994a91c73b71f54aeaf, type: 2}
+  fishMaterial: {fileID: 2100000, guid: 13ac52a8be4347e43999e775eeb576d8, type: 2}
+  playerTransform: {fileID: 68808359}
+  numBoids: 400
+  spawnRadius: 20
+  speed: 4
+  sightRadius: 3
+  separationWeight: 0.8
+  targetWeight: 0.75
+  separationPulseSpeed: 0.84
+  separationPulseAmount: 0.58
+  colorA: {r: 0, g: 0.8647673, b: 1, a: 1}
+  colorB: {r: 0, g: 0, b: 1, a: 1}
+  minSize: 0.45
+  maxSize: 0.75
+  predatorRadius: 5
+  floorY: 0
+  floorAvoidanceMargin: 2
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  maxObstacles: 32
+  scanRadius: 32
 --- !u!1 &1823006395
 GameObject:
   m_ObjectHideFlags: 0

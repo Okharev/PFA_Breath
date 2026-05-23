@@ -1,0 +1,136 @@
+#pragma kernel CSMain
+
+struct Boid
+{
+    float3 position;
+    float3 direction;
+    float3 color;
+    float size;
+    float currentSpeed;
+};
+
+// --- NOUVEAU : La carte d'identité d'un obstacle ---
+struct Obstacle
+{
+    float3 position;
+    float radius;
+};
+
+RWStructuredBuffer<Boid> boidsBuffer;
+// --- NOUVEAU : Le tableau des obstacles reçu du C# ---
+StructuredBuffer<Obstacle> obstaclesBuffer;
+int numObstacles;
+// ---------------------------------------------------
+
+int numBoids;
+float deltaTime;
+float speed;
+float sightRadius;
+float separationWeight;
+float3 targetPosition; 
+float targetWeight;
+float3 predatorPosition;
+float predatorRadius;
+float time;
+float floorY;
+float avoidanceMargin;
+
+[numthreads(64, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)numBoids) return;
+
+    Boid boid = boidsBuffer[id.x];
+    
+    float3 separation = float3(0, 0, 0);
+    float3 alignment = float3(0, 0, 0);
+    float3 cohesion = float3(0, 0, 0);
+    int boidsInRange = 0;
+
+    for (int i = 0; i < numBoids; i++)
+    {
+        if (i == (int)id.x) continue;
+        Boid otherBoid = boidsBuffer[i];
+        float dist = distance(boid.position, otherBoid.position);
+
+        if (dist < sightRadius)
+        {
+            if (dist > 0.001f)
+            {
+                separation += (boid.position - otherBoid.position) / (dist * dist); 
+            }
+            alignment += otherBoid.direction;
+            cohesion += otherBoid.position;
+            boidsInRange++;
+        }
+    }
+
+    if (boidsInRange > 0)
+    {
+        alignment = normalize(alignment / boidsInRange);
+        cohesion = normalize((cohesion / boidsInRange) - boid.position);
+    }
+
+    float3 directionToTarget = normalize(targetPosition - boid.position);
+
+    float3 organicNoise = float3(
+        sin(time * 2.0f + boid.position.z), 
+        cos(time * 1.5f + boid.position.x), 
+        sin(time * 2.0f + boid.position.y)
+    ) * 0.2f;
+
+    float3 fleeDirection = float3(0, 0, 0);
+    float distToPredator = distance(boid.position, predatorPosition);
+    float targetSpeed = speed;
+    
+
+    if (distToPredator < predatorRadius)
+    {
+        fleeDirection = normalize(boid.position - predatorPosition) * 5.0f;
+        targetSpeed = speed * 3.0f;
+    }
+
+    // --- NOUVEAU : Calcul de l'évitement du décor ---
+    float3 obstacleAvoidance = float3(0, 0, 0);
+    for (int j = 0; j < numObstacles; j++)
+    {
+        Obstacle obs = obstaclesBuffer[j];
+        float distToObstacle = distance(boid.position, obs.position);
+        
+        // On vérifie si on est dans la zone de danger (Le rayon de l'objet + 1 mètre de marge)
+        if (distToObstacle < obs.radius + 1.0f)
+        {
+            // Plus on est près, plus la force qui nous repousse est violente
+            obstacleAvoidance += normalize(boid.position - obs.position) * (10.0f / distToObstacle);
+            
+            // Si on doit éviter un mur, on nage un peu plus vite
+            targetSpeed = max(targetSpeed, speed * 1.5f); 
+        }
+    }
+    // ---------------------------------------------------
+
+    // On ajoute 'obstacleAvoidance' à notre formule finale !
+    float3 boundaryAvoidance = float3(0, 0, 0);
+    
+    // Si on s'approche trop près du sol...
+    if (boid.position.y < floorY + avoidanceMargin)
+    {
+        // On calcule l'urgence : plus on est près du sol, plus la force vers le HAUT (Y) est violente
+        float urgency = (floorY + avoidanceMargin) - boid.position.y;
+        boundaryAvoidance.y += urgency * 10.0f; // Force de poussée verticale
+        
+        // On accélère pour s'échapper
+        targetSpeed = max(targetSpeed, speed * 1.5f);
+    }
+    // ----------------------------------------------------
+
+    // CORRECTION : N'oublie pas d'ajouter boundaryAvoidance à ton targetDir final !
+    float3 targetDir = alignment + (cohesion * 1.5f) + (separation * separationWeight) + (directionToTarget * targetWeight) + organicNoise + fleeDirection + obstacleAvoidance + boundaryAvoidance;
+    
+    boid.direction = lerp(boid.direction, normalize(targetDir), deltaTime * 3.0f);
+    
+    boid.currentSpeed = lerp(boid.currentSpeed, targetSpeed, deltaTime * 5.0f);
+    boid.position += boid.direction * boid.currentSpeed * deltaTime;
+
+    boidsBuffer[id.x] = boid;
+}
