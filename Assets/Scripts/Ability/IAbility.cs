@@ -22,20 +22,33 @@ namespace Ability
         bool RequiresTargeting { get; }
 
         int CurrentLevel { get; }
-        void SetLevel(int newLevel);
-        
+
         // --- Standardized State Exposure ---
         int CurrentCooldown { get; }
         int MaxCooldown { get; }
         int CurrentChannelTime { get; }
         int RequiredChannelTime { get; }
-        
+
         // Expose state for UI/AI evaluation
         bool IsChanneling { get; }
-        bool IsReady { get; } 
+        bool IsReady { get; }
+        void SetLevel(int newLevel);
 
         bool CanExecute(AbilityContext context);
         void DrawPreview(AbilityContext context);
         void Execute(AbilityContext context);
+    }
+
+    public interface IWeaponAbility : IAbility
+    {
+        int CurrentAmmo { get; }
+        int MaxAmmo { get; }
+        int ReloadTurnCost { get; }
+        bool NeedsReload { get; }
+
+        /// <summary>
+        ///     Refills the weapon's magazine.
+        /// </summary>
+        void Reload();
     }
 }

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using Skills.Skills;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Skills.Skills;
 
 namespace Skills.Editor
 {
@@ -21,7 +21,8 @@ namespace Skills.Editor
             Insert(0, grid);
             grid.StretchToParentSize();
 
-            StyleSheet styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Scripts/Skills/Editor/SkillTreeGraph.uss");
+            StyleSheet styleSheet =
+                AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Scripts/Skills/Editor/SkillTreeGraph.uss");
             if (styleSheet != null) styleSheets.Add(styleSheet);
         }
 
@@ -40,7 +41,7 @@ namespace Skills.Editor
             // Dynamically instantiate the requested subclass
             BaseNodeData newData = (BaseNodeData)Activator.CreateInstance(nodeDataType);
             newData.NodeName = defaultName;
-            
+
             SkillNodeView node = new(newData);
             node.SetPosition(new Rect(100, 100, 200, 150)); // Default spawn pos
             AddElement(node);
@@ -51,10 +52,8 @@ namespace Skills.Editor
         {
             List<Port> compatiblePorts = new();
             foreach (Port port in ports)
-            {
                 if (startPort != port && startPort.node != port.node && startPort.direction != port.direction)
                     compatiblePorts.Add(port);
-            }
             return compatiblePorts;
         }
     }

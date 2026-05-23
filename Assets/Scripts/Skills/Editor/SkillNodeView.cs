@@ -1,16 +1,17 @@
 ﻿using System;
+using Skills.Skills;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using Skills.Skills; // Required to access BaseNodeData
 
 namespace Skills.Editor
 {
     public class SkillNodeView : Node
     {
+        // Define our grid spacing - 25 is the greatest common divisor for center-aligning 150 and 100 width nodes
+        private const float GridSnapSize = 25f;
         public BaseNodeData NodeData;
         public Action<SkillNodeView> OnNodeSelected;
 
-        // Constructor for creating from existing data (Loading)
         public SkillNodeView(BaseNodeData nodeData)
         {
             NodeData = nodeData;
@@ -22,6 +23,21 @@ namespace Skills.Editor
             RefreshVisuals();
         }
 
+        // --- GRID SNAPPING IMPLEMENTATION ---
+        public override void SetPosition(Rect newPos)
+        {
+            // O(1) mathematical rounding to the nearest grid step (25 units)
+            newPos.x = Mathf.Round(newPos.x / GridSnapSize) * GridSnapSize;
+            newPos.y = Mathf.Round(newPos.y / GridSnapSize) * GridSnapSize;
+
+            base.SetPosition(newPos);
+
+            // Sync immediately with the underlying data model
+            if (NodeData != null)
+                // FIX: Assign the entire snapped Rect back to the data model
+                NodeData.Position = newPos;
+        }
+
         public override void OnSelected()
         {
             base.OnSelected();
@@ -30,15 +46,10 @@ namespace Skills.Editor
 
         public void RefreshVisuals()
         {
-            // Pattern matching to apply visual styles based on the derived type
             if (NodeData is GenericNodeData)
-            {
                 titleContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
-            }
             else if (NodeData is EmotionNodeData emotionData)
-            {
                 titleContainer.style.backgroundColor = GetEmotionColor(emotionData.RequiredEmotion);
-            }
         }
 
         private static Color GetEmotionColor(EmotionType emotion)
@@ -56,11 +67,13 @@ namespace Skills.Editor
 
         private void GeneratePorts()
         {
-            Port inputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(bool));
+            Port inputPort =
+                InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(bool));
             inputPort.portName = "Requires";
             inputContainer.Add(inputPort);
 
-            Port outputPort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
+            Port outputPort =
+                InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
             outputPort.portName = "Unlocks";
             outputContainer.Add(outputPort);
 

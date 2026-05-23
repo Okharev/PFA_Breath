@@ -11,7 +11,9 @@ namespace Skills
         ProjectileCount,
         OxygenCostReduction,
         Spread,
-        MovementSpeed
+        MovementSpeed,
+        MaxAmmo, // NEW: Magazine Size
+        ReloadTurnCost // NEW: Turns required to reload
     }
 
     public enum ModifierType
@@ -69,6 +71,8 @@ namespace Skills
             BaseValue = baseValue;
         }
 
+        public int ModifierCount => modifiers.Count;
+
         // O(1) Time Complexity on read. 
         // We ONLY do the heavy math if 'isDirty' is true (which only happens when unlocking a skill).
         public float Value
@@ -111,12 +115,12 @@ namespace Skills
                     {
                         // 2. Accumulate all additive percentages (e.g., +10% and +15% becomes +25% or 0.25)
                         sumPercentAdd += mod.Value;
-            
+
                         // If we are at the end of the list, OR the next modifier is a different type (Multiplicative),
                         // it means we have finished gathering all Additive modifiers. Apply them now.
                         if (i + 1 >= modifiers.Count || modifiers[i + 1].Type != ModifierType.AdditivePercent)
                         {
-                            finalValue *= (1 + sumPercentAdd);
+                            finalValue *= 1 + sumPercentAdd;
                             sumPercentAdd = 0; // Reset for safety
                         }
 
@@ -130,10 +134,9 @@ namespace Skills
             }
 
             // Round to 4 decimal places to prevent nasty float precision errors (e.g., ending up with 10.0000001)
-            return (float)Math.Round(finalValue, 4); 
+            return (float)Math.Round(finalValue, 4);
         }
     }
-
 
 
     [Serializable]
@@ -153,11 +156,11 @@ namespace Skills
             [HideInInspector] public string GUID;
             [HideInInspector] public Rect Position;
 
-            [Header("Identity")]
-            public string NodeName;
+            [Header("Identity")] public string NodeName;
+
             [TextArea] public string Description;
 
-            [HideInInspector] public List<string> PrerequisiteGUIDs = new List<string>();
+            [HideInInspector] public List<string> PrerequisiteGUIDs = new();
 
             protected BaseNodeData()
             {
@@ -170,7 +173,7 @@ namespace Skills
         public class GenericNodeData : BaseNodeData
         {
             public int GenericCost;
-            public List<StatModifierData> GrantedStats = new List<StatModifierData>();
+            public List<StatModifierData> GrantedStats = new();
         }
 
         // 3. THE EMOTION NODE (Abilities & Levels)
@@ -179,14 +182,14 @@ namespace Skills
         {
             public EmotionType RequiredEmotion;
             public int BaseEmotionCost; // Cost for Level 1
-            public int MaxLevel = 4;    // How many times it can be upgraded
+            public int MaxLevel = 4; // How many times it can be upgraded
 
             public bool UnlocksAbility;
             public string GrantedAbilityId;
             public AbilitySlot IntendedSlot;
-        
+
             // We still include stats, but maybe these scale with the node's level!
-            public List<StatModifierData> GrantedStats = new List<StatModifierData>();
+            public List<StatModifierData> GrantedStats = new();
         }
     }
 }

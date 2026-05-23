@@ -8,15 +8,19 @@ namespace Skills
         // O(1) lookup map
         private Dictionary<StatType, Stat> statMap;
 
+        public IReadOnlyDictionary<StatType, Stat> StatMap => statMap;
+
         private void Awake()
         {
             statMap = new Dictionary<StatType, Stat>
             {
                 { StatType.Damage, new Stat(10f) },
-                { StatType.ProjectileCount, new Stat(1f) }, // Default 1 projectile
-                { StatType.OxygenCostReduction, new Stat(0f) }, // Default 0% reduction
+                { StatType.ProjectileCount, new Stat(5f) },
+                { StatType.OxygenCostReduction, new Stat(0f) },
                 { StatType.Spread, new Stat(15f) },
-                { StatType.MovementSpeed, new Stat(5f) }
+                { StatType.MovementSpeed, new Stat(5f) },
+                { StatType.MaxAmmo, new Stat(2f) }, // Shotgun base: 2 shells
+                { StatType.ReloadTurnCost, new Stat(1f) } // Takes 1 turn to reload
             };
         }
 

@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Skills.Skills;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Skills.Skills; // Required
+
+// Required
 
 namespace Skills.Editor
 {
@@ -36,8 +38,8 @@ namespace Skills.Editor
             Edge[] connectedPorts = Edges.Where(x => x.input.node != null).ToArray();
             foreach (Edge edge in connectedPorts)
             {
-                SkillNodeView outputNode = edge.output.node as SkillNodeView; 
-                SkillNodeView inputNode = edge.input.node as SkillNodeView; 
+                SkillNodeView outputNode = edge.output.node as SkillNodeView;
+                SkillNodeView inputNode = edge.input.node as SkillNodeView;
 
                 inputNode.NodeData.PrerequisiteGUIDs.Add(outputNode.NodeData.GUID);
             }

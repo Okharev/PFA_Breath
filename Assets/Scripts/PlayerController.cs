@@ -1,3 +1,4 @@
+using Skills;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -36,7 +37,8 @@ public class ExplorationMovementState : IPlayerMovementState
         agent.updateRotation = false; // We still handle rotation manually for smoothness
         
         // Snappy movement settings
-        agent.speed = context.explorationSpeed;
+        // TODO This is fked needs to be dynamic
+        agent.speed = 8f;
         agent.acceleration = 100f;
         agent.stoppingDistance = 0.1f;
         agent.autoBraking = true;
@@ -80,7 +82,8 @@ public class ExplorationMovementState : IPlayerMovementState
 
     public void StartMovement(Vector3 target)
     {
-        if (agent.enabled && agent.isOnNavMesh)
+        // If the player isn't perfectly snapped to the NavMesh, this fails silently!
+        if (agent.enabled && agent.isOnNavMesh) // <--- If this is false once, input drops forever
         {
             context.IsMoving = true;
             agent.isStopped = false;
@@ -144,7 +147,10 @@ public class CombatMovementState : IPlayerMovementState
         if (context.IsMoving && TurnManager.Instance.IsExecuting)
         {
             Vector3 direction = (targetPosition - rb.position).normalized;
-            float currentSpeed = context.IsDashing ? (context.moveSpeed * context.dashSpeedMultiplier) : context.moveSpeed;
+            
+            //  Pull the dynamically calculated math from PlayerStats via the property
+            float currentSpeed = context.IsDashing ? (context.CombatMoveSpeed * context.dashSpeedMultiplier) : context.CombatMoveSpeed;
+            
             float distanceThisFrame = currentSpeed * Time.fixedDeltaTime;
 
             if (rb.SweepTest(direction, out RaycastHit hit, distanceThisFrame + 0.05f))
@@ -180,36 +186,45 @@ public class CombatMovementState : IPlayerMovementState
     }
 }
 
-[RequireComponent(typeof(Rigidbody), typeof(NavMeshAgent))]
+[RequireComponent(typeof(Rigidbody), typeof(NavMeshAgent), typeof(PlayerStats))] // ADDED PlayerStats requirement
 public class PlayerController : MonoBehaviour
 {
-    [Header("Movement Settings")] public float moveSpeed = 5f;
+    // REMOVED: public float moveSpeed = 5f;
+    // REMOVED: public float explorationSpeed = 6f;
 
+    [Header("Movement Settings")]
     public float rotationSpeed = 30f;
-    public float explorationSpeed = 6f;
-
-    [Header("Dash Settings")] public float dashSpeedMultiplier = 3f;
-
+    
+    [Header("Dash Settings")] 
+    public float dashSpeedMultiplier = 3f;
     public string dashLayerName = "Dashing";
+    
+    // Core References
     private NavMeshAgent agent;
+    private Rigidbody rb;
+    private PlayerStats playerStats; // NEW
+
+    // State Tracking
     private CombatMovementState combatState;
     private IPlayerMovementState currentState;
-    private int dashLayerIndex;
     private ExplorationMovementState explorationState;
-
+    private int dashLayerIndex;
     private int originalLayer;
 
-    private Rigidbody rb;
-
-    // Public properties for states to read/write
     public bool IsInvincible { get; private set; }
     public bool IsMoving { get; set; }
     public bool IsDashing { get; private set; }
+
+    // --- NEW: DYNAMIC STAT PROPERTIES ---
+    // These pull instantly from the O(1) dictionary, keeping performance fast while ensuring 100% accuracy with the Skill Tree
+    public float CombatMoveSpeed => playerStats.GetStatValue(StatType.MovementSpeed);
+    public float ExplorationMoveSpeed => playerStats.GetStatValue(StatType.MovementSpeed) * 1.2f; // E.g., 20% faster out of combat
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         agent = GetComponent<NavMeshAgent>();
+        playerStats = GetComponent<PlayerStats>(); // CACHE THE COMPONENT
 
         rb.isKinematic = true;
         rb.useGravity = false;
@@ -217,11 +232,19 @@ public class PlayerController : MonoBehaviour
 
         dashLayerIndex = LayerMask.NameToLayer(dashLayerName);
 
-        // Initialize States
-        explorationState = new ExplorationMovementState(this, agent, rb);        combatState = new CombatMovementState(this, rb);
+        explorationState = new ExplorationMovementState(this, agent, rb);        
+        combatState = new CombatMovementState(this, rb);
 
         GameModeManager.OnGameModeChanged += HandleGameModeChanged;
-        HandleGameModeChanged(GameModeManager.Instance.CurrentMode);
+
+        if (GameModeManager.Instance != null)
+        {
+            HandleGameModeChanged(GameModeManager.Instance.CurrentMode);
+        }
+        else
+        {
+            ChangeState(explorationState); 
+        }
     }
 
     private void Update()
