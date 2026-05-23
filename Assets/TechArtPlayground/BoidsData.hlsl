@@ -8,6 +8,7 @@ struct Boid
     float3 color;
     float size;
     float currentSpeed;
+    float roll;
 };
 
 StructuredBuffer<Boid> boidsBuffer;
@@ -15,11 +16,7 @@ StructuredBuffer<Boid> boidsBuffer;
 // NOUVEAU : J'ai ajouté flapSpeed et flapAmplitude en entrée !
 void GetCubePosition_float(float instanceID_input, float3 objectPosition, float time, float flapSpeed, float flapAmplitude, out float3 worldPosition, out float3 boidColor, out float animSpeed)
 {
-    #if defined(SHADERGRAPH_PREVIEW)
-    worldPosition = objectPosition;
-    boidColor = float3(1, 1, 1);
-    animSpeed = 1.0;
-    #else
+    #if !defined(SHADERGRAPH_PREVIEW)
     uint instanceID = (uint)instanceID_input;
     Boid b = boidsBuffer[instanceID]; 
     
@@ -32,19 +29,28 @@ void GetCubePosition_float(float instanceID_input, float3 objectPosition, float 
     float3 right = normalize(cross(up, boidDir));
     up = cross(boidDir, right);
 
-    float3 scaledPos = objectPosition * b.size;
-
-    // --- NOUVEAU : Le Chaos Organique ---
-    // On crée un décalage unique pour chaque poisson basé sur son numéro d'instance.
-    // Le "12.345" est juste un nombre aléatoire pour bien casser la symétrie.
-    float randomOffset = instanceID_input * 12.345;
+    // --- NOUVEAU : LA MATRICE DE ROULIS ---
+    // On calcule le Cosinus et le Sinus de notre angle
+    float c = cos(b.roll);
+    float s = sin(b.roll);
     
-    // On intègre le décalage, la vitesse (flapSpeed) et l'amplitude (flapAmplitude)
-    float wag = sin(time * b.currentSpeed * flapSpeed + scaledPos.z * 5.0 + randomOffset) * (scaledPos.z < 0 ? -scaledPos.z * flapAmplitude : 0.0);
-    scaledPos.x += wag; 
-    // ------------------------------------
+    // On fait pivoter nos axes "Droite" et "Haut" autour de notre axe "Avant"
+    float3 rolledRight = right * c + up * s;
+    float3 rolledUp = up * c - right * s;
+    // --------------------------------------
+    float3 scaledPos = objectPosition * b.size;
+    float randomOffset = instanceID_input * 12.345;
 
-    float3 rotatedPos = right * scaledPos.x + up * scaledPos.y + boidDir * scaledPos.z;
+    // --- CORRECTION : Adoucissement de l'animation en panique ---
+    // La fonction sqrt() courbe la progression. Le "* 5.0" sert à garder le même rythme de base qu'avant.
+    float safeAnimSpeed = sqrt(b.currentSpeed * 5.0);
+    
+    // On remplace 'b.currentSpeed' par notre nouvelle 'safeAnimSpeed'
+    float wag = sin(time * safeAnimSpeed * flapSpeed + scaledPos.z * 5.0 + randomOffset) * (scaledPos.z < 0 ? -scaledPos.z * flapAmplitude : 0.0);
+    scaledPos.x += wag; 
+    // -------------------------------------------------------------
+
+    float3 rotatedPos = rolledRight * scaledPos.x + rolledUp * scaledPos.y + boidDir * scaledPos.z;
 
     worldPosition = rotatedPos + b.position;
     

@@ -725,13 +725,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+  m_LocalRotation: {x: 0.88207406, y: 0.10547745, z: 0.23635098, w: -0.39364728}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 228.1, y: -30, z: 0}
 --- !u!114 &410087042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2270,7 +2270,7 @@ Transform:
   m_GameObject: {fileID: 1680149051}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 19.16, z: -28}
+  m_LocalPosition: {x: -12.51, y: 1.3199997, z: -31.28}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2345,9 +2345,11 @@ MonoBehaviour:
   numBoids: 400
   spawnRadius: 20
   speed: 4
-  sightRadius: 3
-  separationWeight: 0.8
-  targetWeight: 0.75
+  sightRadius: 2.8
+  separationWeight: 0.6
+  targetWeight: 1.15
+  cellSize: 3
+  gridSize: 64
   separationPulseSpeed: 0.84
   separationPulseAmount: 0.58
   colorA: {r: 0, g: 0.8647673, b: 1, a: 1}
