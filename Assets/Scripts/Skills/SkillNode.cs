@@ -134,37 +134,7 @@ namespace Skills
         }
     }
 
-    public class PlayerStats : MonoBehaviour
-    {
-        // O(1) lookup map
-        private Dictionary<StatType, Stat> statMap;
 
-        private void Awake()
-        {
-            statMap = new Dictionary<StatType, Stat>
-            {
-                { StatType.Damage, new Stat(10f) },
-                { StatType.ProjectileCount, new Stat(1f) }, // Default 1 projectile
-                { StatType.OxygenCostReduction, new Stat(0f) }, // Default 0% reduction
-                { StatType.Spread, new Stat(15f) },
-                { StatType.MovementSpeed, new Stat(5f) }
-            };
-        }
-
-        public Stat GetStat(StatType type)
-        {
-            if (statMap.TryGetValue(type, out Stat stat)) return stat;
-
-            Debug.LogError($"Stat {type} not found!");
-            return null;
-        }
-
-        // Helper method for quick value retrieval
-        public float GetStatValue(StatType type)
-        {
-            return GetStat(type)?.Value ?? 0f;
-        }
-    }
 
     [Serializable]
     public struct SkillCost
@@ -174,28 +144,49 @@ namespace Skills
         public EmotionType RequiredEmotion;
     }
 
-    [Serializable]
-    public class SkillNodeData
+    namespace Skills
     {
-        [HideInInspector] public string GUID = Guid.NewGuid().ToString();
-        [HideInInspector] public Rect Position;
+        // 1. THE BASE CLASS
+        [Serializable]
+        public abstract class BaseNodeData
+        {
+            [HideInInspector] public string GUID;
+            [HideInInspector] public Rect Position;
 
-        [Header("Identity")] public string NodeName;
+            [Header("Identity")]
+            public string NodeName;
+            [TextArea] public string Description;
 
-        [TextArea] public string Description;
+            [HideInInspector] public List<string> PrerequisiteGUIDs = new List<string>();
 
-        // NEW: Add the type to the data
-        public NodeType NodeType = NodeType.Generic; // Default to Generic
+            protected BaseNodeData()
+            {
+                GUID = Guid.NewGuid().ToString();
+            }
+        }
 
-        [Header("Economics")] public SkillCost Cost;
+        // 2. THE GENERIC NODE (Passive Stats Only)
+        [Serializable]
+        public class GenericNodeData : BaseNodeData
+        {
+            public int GenericCost;
+            public List<StatModifierData> GrantedStats = new List<StatModifierData>();
+        }
 
-        [Header("Passive Upgrades")] public List<StatModifierData> GrantedStats = new();
+        // 3. THE EMOTION NODE (Abilities & Levels)
+        [Serializable]
+        public class EmotionNodeData : BaseNodeData
+        {
+            public EmotionType RequiredEmotion;
+            public int BaseEmotionCost; // Cost for Level 1
+            public int MaxLevel = 4;    // How many times it can be upgraded
 
-        [Header("Active Abilities")] public bool UnlocksAbility;
-
-        public string GrantedAbilityId;
-        public AbilitySlot IntendedSlot;
-
-        [HideInInspector] public List<string> PrerequisiteGUIDs = new();
+            public bool UnlocksAbility;
+            public string GrantedAbilityId;
+            public AbilitySlot IntendedSlot;
+        
+            // We still include stats, but maybe these scale with the node's level!
+            public List<StatModifierData> GrantedStats = new List<StatModifierData>();
+        }
     }
 }

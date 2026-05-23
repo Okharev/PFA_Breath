@@ -11,15 +11,18 @@ namespace Ability
         private readonly PlayerController physicsController; // NEW: Added Reference
         
         // State tracking
-        private int currentCooldown;
-        private readonly int maxCooldown = 3;
 
+        public int CurrentLevel { get; private set; }
+        
         public TeleportAbility(PlayerController controller, float maxDistance)
         {
             physicsController = controller;
             maxTeleportDistance = maxDistance;
             TurnManager.OnTurnTicked += HandleTurnTicked; 
+            this.CurrentLevel = 1;
         }
+
+        public void SetLevel(int newLevel) => CurrentLevel = newLevel;
 
         public string AbilityId => "Blink_Strike";
         public int TurnCost => 0; 
@@ -27,12 +30,14 @@ namespace Ability
         public bool RequiresTargeting => true;
 
         // --- UI Properties ---
-        public int CurrentCooldown => currentCooldown;
-        public int MaxCooldown => maxCooldown;
+        public int CurrentCooldown { get; private set; }
+
+        public int MaxCooldown { get; } = 3;
+
         public int CurrentChannelTime => 0;
         public int RequiredChannelTime => 0;
         public bool IsChanneling => false;
-        public bool IsReady => currentCooldown <= 0;
+        public bool IsReady => CurrentCooldown <= 0;
 
         public bool CanExecute(AbilityContext context) => IsReady;
 
@@ -67,14 +72,14 @@ namespace Ability
             // FIX: Use the safe physics controller method instead of forcing the transform!
             physicsController.TeleportTo(targetPos);
 
-            currentCooldown = maxCooldown;
+            CurrentCooldown = MaxCooldown;
         }
 
         private void HandleTurnTicked(int newTurnNumber)
         {
-            if (currentCooldown > 0)
+            if (CurrentCooldown > 0)
             {
-                currentCooldown--;
+                CurrentCooldown--;
             }
         }
 
@@ -89,16 +94,18 @@ namespace Ability
     {
         private readonly float maxDashDistance;
         private readonly PlayerController physicsController;
-        
-        private int currentCooldown;
-        private readonly int maxCooldown = 2; // Cooldown in turns
+
+        public int CurrentLevel { get; private set; }
 
         public DashAbility(PlayerController controller, float maxDistance)
         {
             physicsController = controller;
             maxDashDistance = maxDistance;
             TurnManager.OnTurnTicked += HandleTurnTicked;
+            this.CurrentLevel = 1;
         }
+
+        public void SetLevel(int newLevel) => CurrentLevel = newLevel;
 
         public string AbilityId => "Evasive_Dash";
         public int TurnCost => 1; // Costs 1 turn to execute
@@ -106,12 +113,14 @@ namespace Ability
         public bool RequiresTargeting => true;
 
         // --- UI Properties ---
-        public int CurrentCooldown => currentCooldown;
-        public int MaxCooldown => maxCooldown;
+        public int CurrentCooldown { get; private set; }
+
+        public int MaxCooldown { get; } = 2;
+
         public int CurrentChannelTime => 0;
         public int RequiredChannelTime => 0;
         public bool IsChanneling => false;
-        public bool IsReady => currentCooldown <= 0;
+        public bool IsReady => CurrentCooldown <= 0;
 
         public bool CanExecute(AbilityContext context) => IsReady;
 
@@ -131,7 +140,7 @@ namespace Ability
             Vector3 target = GetClampedTarget(context.CasterPosition, context.MouseWorldPosition.Value);
             physicsController.StartDash(target);
             
-            currentCooldown = maxCooldown;
+            CurrentCooldown = MaxCooldown;
         }
 
         private Vector3 GetClampedTarget(Vector3 start, Vector3 rawTarget)
@@ -149,7 +158,7 @@ namespace Ability
 
         private void HandleTurnTicked(int newTurnNumber)
         {
-            if (currentCooldown > 0) currentCooldown--;
+            if (CurrentCooldown > 0) CurrentCooldown--;
         }
 
         public void Dispose()
@@ -163,19 +172,21 @@ namespace Ability
     {
         private readonly Transform firePoint;
         private readonly GameObject projectilePrefab;
-        private readonly int maxCooldown = 4;
 
-        private int currentCooldownTurns;
         private SniperState currentState = SniperState.Ready;
         private Vector3 lockedTargetDirection;
-        private int turnsChanneled;
+
+        public int CurrentLevel { get; private set; }
 
         public SniperAbility(GameObject prefab, Transform firePoint)
         {
             projectilePrefab = prefab;
             this.firePoint = firePoint;
             TurnManager.OnTurnTicked += HandleTurnTicked;
+            this.CurrentLevel = 1;
         }
+
+        public void SetLevel(int newLevel) => CurrentLevel = newLevel;
 
         public string AbilityId => "Railgun_Sniper_Channeled";
         public int TurnCost => 2;
@@ -183,9 +194,12 @@ namespace Ability
         public bool RequiresTargeting => true;
 
         // --- UI Properties ---
-        public int CurrentCooldown => currentCooldownTurns;
-        public int MaxCooldown => maxCooldown;
-        public int CurrentChannelTime => turnsChanneled;
+        public int CurrentCooldown { get; private set; }
+
+        public int MaxCooldown { get; } = 4;
+
+        public int CurrentChannelTime { get; private set; }
+
         public int RequiredChannelTime => TurnCost;
         public bool IsChanneling => currentState == SniperState.Channeling;
         public bool IsReady => currentState == SniperState.Ready;
@@ -206,7 +220,7 @@ namespace Ability
             lockedTargetDirection = (target - firePoint.position).normalized;
 
             currentState = SniperState.Channeling;
-            turnsChanneled = 0;
+            CurrentChannelTime = 0;
             Debug.Log("Sniper is charging! (Player is locked)");
         }
 
@@ -214,8 +228,8 @@ namespace Ability
         {
             if (currentState == SniperState.Cooldown)
             {
-                currentCooldownTurns--;
-                if (currentCooldownTurns <= 0)
+                CurrentCooldown--;
+                if (CurrentCooldown <= 0)
                 {
                     currentState = SniperState.Ready;
                 }
@@ -224,14 +238,14 @@ namespace Ability
 
             if (currentState == SniperState.Channeling)
             {
-                turnsChanneled++;
+                CurrentChannelTime++;
 
-                if (turnsChanneled == Mathf.Max(1, TurnCost - 1)) FirePayload();
+                if (CurrentChannelTime == Mathf.Max(1, TurnCost - 1)) FirePayload();
 
-                if (turnsChanneled >= TurnCost)
+                if (CurrentChannelTime >= TurnCost)
                 {
                     currentState = SniperState.Cooldown;
-                    currentCooldownTurns = maxCooldown;
+                    CurrentCooldown = MaxCooldown;
                 }
             }
         }
@@ -255,12 +269,17 @@ namespace Ability
         private readonly float maxMoveDistance;
         private readonly PlayerController physicsController;
 
+        public int CurrentLevel { get; private set; }
+        
         public MovementAbility(PlayerController controller, float maxDistance)
         {
             physicsController = controller;
             maxMoveDistance = maxDistance;
+            this.CurrentLevel = 1;
         }
 
+        public void SetLevel(int newLevel) => CurrentLevel = newLevel;
+        
         public string AbilityId => "Basic_Move";
         public int TurnCost => 1;
         public int OxygenCost => 0; 
@@ -312,14 +331,19 @@ namespace Ability
         private readonly GameObject pelletPrefab;
         private readonly float spreadAngle;
 
+        public int CurrentLevel { get; private set; }
+        
         public ShotgunAbility(GameObject prefab, Transform firePoint, int pelletCount = 5, float spreadAngle = 15f)
         {
             pelletPrefab = prefab;
             this.firePoint = firePoint;
             this.pelletCount = pelletCount;
             this.spreadAngle = spreadAngle;
+            this.CurrentLevel = 1;
         }
 
+        public void SetLevel(int newLevel) => CurrentLevel = newLevel;
+        
         public string AbilityId => "Shotgun_Blast";
         public int TurnCost => 1;
         public int OxygenCost => 20;

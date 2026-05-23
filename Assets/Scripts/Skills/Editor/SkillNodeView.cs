@@ -1,28 +1,25 @@
 ﻿using System;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using Skills.Skills; // Required to access BaseNodeData
 
 namespace Skills.Editor
 {
     public class SkillNodeView : Node
     {
-        public SkillNodeData NodeData;
+        public BaseNodeData NodeData;
         public Action<SkillNodeView> OnNodeSelected;
 
-        public SkillNodeView(string nodeName)
+        // Constructor for creating from existing data (Loading)
+        public SkillNodeView(BaseNodeData nodeData)
         {
-            title = nodeName;
-
-            NodeData = new SkillNodeData
-            {
-                GUID = Guid.NewGuid().ToString(),
-                NodeName = nodeName
-            };
+            NodeData = nodeData;
+            title = nodeData.NodeName;
 
             mainContainer.style.backgroundColor = new Color(0.17f, 0.17f, 0.17f, 1f);
 
             GeneratePorts();
-            RefreshVisuals(); // Apply color on creation
+            RefreshVisuals();
         }
 
         public override void OnSelected()
@@ -31,18 +28,20 @@ namespace Skills.Editor
             OnNodeSelected?.Invoke(this);
         }
 
-        // --- NEW: Dynamic Coloring Logic ---
         public void RefreshVisuals()
         {
-            if (NodeData.NodeType == NodeType.Generic)
-                // Default dark grey for Generic nodes
+            // Pattern matching to apply visual styles based on the derived type
+            if (NodeData is GenericNodeData)
+            {
                 titleContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
-            else
-                // Apply specific colors for Emotion nodes
-                titleContainer.style.backgroundColor = GetEmotionColor(NodeData.Cost.RequiredEmotion);
+            }
+            else if (NodeData is EmotionNodeData emotionData)
+            {
+                titleContainer.style.backgroundColor = GetEmotionColor(emotionData.RequiredEmotion);
+            }
         }
 
-        private Color GetEmotionColor(EmotionType emotion)
+        private static Color GetEmotionColor(EmotionType emotion)
         {
             return emotion switch
             {
@@ -50,20 +49,18 @@ namespace Skills.Editor
                 EmotionType.Green => new Color(0.2f, 0.6f, 0.2f, 1f),
                 EmotionType.Blue => new Color(0.2f, 0.4f, 0.7f, 1f),
                 EmotionType.Yellow => new Color(0.7f, 0.7f, 0.1f, 1f),
-                EmotionType.White => new Color(0.8f, 0.8f, 0.8f, 1f), // Off-white to keep text readable
+                EmotionType.White => new Color(0.8f, 0.8f, 0.8f, 1f),
                 _ => new Color(0.25f, 0.25f, 0.25f, 1f)
             };
         }
 
         private void GeneratePorts()
         {
-            Port inputPort =
-                InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(bool));
+            Port inputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(bool));
             inputPort.portName = "Requires";
             inputContainer.Add(inputPort);
 
-            Port outputPort =
-                InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
+            Port outputPort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
             outputPort.portName = "Unlocks";
             outputContainer.Add(outputPort);
 

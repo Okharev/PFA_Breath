@@ -5,7 +5,6 @@ namespace Ability
     /// <summary>
     ///     Packages all necessary game state required for an ability to execute.
     ///     Keeps the IAbility signature clean and allows future expansion (e.g., adding TargetEntity)
-    ///     without breaking existing implementations.
     /// </summary>
     public struct AbilityContext
     {
@@ -22,6 +21,9 @@ namespace Ability
         int OxygenCost { get; }
         bool RequiresTargeting { get; }
 
+        int CurrentLevel { get; }
+        void SetLevel(int newLevel);
+        
         // --- Standardized State Exposure ---
         int CurrentCooldown { get; }
         int MaxCooldown { get; }

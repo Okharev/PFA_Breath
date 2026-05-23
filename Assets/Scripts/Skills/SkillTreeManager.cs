@@ -1,71 +1,96 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Skills.Skills;
 
 namespace Skills
 {
     public class SkillTreeManager : MonoBehaviour
     {
-        [Header("Player Currencies")] public int genericPoints;
-
+        [Header("Player Currencies")] 
+        public int genericPoints;
         public readonly Dictionary<EmotionType, int> emotionPoints = new();
 
-        // O(1) lookup. When evaluating a tree of 100 nodes, HashSets prevent massive performance drops.
+        // O(1) lookup. HashSets prevent massive performance drops when checking unlock states.
         private readonly HashSet<string> unlockedNodeGuids = new();
+        
         public static SkillTreeManager Instance { get; private set; }
 
         private void Awake()
         {
             if (!Instance) Instance = this;
             else Destroy(gameObject);
+            
             // Initialize dictionary to prevent KeyNotFound exceptions
-            foreach (EmotionType emotion in Enum.GetValues(typeof(EmotionType))) emotionPoints[emotion] = 0;
+            foreach (EmotionType emotion in Enum.GetValues(typeof(EmotionType))) 
+            {
+                emotionPoints[emotion] = 0;
+            }
         }
 
-
-        public bool CanUnlock(SkillNodeData node)
+        public bool CanUnlock(BaseNodeData node)
         {
             if (unlockedNodeGuids.Contains(node.GUID)) return false; // Already bought
 
-            // Check Prerequisites using the GUID strings saved by our GraphView wires
+            // 1. Check Prerequisites
             foreach (string reqGuid in node.PrerequisiteGUIDs)
-                if (!unlockedNodeGuids.Contains(reqGuid))
-                    return false;
+            {
+                if (!unlockedNodeGuids.Contains(reqGuid)) return false;
+            }
 
-            // Check Costs
-            if (genericPoints < node.Cost.GenericPoints) return false;
-            if (node.Cost.EmotionPoints > 0 &&
-                emotionPoints[node.Cost.RequiredEmotion] < node.Cost.EmotionPoints) return false;
-
-            return true;
+            // 2. Check Costs via Pattern Matching
+            return node switch
+            {
+                GenericNodeData genericNode => genericPoints >= genericNode.GenericCost,
+                
+                EmotionNodeData emotionNode => emotionPoints[emotionNode.RequiredEmotion] >= emotionNode.BaseEmotionCost,
+                
+                // Fallback for any future node types that might not have a cost
+                _ => true 
+            };
         }
 
-        public bool TryUnlock(SkillNodeData node)
+        public bool TryUnlock(BaseNodeData node)
         {
             if (!CanUnlock(node)) return false;
 
-            // 1. Deduct currencies
-            genericPoints -= node.Cost.GenericPoints;
-            if (node.Cost.EmotionPoints > 0)
-                emotionPoints[node.Cost.RequiredEmotion] -= node.Cost.EmotionPoints;
+            List<StatModifierData> statsToApply = new List<StatModifierData>();
+
+            // 1. Deduct currencies and extract stats based on the node type
+            if (node is GenericNodeData genericNode)
+            {
+                genericPoints -= genericNode.GenericCost;
+                statsToApply = genericNode.GrantedStats;
+            }
+            else if (node is EmotionNodeData emotionNode)
+            {
+                emotionPoints[emotionNode.RequiredEmotion] -= emotionNode.BaseEmotionCost;
+                statsToApply = emotionNode.GrantedStats;
+                
+                // Here is where you would also hook into your Ability Manager:
+                // if (emotionNode.UnlocksAbility) AbilityManager.Unlock(emotionNode.GrantedAbilityId);
+            }
 
             // 2. Apply Stats via the Modifier Pattern
             PlayerStats playerStats = FindAnyObjectByType<PlayerStats>();
-            foreach (StatModifierData mod in node.GrantedStats)
+            if (playerStats is not null && statsToApply != null)
             {
-                StatModifierData initializedMod = mod;
-                initializedMod.Source = node; // Tag the source in case we implement a "Refund Node" feature
-                playerStats.GetStat(mod.Stat).AddModifier(initializedMod);
+                foreach (StatModifierData mod in statsToApply)
+                {
+                    StatModifierData initializedMod = mod;
+                    initializedMod.Source = node; // Tag the source in case of respec
+                    playerStats.GetStat(mod.Stat).AddModifier(initializedMod);
+                }
             }
 
             // 3. Mark as unlocked
             unlockedNodeGuids.Add(node.GUID);
-            Debug.Log($"Unlocked Skill: {node.NodeName}");
+            Debug.Log($"[SkillTreeManager] Unlocked Skill: {node.NodeName}");
 
             return true;
         }
 
-        public bool IsUnlocked(SkillNodeData node)
+        public bool IsUnlocked(BaseNodeData node)
         {
             return unlockedNodeGuids.Contains(node.GUID);
         }

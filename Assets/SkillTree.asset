@@ -13,95 +13,148 @@ MonoBehaviour:
   m_Name: SkillTree
   m_EditorClassIdentifier: Assembly-CSharp::Skills.SkillTreeGraph
   AllNodes:
-  - GUID: 
-    Position:
-      serializedVersion: 2
-      x: -96
-      y: -32
-      width: 160.8
-      height: 76.8
-    NodeName: Yeet
-    Description: sdasdasd
-    NodeType: 0
-    Cost:
-      GenericPoints: 1
-      EmotionPoints: 0
-      RequiredEmotion: 1
-    GrantedStats:
-    - Stat: 0
-      Type: 200
-      Value: 10
-    - Stat: 0
-      Type: 100
-      Value: 0
-    UnlocksAbility: 0
-    GrantedAbilityId: 
-    IntendedSlot: 0
-    PrerequisiteGUIDs: []
-  - GUID: f6105415-527c-438b-87b5-e79d4d69d730
-    Position:
-      serializedVersion: 2
-      x: 267.2
-      y: 73.600006
-      width: 160.79999
-      height: 76.8
-    NodeName: New Skill
-    Description: 
-    NodeType: 0
-    Cost:
-      GenericPoints: 0
-      EmotionPoints: 0
-      RequiredEmotion: 0
-    GrantedStats:
-    - Stat: 0
-      Type: 100
-      Value: 0
-    UnlocksAbility: 0
-    GrantedAbilityId: 
-    IntendedSlot: 0
-    PrerequisiteGUIDs:
-    - 
-  - GUID: 921b5154-d724-4361-89d1-807e065f644f
-    Position:
-      serializedVersion: 2
-      x: 589.6
-      y: -32
-      width: 160.80005
-      height: 76.8
-    NodeName: New Skill
-    Description: 
-    NodeType: 1
-    Cost:
-      GenericPoints: 0
-      EmotionPoints: 5
-      RequiredEmotion: 0
-    GrantedStats: []
-    UnlocksAbility: 0
-    GrantedAbilityId: 
-    IntendedSlot: 0
-    PrerequisiteGUIDs:
-    - 7091bcc0-1f2f-462d-86dd-b06a07c9a9c0
-    - f6105415-527c-438b-87b5-e79d4d69d730
-  - GUID: 7091bcc0-1f2f-462d-86dd-b06a07c9a9c0
-    Position:
-      serializedVersion: 2
-      x: 267.2
-      y: -120
-      width: 160.79999
-      height: 76.8
-    NodeName: Yeet 2
-    Description: 
-    NodeType: 0
-    Cost:
-      GenericPoints: 0
-      EmotionPoints: 0
-      RequiredEmotion: 0
-    GrantedStats:
-    - Stat: 0
-      Type: 100
-      Value: 0
-    UnlocksAbility: 0
-    GrantedAbilityId: 
-    IntendedSlot: 0
-    PrerequisiteGUIDs:
-    - 
+  - rid: 2913246723371696217
+  - rid: 2913246723371696218
+  - rid: 2913246723371696219
+  - rid: 2913246723371696220
+  - rid: 2913246723371696221
+  - rid: 2913246723371696222
+  - rid: 2913246723371696223
+  references:
+    version: 2
+    RefIds:
+    - rid: 2913246723371696217
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 6683bc25-37b2-4687-9290-e7734be7bab0
+        Position:
+          serializedVersion: 2
+          x: -208
+          y: 322.4
+          width: 160.8
+          height: 76.79999
+        NodeName: Damage +5
+        Description: add 5 dmg to projectile
+        PrerequisiteGUIDs: []
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 0
+          Type: 100
+          Value: 5
+    - rid: 2913246723371696218
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 63751b21-2ee5-4077-9956-040f0068278e
+        Position:
+          serializedVersion: 2
+          x: 40.8
+          y: 245.59999
+          width: 160.8
+          height: 76.80002
+        NodeName: Speed +10%
+        Description: 
+        PrerequisiteGUIDs:
+        - 6683bc25-37b2-4687-9290-e7734be7bab0
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 4
+          Type: 200
+          Value: 10
+    - rid: 2913246723371696219
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: c21043d4-8cb4-4561-ae02-9c15af838b6a
+        Position:
+          serializedVersion: 2
+          x: 40.8
+          y: 422.4
+          width: 160.8
+          height: 76.80002
+        NodeName: Oxygen cost -5%
+        Description: 
+        PrerequisiteGUIDs:
+        - 6683bc25-37b2-4687-9290-e7734be7bab0
+        GenericCost: 0
+        GrantedStats:
+        - Stat: 2
+          Type: 200
+          Value: 5
+    - rid: 2913246723371696220
+      type: {class: EmotionNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 4c4a5a96-1be0-463a-8f51-6eba41778733
+        Position:
+          serializedVersion: 2
+          x: 296.8
+          y: 322.4
+          width: 160.80002
+          height: 76.79999
+        NodeName: Lashing out
+        Description: YOur primary shooting ability is now a short range sotgun
+        PrerequisiteGUIDs:
+        - c21043d4-8cb4-4561-ae02-9c15af838b6a
+        - 63751b21-2ee5-4077-9956-040f0068278e
+        RequiredEmotion: 0
+        BaseEmotionCost: 1
+        MaxLevel: 4
+        UnlocksAbility: 1
+        GrantedAbilityId: shotgun
+        IntendedSlot: 0
+        GrantedStats: []
+    - rid: 2913246723371696221
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 95ae43a1-f08f-4ee1-897f-4646d5610c50
+        Position:
+          serializedVersion: 2
+          x: 552
+          y: 322.4
+          width: 160.79999
+          height: 76.79999
+        NodeName: +1 bullets
+        Description: 
+        PrerequisiteGUIDs:
+        - 4c4a5a96-1be0-463a-8f51-6eba41778733
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 1
+          Type: 100
+          Value: 1
+    - rid: 2913246723371696222
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 4afa15d0-37d8-4723-a61e-9d8cdf8d24a8
+        Position:
+          serializedVersion: 2
+          x: 552
+          y: 149.6
+          width: 160.79999
+          height: 76.8
+        NodeName: Damage +10%
+        Description: 
+        PrerequisiteGUIDs:
+        - 4c4a5a96-1be0-463a-8f51-6eba41778733
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 0
+          Type: 200
+          Value: 10
+    - rid: 2913246723371696223
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 12b59707-4470-4a31-8ebb-3fa4c59184a8
+        Position:
+          serializedVersion: 2
+          x: 552
+          y: 528.8
+          width: 160.79999
+          height: 76.79999
+        NodeName: Oxygen cost -5%
+        Description: 
+        PrerequisiteGUIDs:
+        - 4c4a5a96-1be0-463a-8f51-6eba41778733
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 2
+          Type: 200
+          Value: 5
