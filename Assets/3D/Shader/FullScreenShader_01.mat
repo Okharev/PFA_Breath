@@ -41,7 +41,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Breath_Frequency: 5
+    - _Breath_Frequency: 3.2
     - _Fullscreen_AlphaBlendOperation: 0
     - _Fullscreen_BlendMode: 1
     - _Fullscreen_ColorBlendOperation: 0
@@ -50,11 +50,11 @@ Material:
     - _Fullscreen_DstColorBlend: 10
     - _Fullscreen_SrcAlphaBlend: 1
     - _Fullscreen_SrcColorBlend: 5
-    - _Vignette_Power: 4.04
-    - _Vitgnette_Intensity: 35.76
+    - _Vignette_Power: 3.68
+    - _Vitgnette_Intensity: 8.23
     m_Colors:
-    - _Breathy_Intensity: {r: 0.85, g: 0, b: 0, a: 0}
-    - _Color: {r: 1, g: 0.045656364, b: 0, a: 1}
+    - _Breathy_Intensity: {r: 0.8, g: 0, b: 0, a: 0}
+    - _Color: {r: 1, g: 0.17153795, b: 0, a: 1}
     - _NoiseSpeed: {r: 0, g: 0.2, b: 0, a: 0}
     - _Noise_Tiling: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []

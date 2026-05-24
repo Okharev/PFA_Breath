@@ -1,0 +1,6 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/UI/ActionBarStyles.uss?fileID=7433441132597879392&amp;guid=88f6a3a7cdc4c764fb08bac86ece0bb8&amp;type=3#ActionBarStyles"/>
+    <ui:VisualElement name="screen-root" class="screen-container">
+        <ui:VisualElement name="action-bar-container" class="action-bar-row"/>
+    </ui:VisualElement>
+</ui:UXML>

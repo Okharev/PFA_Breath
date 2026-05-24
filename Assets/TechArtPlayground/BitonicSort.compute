@@ -1,0 +1,54 @@
+﻿#pragma kernel BitonicSort
+
+// The struct we are sorting
+struct BoidHashPair
+{
+    uint boidIndex; // Original ID of the boid
+    uint cellHash; // The grid cell it belongs to
+};
+
+RWStructuredBuffer<BoidHashPair> SortBuffer;
+
+// Parameters set by the CPU loop
+uint block;
+uint step;
+uint count;
+
+[numthreads(256, 1, 1)]
+void BitonicSort(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x;
+
+    // Safety check. Bitonic sort requires a power-of-2 array size to work perfectly.
+    // We pad our buffer size on the CPU to ensure this.
+    if (i >= count) return;
+
+    // Determine the partner element we are comparing against in this step
+    uint ixj = i ^ step;
+
+    // Only proceed if 'i' is the smaller index to prevent threads from doing double swaps
+    if (ixj > i)
+    {
+        // Are we sorting ascending or descending in this block?
+        if ((i & block) == 0)
+        {
+            // Sort Ascending
+            if (SortBuffer[i].cellHash > SortBuffer[ixj].cellHash)
+            {
+                BoidHashPair temp = SortBuffer[i];
+                SortBuffer[i] = SortBuffer[ixj];
+                SortBuffer[ixj] = temp;
+            }
+        }
+        else
+        {
+            // Sort Descending
+            if (SortBuffer[i].cellHash < SortBuffer[ixj].cellHash)
+            {
+                BoidHashPair temp = SortBuffer[i];
+                SortBuffer[i] = SortBuffer[ixj];
+                SortBuffer[ixj] = temp;
+            }
+        }
+    }
+}

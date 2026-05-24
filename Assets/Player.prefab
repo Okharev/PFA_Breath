@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 3955124832136619161}
   - component: {fileID: 5681027109302336312}
   - component: {fileID: 6904875513823134823}
+  - component: {fileID: 7010698423189710977}
   m_Layer: 11
   m_Name: Player
   m_TagString: Player
@@ -34,7 +35,7 @@ Transform:
   m_GameObject: {fileID: 3029938191028018037}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -49,7 +50,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3029938191028018037}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: -1338018366858804879, guid: 67c7ea88b94a01e4080cd5979b2b18af, type: 3}
 --- !u!23 &63616100447158056
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -119,9 +120,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 2
+  m_Height: 1.8999999
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!54 &7272611450858167394
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -163,6 +164,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 5
   rotationSpeed: 30
+  explorationSpeed: 6
+  dashSpeedMultiplier: 3
+  dashLayerName: Dashing
 --- !u!114 &2293698169202067251
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209,15 +213,6 @@ MonoBehaviour:
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
-  OnTakeDamage:
-    m_PersistentCalls:
-      m_Calls: []
-  OnHealed:
-    m_PersistentCalls:
-      m_Calls: []
-  OnDie:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!114 &6904875513823134823
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -237,6 +232,28 @@ MonoBehaviour:
   actionVisualizer: {fileID: 2293698169202067251}
   defaultProjectile: {fileID: 1171659284125416050, guid: 6dd6eec1398c3704782464a79721a453, type: 3}
   sniperProjectile: {fileID: 1171659284125416050, guid: 6dd6eec1398c3704782464a79721a453, type: 3}
+--- !u!195 &7010698423189710977
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3029938191028018037}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 3.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4
 --- !u!1 &3079381061294999465
 GameObject:
   m_ObjectHideFlags: 0
@@ -262,7 +279,7 @@ Transform:
   m_GameObject: {fileID: 3079381061294999465}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.001, z: 1}
+  m_LocalPosition: {x: 0, y: 1.251, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -295,7 +312,7 @@ Transform:
   m_GameObject: {fileID: 9136633293155930230}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.225}
+  m_LocalPosition: {x: 0, y: 1.25, z: 0.225}
   m_LocalScale: {x: 0.21826, y: 0.15458, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

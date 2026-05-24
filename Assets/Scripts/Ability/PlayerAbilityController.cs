@@ -1,15 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using Skills;
+using Skills.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+
+// Added for the loadout list
 
 namespace Ability
 {
-    /// <summary>
-    ///     The central input and state manager for the player.
-    ///     Determines what ability is active, polls for user input, draws UI previews,
-    ///     and deducts global resources (Oxygen/Time) before executing an ability.
-    /// </summary>
-    [RequireComponent(typeof(PlayerOxygen), typeof(PlayerController))]
+    [RequireComponent(typeof(PlayerOxygen), typeof(PlayerController), typeof(PlayerStats))]
     public class PlayerAbilityController : MonoBehaviour
     {
         [Header("Aiming Settings")] [Tooltip("Must match the floor layer so mouse raycasts ignore walls/enemies.")]
@@ -18,46 +19,50 @@ namespace Ability
         [Header("References")] public Transform firePoint;
 
         public ActionVisualizer actionVisualizer;
-        public GameObject defaultProjectile; // Placeholder for demo purposes
-        public GameObject sniperProjectile; // Placeholder for demo purposes
-
-        // State Tracking
-        private IAbility activeWeaponAbility;
+        public GameObject defaultProjectile;
+        public GameObject sniperProjectile;
+        private IAbility dashAbility;
 
         // Core Dependencies
         private Camera mainCam;
 
-        // --- ABILITY SLOTS (The Strategy Pattern) ---
+        // Ability Slots
         private IAbility movementAbility;
         private PlayerOxygen oxygen;
         private PlayerController physicsController;
+        private PlayerStats playerStats;
         private IAbility primaryAbility;
         private IAbility secondaryAbility;
         private IAbility specialAbility;
 
-        private void Start()
+        // --- Expose active weapon for UI styling (e.g., highlighting the active slot) ---
+        public IAbility ActiveWeaponAbility { get; private set; }
+
+        private void Awake()
         {
             oxygen = GetComponent<PlayerOxygen>();
             physicsController = GetComponent<PlayerController>();
+            playerStats = GetComponent<PlayerStats>();
             mainCam = Camera.main;
 
-            // Initialize Loadout (In the future, a Skill Tree/Inventory manager injects these)
-            movementAbility = new MovementAbility(physicsController, 5f);
-            primaryAbility = new ShotgunAbility(defaultProjectile, firePoint, 6, 12f);
-            secondaryAbility = new SniperAbility(sniperProjectile, firePoint);
-            specialAbility = new TeleportAbility(15f);
+            // Dependency Injection: Pass playerStats into the abilities
+            movementAbility = new MovementAbility(physicsController, 5f); // Move speed could also be tied to stats!
+            primaryAbility = new ShotgunAbility(defaultProjectile, firePoint, playerStats);
+            secondaryAbility = new SniperAbility(sniperProjectile, firePoint); // Update Sniper similarly
 
-            // Default starting state
-            activeWeaponAbility = primaryAbility;
-            
+            specialAbility = new TeleportAbility(physicsController, 15f);
+            dashAbility = new DashAbility(physicsController, 8f);
+
+            ActiveWeaponAbility = primaryAbility;
         }
 
         private void Update()
         {
-            // Safety check for critical dependencies
+            // ADD THIS LINE: Stop processing player input if the skill tree is open
+            if (SkillTreeUIController.IsOpen) return;
+
             if (Mouse.current == null || Keyboard.current == null || mainCam == null) return;
 
-            // --- PHASE 1: PLANNING PHASE (Time is paused, awaiting input) ---
             if (!TurnManager.Instance.IsExecuting)
             {
                 HandleModeSwitching();
@@ -65,47 +70,142 @@ namespace Ability
             }
             else
             {
-                // --- PHASE 2: EXECUTION PHASE (Time is flowing) ---
                 actionVisualizer?.Hide();
             }
         }
 
         private void OnDestroy()
         {
-            // CRITICAL: Ensure any stateful abilities (like Sniper) unsubscribe from TurnManager
-            if (secondaryAbility is IDisposable disposableSecondary) disposableSecondary.Dispose();
-            if (specialAbility is IDisposable disposableSpecial) disposableSpecial.Dispose();
+            foreach (IAbility ability in GetLoadout())
+                if (ability is IDisposable disposableAbility)
+                    disposableAbility.Dispose();
         }
 
+        // --- Public API for the UI Controller ---
         /// <summary>
-        ///     Handles swapping which ability is currently bound to Left-Click.
-        ///     Because abilities are abstracted, switching them is an O(1) operation with zero GC allocation.
+        ///     Returns the player's current loadout so the UI Toolkit can dynamically build the Action Bar.
         /// </summary>
+        public List<IAbility> GetLoadout()
+        {
+            return new List<IAbility>
+            {
+                movementAbility,
+                primaryAbility,
+                secondaryAbility,
+                dashAbility,
+                specialAbility
+            };
+        }
+
+        public void EquipAbility(string abilityId, AbilitySlot slot, int level)
+        {
+            IAbility newAbility = CreateAbilityById(abilityId);
+            if (newAbility == null) return;
+
+            newAbility.SetLevel(level);
+
+            IAbility oldAbility = GetAbilityInSlot(slot);
+            if (oldAbility is IDisposable disposableAbility) disposableAbility.Dispose();
+
+            AssignToSlot(slot, newAbility, oldAbility);
+            Debug.Log($"[AbilitySystem] Successfully equipped {abilityId} (Level {level}) to {slot} slot.");
+        }
+
+        // NEW: Safe fallback mechanic to restore base abilities when unequipping a skill tree node
+        public void EquipDefaultAbility(AbilitySlot slot)
+        {
+            IAbility oldAbility = GetAbilityInSlot(slot);
+            if (oldAbility is IDisposable disposableAbility) disposableAbility.Dispose();
+
+            IAbility defaultAbility = slot switch
+            {
+                AbilitySlot.Primary => new ShotgunAbility(defaultProjectile, firePoint, playerStats),
+                AbilitySlot.Secondary => new SniperAbility(sniperProjectile, firePoint),
+                AbilitySlot.Movement => new MovementAbility(physicsController, 5f),
+                AbilitySlot.Dash => new DashAbility(physicsController, 8f),
+                AbilitySlot.Special => new TeleportAbility(physicsController, 15f),
+                _ => null
+            };
+
+            AssignToSlot(slot, defaultAbility, oldAbility);
+            Debug.Log($"[AbilitySystem] Slot {slot} reverted to default base ability.");
+        }
+
+        // Helper method to keep slot assignment clean and ensure the UI/Weapon Switcher stays synced
+        private void AssignToSlot(AbilitySlot slot, IAbility newAbility, IAbility oldAbility)
+        {
+            switch (slot)
+            {
+                case AbilitySlot.Primary:
+                    primaryAbility = newAbility;
+                    if (ActiveWeaponAbility == oldAbility) ActiveWeaponAbility = primaryAbility;
+                    break;
+                case AbilitySlot.Secondary:
+                    secondaryAbility = newAbility;
+                    if (ActiveWeaponAbility == oldAbility) ActiveWeaponAbility = secondaryAbility;
+                    break;
+                case AbilitySlot.Movement: movementAbility = newAbility; break;
+                case AbilitySlot.Dash: dashAbility = newAbility; break;
+                case AbilitySlot.Special: specialAbility = newAbility; break;
+            }
+        }
+
+        private IAbility GetAbilityInSlot(AbilitySlot slot)
+        {
+            return slot switch
+            {
+                AbilitySlot.Primary => primaryAbility,
+                AbilitySlot.Secondary => secondaryAbility,
+                AbilitySlot.Movement => movementAbility,
+                AbilitySlot.Dash => dashAbility,
+                AbilitySlot.Special => specialAbility,
+                _ => null
+            };
+        }
+
+        private IAbility CreateAbilityById(string id)
+        {
+            return id switch
+            {
+                "Basic_Move" => new MovementAbility(physicsController, 5f),
+                "Blink_Strike" => new TeleportAbility(physicsController, 15f),
+                "Evasive_Dash" => new DashAbility(physicsController, 8f),
+                "Shotgun_Blast" => new ShotgunAbility(defaultProjectile, firePoint, playerStats),
+                "Railgun_Sniper_Channeled" => new SniperAbility(sniperProjectile, firePoint),
+                _ => null
+            };
+        }
+
         private void HandleModeSwitching()
         {
-            // Tab swaps between Primary and Secondary
+            if (GameModeManager.Instance.CurrentMode == GameMode.Exploration) return;
+
+            // Weapon Swap
             if (Keyboard.current.tabKey.wasPressedThisFrame)
-            {
-                activeWeaponAbility = (activeWeaponAbility == primaryAbility) ? secondaryAbility : primaryAbility;
-                Debug.Log($"Switched weapon to: {activeWeaponAbility.AbilityId}");
-            }
-        
-            // R instantly executes the Special Ability 
-            if (Keyboard.current.rKey.wasPressedThisFrame)
-            {
+                ActiveWeaponAbility = ActiveWeaponAbility == primaryAbility ? secondaryAbility : primaryAbility;
+
+            // Special Ability (Changed from R to Q to allow R to be Reload)
+            if (Keyboard.current.qKey.wasPressedThisFrame)
                 AttemptAbility(specialAbility, GetMouseWorldPosition());
-            }
+
+            if (Keyboard.current.leftShiftKey.wasPressedThisFrame)
+                AttemptAbility(dashAbility, GetMouseWorldPosition());
+
+            // RELOAD LOGIC
+            if (Keyboard.current.rKey.wasPressedThisFrame) AttemptReload(ActiveWeaponAbility);
         }
 
-        /// <summary>
-        ///     Calculates the mouse position, asks the active ability to draw its UI preview,
-        ///     and listens for the execution trigger.
-        /// </summary>
         private void HandleAimingAndExecution()
         {
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+                // Ignore the click if the mouse is hovering over ANY UI element
+                if (EventSystem.current is not null && EventSystem.current.IsPointerOverGameObject())
+                    return;
+
             Vector3? mouseTarget = GetMouseWorldPosition();
-        
-            AbilityContext context = new AbilityContext
+            bool isExploration = GameModeManager.Instance.CurrentMode == GameMode.Exploration;
+
+            AbilityContext context = new()
             {
                 Caster = gameObject,
                 CasterPosition = transform.position,
@@ -113,68 +213,105 @@ namespace Ability
                 Visualizer = actionVisualizer
             };
 
-            // 1. Draw Previews
-            // Because they are decoupled, you can preview both where you will walk 
-            // AND where your gun is aiming simultaneously!
-            movementAbility.DrawPreview(context);
-            activeWeaponAbility.DrawPreview(context);
-
-            if (mouseTarget.HasValue)
+            if (!isExploration)
             {
-                physicsController.LookAtTarget(mouseTarget.Value);
+                // Only draw previews and force rotation in combat mode
+                movementAbility.DrawPreview(context);
+                ActiveWeaponAbility?.DrawPreview(context);
+
+                if (mouseTarget.HasValue) physicsController.LookAtTarget(mouseTarget.Value);
             }
 
-            // 2. Listen for Inputs strictly mapped to their dedicated abilities
+            // --- INPUT ROUTING ---
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
-                // LEFT CLICK IS STRICTLY MOVEMENT
-                AttemptAbility(movementAbility, mouseTarget);
+                if (isExploration)
+                {
+                    // BYPASS ABILITY SYSTEM: 
+                    // Feed the raw, unclamped mouse click directly to the NavMeshAgent.
+                    if (mouseTarget.HasValue) physicsController.StartMovement(mouseTarget.Value);
+                }
+                else
+                {
+                    // TACTICAL COMBAT:
+                    // Route through AttemptAbility to apply distance clamping and Turn/Oxygen costs.
+                    AttemptAbility(movementAbility, mouseTarget);
+                }
             }
-            else if (Mouse.current.rightButton.wasPressedThisFrame)
+            else if (Mouse.current.rightButton.wasPressedThisFrame && !isExploration)
             {
-                // RIGHT CLICK IS STRICTLY THE EQUIPPED WEAPON
-                AttemptAbility(activeWeaponAbility, mouseTarget);
+                // Auto-reload fallback if the player tries to shoot while empty
+                if (ActiveWeaponAbility is IWeaponAbility weapon && weapon.NeedsReload)
+                {
+                    Debug.Log("Weapon empty! Auto-reloading...");
+                    AttemptReload(ActiveWeaponAbility);
+                }
+                else
+                {
+                    AttemptAbility(ActiveWeaponAbility, mouseTarget);
+                }
             }
         }
 
-        /// <summary>
-        ///     Centralized gatekeeper for all abilities. Validates targeting, deducts Oxygen,
-        ///     executes the ability logic, and charges the TurnManager.
-        /// </summary>
+        private void AttemptReload(IAbility ability)
+        {
+            if (ability is IWeaponAbility weapon)
+            {
+                if (weapon.CurrentAmmo >= weapon.MaxAmmo)
+                {
+                    Debug.Log("Magazine already full.");
+                    return;
+                }
+
+                // Execute the reload
+                weapon.Reload();
+
+                // Consume the turns required to reload
+                TurnManager.Instance.ExecuteTurns(weapon.ReloadTurnCost);
+            }
+        }
+
         private void AttemptAbility(IAbility ability, Vector3? targetPos)
         {
-            if (ability.RequiresTargeting && !targetPos.HasValue) return;
+            if (ability.RequiresTargeting && !targetPos.HasValue)
+            {
+                Debug.LogWarning(
+                    $"[Movement Debug] {ability.AbilityId} aborted: targetPos is null. The mouse raycast did not hit the Floor Mask!");
+                return;
+            }
 
-            AbilityContext context = new AbilityContext
+            AbilityContext context = new()
             {
                 Caster = gameObject,
                 CasterPosition = transform.position,
                 MouseWorldPosition = targetPos,
                 Visualizer = actionVisualizer
             };
-    
+
             if (!ability.CanExecute(context))
             {
-                Debug.Log($"{ability.AbilityId} is not ready or target is invalid!");
+                Debug.LogWarning($"[Movement Debug] {ability.AbilityId} cannot execute (CanExecute returned false).");
                 return;
             }
+
+            bool isExploration = GameModeManager.Instance.CurrentMode == GameMode.Exploration;
 
             if (oxygen.TryConsume(ability.OxygenCost))
             {
                 actionVisualizer?.Hide();
                 ability.Execute(context);
-                TurnManager.Instance.ExecuteTurns(ability.TurnCost);
 
+                Debug.Log($"[Movement Debug] Successfully executed {ability.AbilityId} at {targetPos.Value}");
+
+                if (!isExploration) TurnManager.Instance.ExecuteTurns(ability.TurnCost);
             }
             else
             {
-                Debug.Log($"Not enough oxygen for {ability.AbilityId}!");
+                Debug.LogWarning(
+                    $"[Movement Debug] Not enough oxygen for {ability.AbilityId}! (Cost: {ability.OxygenCost})");
             }
         }
-        
-        /// <summary>
-        ///     Raycasts from the screen to the 3D floor to find the tactical grid position.
-        /// </summary>
+
         private Vector3? GetMouseWorldPosition()
         {
             Ray ray = mainCam.ScreenPointToRay(Mouse.current.position.ReadValue());
