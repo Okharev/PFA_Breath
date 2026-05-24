@@ -1,10 +1,10 @@
 ﻿#pragma kernel BitonicSort
 
 // The struct we are sorting
-struct BoidHashPair 
+struct BoidHashPair
 {
     uint boidIndex; // Original ID of the boid
-    uint cellHash;  // The grid cell it belongs to
+    uint cellHash; // The grid cell it belongs to
 };
 
 RWStructuredBuffer<BoidHashPair> SortBuffer;
@@ -15,10 +15,10 @@ uint step;
 uint count;
 
 [numthreads(256, 1, 1)]
-void BitonicSort (uint3 id : SV_DispatchThreadID) 
+void BitonicSort(uint3 id : SV_DispatchThreadID)
 {
     uint i = id.x;
-    
+
     // Safety check. Bitonic sort requires a power-of-2 array size to work perfectly.
     // We pad our buffer size on the CPU to ensure this.
     if (i >= count) return;
@@ -27,23 +27,23 @@ void BitonicSort (uint3 id : SV_DispatchThreadID)
     uint ixj = i ^ step;
 
     // Only proceed if 'i' is the smaller index to prevent threads from doing double swaps
-    if (ixj > i) 
+    if (ixj > i)
     {
         // Are we sorting ascending or descending in this block?
-        if ((i & block) == 0) 
+        if ((i & block) == 0)
         {
             // Sort Ascending
-            if (SortBuffer[i].cellHash > SortBuffer[ixj].cellHash) 
+            if (SortBuffer[i].cellHash > SortBuffer[ixj].cellHash)
             {
                 BoidHashPair temp = SortBuffer[i];
                 SortBuffer[i] = SortBuffer[ixj];
                 SortBuffer[ixj] = temp;
             }
-        } 
-        else 
+        }
+        else
         {
             // Sort Descending
-            if (SortBuffer[i].cellHash < SortBuffer[ixj].cellHash) 
+            if (SortBuffer[i].cellHash < SortBuffer[ixj].cellHash)
             {
                 BoidHashPair temp = SortBuffer[i];
                 SortBuffer[i] = SortBuffer[ixj];

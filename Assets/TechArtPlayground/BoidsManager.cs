@@ -1,10 +1,14 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TechArtPlayground
 {
+    [DefaultExecutionOrder(-50)]
     public class BoidsManager : MonoBehaviour
     {
-        // Property IDs for slight performance gain over strings
+        private const float OBSTACLE_SCAN_RATE = 10f;
+
+        // Property IDs
         private static readonly int CellSize = Shader.PropertyToID("cellSize");
         private static readonly int GridSize = Shader.PropertyToID("gridSize");
         private static readonly int DeltaTime = Shader.PropertyToID("deltaTime");
@@ -19,75 +23,95 @@ namespace TechArtPlayground
         private static readonly int FloorY = Shader.PropertyToID("floorY");
         private static readonly int AvoidanceMargin = Shader.PropertyToID("avoidanceMargin");
         private static readonly int NumObstacles = Shader.PropertyToID("numObstacles");
-        private static readonly int PredatorPosition = Shader.PropertyToID("predatorPosition");
-        private static readonly int PredatorRadius = Shader.PropertyToID("predatorRadius");
+        private static readonly int NumPredators = Shader.PropertyToID("numPredators");
+        private static readonly int BoidsBuffer = Shader.PropertyToID("boidsBuffer");
+        private static readonly int ReadBoidsBuffer = Shader.PropertyToID("ReadBoidsBuffer");
+        private static readonly int WriteBoidsBuffer = Shader.PropertyToID("WriteBoidsBuffer");
 
-        struct Boid { public Vector3 position; public Vector3 direction; public Vector3 color; public float size; public float currentSpeed; public float roll; public float flapPhase;
-        }
-        struct Obstacle { public Vector3 position; public float radius; }
+        [Header("Optimization")] [Range(1, 10)]
+        public int sortFrequency = 4;
 
-        [Header("References")]
-        public ComputeShader boidsCompute;
-        public ComputeShader bitonicSortCompute; // NOUVEAU: Add this in inspector!
+        [Header("Predator Settings")] public int maxPredators = 16;
+
+        [Header("References")] public ComputeShader boidsCompute;
+
+        public ComputeShader bitonicSortCompute;
         public Mesh fishMesh;
         public Material fishMaterial;
         public Transform playerTransform;
 
-        [Header("Banc Parameters")]
-        public int numBoids = 10000;
-        private int paddedCount; // Power of 2 requirement
+        [Header("Banc Parameters")] public int numBoids = 10000;
+
         public float spawnRadius = 40f;
         public float speed = 5f;
         public float sightRadius = 3f;
         public float separationWeight = 1.5f;
         public float targetWeight = 0.5f;
 
-        [Header("Spatial Grid")]
-        public float cellSize = 3f;
-        public int gridSize = 64; 
+        [Header("Spatial Grid")] public float cellSize = 3f;
 
-        [Header("Variations Organiques")]
-        public float separationPulseSpeed = 1.0f; 
-        public float separationPulseAmount = 0.8f; 
+        public int gridSize = 64;
 
-        [Header("Visuals")]
-        public Color colorA = Color.white;
+        [Header("Variations Organiques")] public float separationPulseSpeed = 1.0f;
+
+        public float separationPulseAmount = 0.8f;
+
+        [Header("Visuals")] public Color colorA = Color.white;
+
         public Color colorB = Color.blue;
         public float minSize = 0.5f;
         public float maxSize = 1.5f;
         public float predatorRadius = 5f;
 
-        [Header("World Limits")]
-        public float floorY = 0f; 
-        public float floorAvoidanceMargin = 2f; 
+        [Header("World Limits")] public float floorY;
+
+        public float floorAvoidanceMargin = 2f;
         public LayerMask obstacleLayer;
         public int maxObstacles = 50;
         public float scanRadius = 50f;
+        private readonly List<BoidPredator> activePredators = new();
 
-        private ComputeBuffer boidsBuffer;
-        private ComputeBuffer argsBuffer;
-        private ComputeBuffer obstaclesBuffer; 
-        private ComputeBuffer gridOffsetsBuffer;
-        private ComputeBuffer sortBuffer; // NOUVEAU
+        private GraphicsBuffer argsBuffer;
+
+        // PING PONG BUFFERS (Modern Unity 6.4 GraphicsBuffers)
+        private GraphicsBuffer boidsBufferA;
+        private GraphicsBuffer boidsBufferB;
+
+        private int clearGridKernel, populateHashesKernel, buildOffsetsKernel, csMainKernel, reorderBoidsKernel;
+        private readonly Collider[] collBuffer = new Collider[32];
+
+        private GraphicsBuffer currentBuffer;
+        private int frameCount;
+        private GraphicsBuffer gridOffsetsBuffer;
+        private GraphicsBuffer nextBuffer;
+        private int obstacleCount;
 
         private Obstacle[] obstaclesArray;
-        private Collider[] collBuffer = new Collider[32];
-    
-        private int clearGridKernel, populateHashesKernel, buildOffsetsKernel, csMainKernel;
-        private int obstacleCount = 0;
-        
-        // Physics Throttle
-        private float obstacleScanTimer = 0f;
-        private const float OBSTACLE_SCAN_RATE = 10f;
+        private GraphicsBuffer obstaclesBuffer;
 
-        void Start()
+        private float obstacleScanTimer;
+        private int paddedCount;
+        private PredatorData[] predatorDataArray;
+        private GraphicsBuffer predatorsBuffer;
+        private GraphicsBuffer sortBuffer;
+        public static BoidsManager Instance { get; private set; }
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this) Destroy(this);
+            else Instance = this;
+        }
+
+        private void Start()
         {
             clearGridKernel = boidsCompute.FindKernel("ClearGrid");
             populateHashesKernel = boidsCompute.FindKernel("PopulateHashes");
             buildOffsetsKernel = boidsCompute.FindKernel("BuildGridOffsets");
             csMainKernel = boidsCompute.FindKernel("CSMain");
 
-            // Calculate Power of 2 for Sorting
+            // NOUVEAU: Find the reorder kernel
+            reorderBoidsKernel = boidsCompute.FindKernel("ReorderBoids");
+
             paddedCount = Mathf.NextPowerOfTwo(numBoids);
 
             // 1. Init Boids
@@ -104,47 +128,51 @@ namespace TechArtPlayground
                 boidsArray[i].flapPhase = Random.Range(0f, 100f);
             }
 
-            boidsBuffer = new ComputeBuffer(numBoids, 52);
-            boidsBuffer.SetData(boidsArray);
+            // Allocate Two Buffers
+            int boidStride = 52;
+            boidsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
+            boidsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
+
+            boidsBufferA.SetData(boidsArray);
+            boidsBufferB.SetData(boidsArray); // Initialize both safely
 
             // 2. Spatial Grid Buffers
             int totalCells = gridSize * gridSize * gridSize;
-            gridOffsetsBuffer = new ComputeBuffer(totalCells, sizeof(int));
-            sortBuffer = new ComputeBuffer(paddedCount, sizeof(uint) * 2);
+            gridOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, totalCells, sizeof(int));
+            sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, sizeof(uint) * 2);
 
-            // 3. Obstacle Buffers
+            // 3. Obstacle & Predator Buffers
             obstaclesArray = new Obstacle[maxObstacles];
-            obstaclesBuffer = new ComputeBuffer(maxObstacles, 16); 
+            obstaclesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxObstacles, 16);
+            predatorDataArray = new PredatorData[maxPredators];
+            predatorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxPredators, 16);
 
-            // 4. Assign Buffers
+            // 4. Static Bindings (Buffers that don't swap)
             boidsCompute.SetBuffer(clearGridKernel, "gridOffsets", gridOffsetsBuffer);
-        
-            boidsCompute.SetBuffer(populateHashesKernel, "boidsBuffer", boidsBuffer);
             boidsCompute.SetBuffer(populateHashesKernel, "SortBuffer", sortBuffer);
-
             boidsCompute.SetBuffer(buildOffsetsKernel, "SortBuffer", sortBuffer);
             boidsCompute.SetBuffer(buildOffsetsKernel, "gridOffsets", gridOffsetsBuffer);
-
-            boidsCompute.SetBuffer(csMainKernel, "boidsBuffer", boidsBuffer);
             boidsCompute.SetBuffer(csMainKernel, "gridOffsets", gridOffsetsBuffer);
             boidsCompute.SetBuffer(csMainKernel, "SortBuffer", sortBuffer);
             boidsCompute.SetBuffer(csMainKernel, "obstaclesBuffer", obstaclesBuffer);
+            boidsCompute.SetBuffer(csMainKernel, "predatorsBuffer", predatorsBuffer);
+            boidsCompute.SetBuffer(reorderBoidsKernel, "SortBuffer", sortBuffer);
 
-            fishMaterial.SetBuffer("boidsBuffer", boidsBuffer);
-
-            uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
-            args[0] = (uint)fishMesh.GetIndexCount(0);
-            args[1] = (uint)numBoids;
-            argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+            // 5. Args Buffer
+            uint[] args = new uint[5] { fishMesh.GetIndexCount(0), (uint)numBoids, 0, 0, 0 };
+            argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, args.Length * sizeof(uint));
             argsBuffer.SetData(args);
-            
-            // Initial scan
+
             UpdateObstacles();
+
+            currentBuffer = boidsBufferA;
+            nextBuffer = boidsBufferB;
         }
 
-        void Update()
+        private void Update()
         {
-            // CPU OPTIMIZATION: Throttle physics scan
+            frameCount++;
+
             obstacleScanTimer += Time.deltaTime;
             if (obstacleScanTimer >= OBSTACLE_SCAN_RATE)
             {
@@ -152,10 +180,9 @@ namespace TechArtPlayground
                 UpdateObstacles();
             }
 
-            float pulse = Mathf.Sin(Time.time * separationPulseSpeed) * separationPulseAmount;
-            float dynamicSeparation = Mathf.Max(0.1f, separationWeight + pulse);
-
-            // Send globals
+            // --- 1. SET GLOBALS ---
+            float dynamicSeparation = Mathf.Max(0.1f,
+                separationWeight + Mathf.Sin(Time.time * separationPulseSpeed) * separationPulseAmount);
             boidsCompute.SetFloat(CellSize, cellSize);
             boidsCompute.SetInt(GridSize, gridSize);
             boidsCompute.SetFloat(DeltaTime, Time.deltaTime);
@@ -170,62 +197,118 @@ namespace TechArtPlayground
             boidsCompute.SetFloat(FloorY, floorY);
             boidsCompute.SetFloat(AvoidanceMargin, floorAvoidanceMargin);
 
-            if (playerTransform is not null)
+            int count = activePredators.Count;
+            for (int i = 0; i < count; i++)
             {
-                boidsCompute.SetVector(PredatorPosition, playerTransform.position);
-                boidsCompute.SetFloat(PredatorRadius, predatorRadius);
+                predatorDataArray[i].position = activePredators[i].transform.position;
+                predatorDataArray[i].radius = activePredators[i].panicRadius;
             }
 
-            // CPU OPTIMIZATION: Integer division instead of floats and CeilToInt
+            predatorsBuffer.SetData(predatorDataArray, 0, 0, count);
+            boidsCompute.SetInt(NumPredators, count);
+
             int totalCells = gridSize * gridSize * gridSize;
             int gridThreadGroups = (totalCells + 63) / 64;
             int boidThreadGroups = (numBoids + 63) / 64;
             int paddedThreadGroups = (paddedCount + 63) / 64;
 
-            // --- THE 5-STEP GPU PIPELINE ---
-            
-            // Step 1: Clear grid
-            boidsCompute.Dispatch(clearGridKernel, gridThreadGroups, 1, 1);
-        
-            // Step 2: Hash calculation (Uses paddedCount)
-            boidsCompute.Dispatch(populateHashesKernel, paddedThreadGroups, 1, 1);
-        
-            // Step 3: Execute Bitonic Sort
-            GPUSort.Sort(bitonicSortCompute, sortBuffer, paddedCount);
+            // --- 2. THE SORTING PASS (Runs every N frames) ---
+            if (frameCount % sortFrequency == 0)
+            {
+                boidsCompute.Dispatch(clearGridKernel, gridThreadGroups, 1, 1);
 
-            // Step 4: Map the sorted array to grid offsets (Uses numBoids)
-            boidsCompute.Dispatch(buildOffsetsKernel, boidThreadGroups, 1, 1);
+                // Populate hashes from our current state
+                boidsCompute.SetBuffer(populateHashesKernel, ReadBoidsBuffer, currentBuffer);
+                boidsCompute.Dispatch(populateHashesKernel, paddedThreadGroups, 1, 1);
 
-            // Step 5: Execute boid physics
+                GPUSort.Sort(bitonicSortCompute, sortBuffer, paddedCount);
+
+                // Physically reorder 'currentBuffer' into 'nextBuffer'
+                boidsCompute.SetBuffer(reorderBoidsKernel, ReadBoidsBuffer, currentBuffer);
+                boidsCompute.SetBuffer(reorderBoidsKernel, WriteBoidsBuffer, nextBuffer);
+                boidsCompute.Dispatch(reorderBoidsKernel, boidThreadGroups, 1, 1);
+
+                boidsCompute.Dispatch(buildOffsetsKernel, boidThreadGroups, 1, 1);
+
+                // CRITICAL FIX: 'nextBuffer' is now perfectly sorted! 'currentBuffer' is a mess.
+                // We swap them manually so CSMain reads the cleanly sorted data.
+                (currentBuffer, nextBuffer) = (nextBuffer, currentBuffer);
+            }
+
+            // --- 3. THE PHYSICS PASS (Runs EVERY frame) ---
+            // Read the current state, calculate physics, write into the empty scratchpad (nextBuffer)
+            boidsCompute.SetBuffer(csMainKernel, ReadBoidsBuffer, currentBuffer);
+            boidsCompute.SetBuffer(csMainKernel, WriteBoidsBuffer, nextBuffer);
             boidsCompute.Dispatch(csMainKernel, boidThreadGroups, 1, 1);
 
-            // ---------------------------------------------------
+            // --- 4. PREPARE FOR RENDER ---
+            // nextBuffer now contains the newly calculated frame. 
+            // Swap references so nextBuffer becomes currentBuffer for rendering and the next frame!
+            (currentBuffer, nextBuffer) = (nextBuffer, currentBuffer);
 
-            Graphics.DrawMeshInstancedIndirect(fishMesh, 0, fishMaterial, new Bounds(transform.position, Vector3.one * 1000f), argsBuffer);
+            // Render the final calculated state
+            fishMaterial.SetBuffer(BoidsBuffer, currentBuffer);
+            Graphics.DrawMeshInstancedIndirect(fishMesh, 0, fishMaterial,
+                new Bounds(transform.position, Vector3.one * 1000f), argsBuffer);
         }
-        
+
+        private void OnDestroy()
+        {
+            boidsBufferA?.Release();
+            boidsBufferB?.Release();
+            argsBuffer?.Release();
+            obstaclesBuffer?.Release();
+            gridOffsetsBuffer?.Release();
+            sortBuffer?.Release();
+            predatorsBuffer?.Release();
+        }
+
+        public void RegisterPredator(BoidPredator predator)
+        {
+            if (!activePredators.Contains(predator) && activePredators.Count < maxPredators)
+                activePredators.Add(predator);
+        }
+
+        public void UnregisterPredator(BoidPredator predator)
+        {
+            activePredators.Remove(predator);
+        }
+
         private void UpdateObstacles()
         {
-            var size = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, collBuffer, obstacleLayer);
+            int size = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, collBuffer, obstacleLayer);
             obstacleCount = Mathf.Min(size, maxObstacles);
-
             for (int i = 0; i < obstacleCount; i++)
             {
                 obstaclesArray[i].position = collBuffer[i].bounds.center;
-                obstaclesArray[i].radius = collBuffer[i].bounds.extents.magnitude; 
+                obstaclesArray[i].radius = collBuffer[i].bounds.extents.magnitude;
             }
 
             obstaclesBuffer.SetData(obstaclesArray);
             boidsCompute.SetInt(NumObstacles, obstacleCount);
         }
 
-        void OnDestroy()
+        private struct PredatorData
         {
-            if (boidsBuffer != null) boidsBuffer.Release();
-            if (argsBuffer != null) argsBuffer.Release();
-            if (obstaclesBuffer != null) obstaclesBuffer.Release();
-            if (gridOffsetsBuffer != null) gridOffsetsBuffer.Release();
-            if (sortBuffer != null) sortBuffer.Release();
+            public Vector3 position;
+            public float radius;
+        }
+
+        private struct Boid
+        {
+            public Vector3 position;
+            public Vector3 direction;
+            public Vector3 color;
+            public float size;
+            public float currentSpeed;
+            public float roll;
+            public float flapPhase;
+        }
+
+        private struct Obstacle
+        {
+            public Vector3 position;
+            public float radius;
         }
     }
 }
