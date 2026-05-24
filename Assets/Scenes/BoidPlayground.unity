@@ -470,17 +470,17 @@ MonoBehaviour:
   - m_EditModeType: 1
     m_Knots:
     - Position:
-        x: -113.70001
-        y: -0.027709961
-        z: -38.30469
+        x: -48.699997
+        y: -0.0016822815
+        z: -23.982706
       TangentIn:
-        x: -20.542915
-        y: 0.0000010529106
-        z: -70.015144
+        x: 96.40781
+        y: 0.0013504028
+        z: -138.45586
       TangentOut:
-        x: 3.3638525
-        y: 0.00000081284753
-        z: 18.409924
+        x: -56.79815
+        y: 0.07469177
+        z: 67.140175
       Rotation:
         value:
           x: -0.0000000042718393
@@ -488,67 +488,27 @@ MonoBehaviour:
           z: 7.1368544e-10
           w: 0.39483228
     - Position:
-        x: 38.14147
-        y: -22
-        z: -0.6104851
+        x: 1.8999939
+        y: 0.020648956
+        z: 192.72183
       TangentIn:
         x: 0
         y: 0
-        z: -9.809974
+        z: -95.35182
       TangentOut:
         x: 0
         y: 0
-        z: 68.56183
+        z: 95.35182
       Rotation:
         value:
-          x: 0.00004583597
-          y: 0.4008673
-          z: -0.000049427144
-          w: 0.9161361
-    - Position:
-        x: 74.2
-        y: -52.585556
-        z: 74.94272
-      TangentIn:
-        x: 0
-        y: 0
-        z: -16.144657
-      TangentOut:
-        x: 0
-        y: 0
-        z: 32.749706
-      Rotation:
-        value:
-          x: 1.9311832e-11
-          y: -0.037189797
-          z: -5.1891896e-10
-          w: 0.9993083
-    - Position:
-        x: -32.35853
-        y: 25.77
-        z: 92.07951
-      TangentIn:
-        x: 0
-        y: 0
-        z: -118.871826
-      TangentOut:
-        x: 0
-        y: 0
-        z: 52.54752
-      Rotation:
-        value:
-          x: 0.00021960586
-          y: 0.9676291
-          z: -0.00052431243
-          w: -0.25237605
+          x: -0.00028148296
+          y: 0.7895859
+          z: 0.00025764102
+          w: 0.61363995
     m_MetaData:
     - Mode: 4
       Tension: 0.5
-    - Mode: 3
-      Tension: 0.5
-    - Mode: 3
-      Tension: 0.5
-    - Mode: 3
+    - Mode: 2
       Tension: 0.5
     m_Closed: 1
     m_IntData:
@@ -1215,7 +1175,7 @@ MonoBehaviour:
   bitonicSortCompute: {fileID: 7200000, guid: eca7a9d318d745f8afaccdfc8a1b0780, type: 3}
   fishMesh: {fileID: 4300000, guid: 1cfa4408f005b994a91c73b71f54aeaf, type: 2}
   fishMaterial: {fileID: 2100000, guid: fb4a11342c604c14ba3bb1b737785176, type: 2}
-  numBoids: 2000
+  numBoids: 10000
   spawnRadius: 80
   speed: 8
   sightRadius: 3
@@ -1238,6 +1198,8 @@ MonoBehaviour:
   maxObstacles: 50
   scanRadius: 50
   useSplineFlow: 1
+  tubeRadius: 10
+  predatorFleeWeight: 10
   globalAttractorWeight: 1000
   swirlStrength: 0.9
   arrivalRadius: 20

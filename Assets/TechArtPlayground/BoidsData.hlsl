@@ -15,7 +15,7 @@ struct Boid
 
 StructuredBuffer<Boid> boidsBuffer;
 
-// NOUVEAU : J'ai ajouté flapSpeed et flapAmplitude en entrée !
+//J'ai ajouté flapSpeed et flapAmplitude en entrée !
 void GetCubePosition_float(float instanceID_input, float3 objectPosition, float time, float flapSpeed,
                            float flapAmplitude, out float3 worldPosition, out float3 boidColor, out float animSpeed)
 {
@@ -32,7 +32,7 @@ void GetCubePosition_float(float instanceID_input, float3 objectPosition, float 
     float3 right = normalize(cross(up, boidDir));
     up = cross(boidDir, right);
 
-    // --- NOUVEAU : LA MATRICE DE ROULIS ---
+    // ---  LA MATRICE DE ROULIS ---
     // On calcule le Cosinus et le Sinus de notre angle
     float c = cos(b.roll);
     float s = sin(b.roll);
@@ -43,7 +43,7 @@ void GetCubePosition_float(float instanceID_input, float3 objectPosition, float 
     // --------------------------------------
     float3 scaledPos = objectPosition * b.size;
 
-    // --- NOUVEAU : Pure Smooth Animation ---
+    // --- Smooth Animation ---
     // We completely drop the "time *" logic and use our safe, GPU-integrated phase.
     // The flapSpeed from Shader Graph is multiplied directly against the phase.
 
@@ -51,7 +51,6 @@ void GetCubePosition_float(float instanceID_input, float3 objectPosition, float 
         scaledPos.z < 0 ? -scaledPos.z * flapAmplitude : 0.0);
 
     scaledPos.x += wag;
-    // -------------------------------------------------------------
     // -------------------------------------------------------------
 
     float3 rotatedPos = rolledRight * scaledPos.x + rolledUp * scaledPos.y + boidDir * scaledPos.z;

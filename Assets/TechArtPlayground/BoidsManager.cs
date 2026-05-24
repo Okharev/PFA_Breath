@@ -35,6 +35,8 @@ namespace TechArtPlayground
         private static readonly int ArrivalRadiusSq = Shader.PropertyToID("arrivalRadiusSq");
         private static readonly int ArrivalMinSpeed = Shader.PropertyToID("arrivalMinSpeed");
         private static readonly int SingularitySoften = Shader.PropertyToID("singularitySoften");
+        private static readonly int TubeRadius = Shader.PropertyToID("tubeRadius");
+        private static readonly int PredatorFleeWeight = Shader.PropertyToID("predatorFleeWeight");
 
         [Header("Optimization")] 
         [Range(1, 10)] public int sortFrequency = 4;
@@ -80,6 +82,10 @@ namespace TechArtPlayground
         
         [Header("Simulation Mode")]
         public bool useSplineFlow = false;
+        [Header("Spline Flow Settings")]
+        public float tubeRadius = 5f;
+        public float predatorFleeWeight = 20f;
+        
         
         [Header("Attractor Tuning")]
         public float globalAttractorWeight = 1.0f;
@@ -122,6 +128,7 @@ namespace TechArtPlayground
         private GraphicsBuffer predatorsBuffer;
         private GraphicsBuffer sortBuffer;
         private GraphicsBuffer splineBuffer;
+        private GraphicsBuffer splineTBuffer;
 
         // Kernel IDs
         private int clearGridKernel, populateHashesKernel, buildOffsetsKernel, csMainKernel, reorderBoidsKernel, splineFlowKernel;
@@ -140,140 +147,131 @@ namespace TechArtPlayground
             else Instance = this;
         }
 
-        private void Start()
+    private void Start()
+    {
+        // --- 0. KERNEL SETUP ---
+        clearGridKernel = boidsCompute.FindKernel("ClearGrid");
+        populateHashesKernel = boidsCompute.FindKernel("PopulateHashes");
+        buildOffsetsKernel = boidsCompute.FindKernel("BuildGridOffsets");
+        csMainKernel = boidsCompute.FindKernel("CSMain");
+        reorderBoidsKernel = boidsCompute.FindKernel("ReorderBoids");
+        splineFlowKernel = boidsCompute.FindKernel("CSMain_SplineFlow");
+
+        // Bitonic Sort requires arrays strictly sized in Powers of Two
+        paddedCount = Mathf.NextPowerOfTwo(numBoids);
+
+        // --- 1. INIT BOIDS (Core Data) ---
+// Inside Start():
+        Boid[] boidsArray = new Boid[numBoids];
+        for (int i = 0; i < numBoids; i++)
         {
-            clearGridKernel = boidsCompute.FindKernel("ClearGrid");
-            populateHashesKernel = boidsCompute.FindKernel("PopulateHashes");
-            buildOffsetsKernel = boidsCompute.FindKernel("BuildGridOffsets");
-            csMainKernel = boidsCompute.FindKernel("CSMain");
-            reorderBoidsKernel = boidsCompute.FindKernel("ReorderBoids");
-            splineFlowKernel = boidsCompute.FindKernel("CSMain_SplineFlow");
-
-            // Bitonic Sort requires arrays strictly sized in Powers of Two
-            paddedCount = Mathf.NextPowerOfTwo(numBoids);
-
-            // 1. INIT BOIDS
-            Boid[] boidsArray = new Boid[numBoids];
-            for (int i = 0; i < numBoids; i++)
-            {
-                boidsArray[i].position = transform.position + Random.insideUnitSphere * spawnRadius;
-                boidsArray[i].direction = Random.onUnitSphere;
-                Color randomColor = Color.Lerp(colorA, colorB, Random.value);
-                boidsArray[i].color = new Vector3(randomColor.r, randomColor.g, randomColor.b);
-                boidsArray[i].size = Random.Range(minSize, maxSize);
-                boidsArray[i].currentSpeed = speed;
-                boidsArray[i].roll = 0f;
-                boidsArray[i].flapPhase = Random.Range(0f, 100f);
-                boidsArray[i].splineT = Random.Range(0f, 1f);
-            }
-
-            // Allocate Two Buffers for the Double-Buffering / Ping-Pong technique
-            int boidStride = 56;
-            boidsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
-            boidsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
-            boidsBufferA.SetData(boidsArray);
-            boidsBufferB.SetData(boidsArray); 
-
-            // 2. INIT ATTRACTORS (32-byte stride alignment!)
-            attractorDataArray = new AttractorData[maxAttractors];
-            previousAttractorPositions = new Vector3[maxAttractors]; 
-            attractorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxAttractors, 32);
-
-            // 3. INIT SPATIAL GRID
-            int totalCells = gridSize * gridSize * gridSize;
-            gridOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, totalCells, sizeof(int));
-            sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, sizeof(uint) * 2);
-
-            // 4. INIT OBSTACLES & PREDATORS
-            obstaclesArray = new Obstacle[maxObstacles];
-            obstaclesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxObstacles, 16);
-            predatorDataArray = new PredatorData[maxPredators];
-            predatorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxPredators, 16);
-
-            int resolution = 100; // O(K) space complexity
-            SplineSampleData[] bakedSpline = new SplineSampleData[resolution];
-            float length = splineContainer.CalculateLength();
-
-            for (int i = 0; i < resolution; i++)
-            {
-                float t = i / (float)(resolution - 1);
-                bakedSpline[i].position = splineContainer.EvaluatePosition(t);
-                bakedSpline[i].tangent = ((Vector3)splineContainer.EvaluateTangent(t)).normalized; 
-                bakedSpline[i].width = 10f; // River width
-            }
-
-// Push to GPU
-            splineBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, resolution, 28); 
-            splineBuffer.SetData(bakedSpline);
-
-            boidsCompute.SetBuffer(splineFlowKernel, "splineBuffer", splineBuffer);
-
-// Pass the required globals
-            boidsCompute.SetInt("splineResolution", resolution);
-            boidsCompute.SetFloat("splineLength", length);
-    
-            // Note: You must also bind Read/Write buffers for the new kernel!
-            boidsCompute.SetBuffer(splineFlowKernel, "gridOffsets", gridOffsetsBuffer);
-            boidsCompute.SetBuffer(splineFlowKernel, "SortBuffer", sortBuffer);
-            boidsCompute.SetBuffer(buildOffsetsKernel, "SortBuffer", sortBuffer);
-            boidsCompute.SetBuffer(buildOffsetsKernel, "gridOffsets", gridOffsetsBuffer);
-            boidsCompute.SetBuffer(csMainKernel, "gridOffsets", gridOffsetsBuffer);
-            boidsCompute.SetBuffer(csMainKernel, "SortBuffer", sortBuffer);
-            boidsCompute.SetBuffer(csMainKernel, "obstaclesBuffer", obstaclesBuffer);
-            boidsCompute.SetBuffer(csMainKernel, "predatorsBuffer", predatorsBuffer);
-            boidsCompute.SetBuffer(reorderBoidsKernel, "SortBuffer", sortBuffer);
-            boidsCompute.SetBuffer(csMainKernel, AttractorsBuffer, attractorsBuffer);
-            
-            
-            
-            // 1. ClearGrid needs the gridOffsets buffer
-            boidsCompute.SetBuffer(clearGridKernel, "gridOffsets", gridOffsetsBuffer);
-
-// 2. PopulateHashes needs the sort buffer
-            boidsCompute.SetBuffer(populateHashesKernel, "SortBuffer", sortBuffer);
-
-// 3. BuildGridOffsets needs both
-            boidsCompute.SetBuffer(buildOffsetsKernel, "SortBuffer", sortBuffer);
-            boidsCompute.SetBuffer(buildOffsetsKernel, "gridOffsets", gridOffsetsBuffer);
-
-            int[] kernelsToBind = { csMainKernel, splineFlowKernel };
-
-            foreach (int k in kernelsToBind)
-            {
-                boidsCompute.SetBuffer(k, "gridOffsets", gridOffsetsBuffer);
-                boidsCompute.SetBuffer(k, "SortBuffer", sortBuffer);
-                boidsCompute.SetBuffer(k, "obstaclesBuffer", obstaclesBuffer);
-                boidsCompute.SetBuffer(k, "predatorsBuffer", predatorsBuffer);
-                boidsCompute.SetBuffer(k, "attractorsBuffer", attractorsBuffer);
-
-            }
-            
-            boidsCompute.SetBuffer(splineFlowKernel, "obstaclesBuffer", obstaclesBuffer);
-            boidsCompute.SetBuffer(splineFlowKernel, "predatorsBuffer", predatorsBuffer);
-
-// 5. ReorderBoids needs the sort buffer
-            boidsCompute.SetBuffer(reorderBoidsKernel, "SortBuffer", sortBuffer);
-
-            predatorsBuffer.SetData(predatorDataArray, 0, 0, activePredators.Count);
-            boidsCompute.SetInt(NumPredators, activePredators.Count);
-            lastPredatorCount = activePredators.Count;
-
-            // 6. SETUP DRAW ARGS
-            uint[] args = new uint[5] { fishMesh.GetIndexCount(0), (uint)numBoids, 0, 0, 0 };
-            argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, args.Length * sizeof(uint));
-            argsBuffer.SetData(args);
-            
-            // Push static properties exactly once to save PCIe bus bandwidth
-            PushStaticGPUProperties();
-            
-            boidsCompute.SetInt(NumBoids, numBoids);
-            boidsCompute.SetInt(PaddedCount, paddedCount);
-
-            UpdateObstacles();
-
-            currentBuffer = boidsBufferA;
-            nextBuffer = boidsBufferB;
+            boidsArray[i].position = transform.position + Random.insideUnitSphere * spawnRadius;
+            boidsArray[i].direction = Random.onUnitSphere;
+            Color randomColor = Color.Lerp(colorA, colorB, Random.value);
+            boidsArray[i].color = new Vector3(randomColor.r, randomColor.g, randomColor.b);
+            boidsArray[i].size = Random.Range(minSize, maxSize);
+            boidsArray[i].currentSpeed = speed;
+            boidsArray[i].roll = 0f;
+            boidsArray[i].flapPhase = Random.Range(0f, 100f);
+            boidsArray[i].splineT = Random.value; // <-- INIT HERE AGAIN
         }
+
+        // Change stride back to 56
+        int boidStride = 56; 
+        boidsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
+        boidsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
+        boidsBufferA.SetData(boidsArray);
+        boidsBufferB.SetData(boidsArray); 
+
+        // --- 2. OPTIONAL SPLINE DATA (SoA Pattern) ---
+        if (useSplineFlow)
+        {
+            float[] initialSplineT = new float[numBoids];
+            for (int i = 0; i < numBoids; i++) initialSplineT[i] = Random.value; // 0.0 to 1.0
+
+            // Stride is just 4 bytes (sizeof(float))
+            splineTBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, sizeof(float));
+            splineTBuffer.SetData(initialSplineT);
+            
+            // Bind immediately to the spline kernel
+            boidsCompute.SetBuffer(splineFlowKernel, "SplineTBuffer", splineTBuffer);
+        }
+
+        // --- 3. INIT ATTRACTORS (32-byte stride alignment) ---
+        attractorDataArray = new AttractorData[maxAttractors];
+        previousAttractorPositions = new Vector3[maxAttractors]; 
+        attractorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxAttractors, 32);
+
+        // --- 4. INIT SPATIAL GRID ---
+        int totalCells = gridSize * gridSize * gridSize;
+        gridOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, totalCells, sizeof(int));
+        sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, sizeof(uint) * 2);
+
+        // --- 5. INIT OBSTACLES & PREDATORS ---
+        obstaclesArray = new Obstacle[maxObstacles];
+        obstaclesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxObstacles, 16);
+        predatorDataArray = new PredatorData[maxPredators];
+        predatorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxPredators, 16);
+
+        // --- 6. SPLINE BAKING ---
+        int resolution = 100; // O(K) space complexity
+        SplineSampleData[] bakedSpline = new SplineSampleData[resolution];
+        float length = splineContainer.CalculateLength();
+
+        for (int i = 0; i < resolution; i++)
+        {
+            float t = i / (float)(resolution - 1);
+            bakedSpline[i].position = splineContainer.EvaluatePosition(t);
+            bakedSpline[i].tangent = ((Vector3)splineContainer.EvaluateTangent(t)).normalized; 
+            bakedSpline[i].width = 10f; // River width
+        }
+
+        splineBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, resolution, 28); 
+        splineBuffer.SetData(bakedSpline);
+
+        boidsCompute.SetInt("splineResolution", resolution);
+        boidsCompute.SetFloat("splineLength", length);
+        boidsCompute.SetBuffer(splineFlowKernel, "splineBuffer", splineBuffer);
+
+        // --- 7. BINDING BUFFERS TO KERNELS ---
+        // Grid Setup
+        boidsCompute.SetBuffer(clearGridKernel, "gridOffsets", gridOffsetsBuffer);
+        boidsCompute.SetBuffer(populateHashesKernel, "SortBuffer", sortBuffer);
+        boidsCompute.SetBuffer(buildOffsetsKernel, "SortBuffer", sortBuffer);
+        boidsCompute.SetBuffer(buildOffsetsKernel, "gridOffsets", gridOffsetsBuffer);
+        boidsCompute.SetBuffer(reorderBoidsKernel, "SortBuffer", sortBuffer);
+
+        // Physics passes
+        int[] physicsKernels = { csMainKernel, splineFlowKernel };
+        foreach (int k in physicsKernels)
+        {
+            boidsCompute.SetBuffer(k, "gridOffsets", gridOffsetsBuffer);
+            boidsCompute.SetBuffer(k, "SortBuffer", sortBuffer);
+            boidsCompute.SetBuffer(k, "obstaclesBuffer", obstaclesBuffer);
+            boidsCompute.SetBuffer(k, "predatorsBuffer", predatorsBuffer);
+            boidsCompute.SetBuffer(k, "attractorsBuffer", attractorsBuffer);
+        }
+
+        predatorsBuffer.SetData(predatorDataArray, 0, 0, activePredators.Count);
+        boidsCompute.SetInt(NumPredators, activePredators.Count);
+        lastPredatorCount = activePredators.Count;
+
+        // --- 8. SETUP DRAW ARGS ---
+        uint[] args = new uint[5] { fishMesh.GetIndexCount(0), (uint)numBoids, 0, 0, 0 };
+        argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, args.Length * sizeof(uint));
+        argsBuffer.SetData(args);
+        
+        // Push static properties exactly once to save PCIe bus bandwidth
+        PushStaticGPUProperties();
+        
+        boidsCompute.SetInt(NumBoids, numBoids);
+        boidsCompute.SetInt(PaddedCount, paddedCount);
+
+        UpdateObstacles();
+
+        currentBuffer = boidsBufferA;
+        nextBuffer = boidsBufferB;
+    }
 
         /// <summary>
         /// Pushes variables that rarely change to the GPU. 
@@ -295,6 +293,11 @@ namespace TechArtPlayground
             boidsCompute.SetFloat(SightRadius, sightRadius);
             boidsCompute.SetFloat(FloorY, floorY);
             boidsCompute.SetFloat(AvoidanceMargin, floorAvoidanceMargin);
+            
+
+            boidsCompute.SetFloat(TubeRadius, tubeRadius);
+            boidsCompute.SetFloat(PredatorFleeWeight, predatorFleeWeight);
+            
         }
 
 #if UNITY_EDITOR
@@ -437,7 +440,9 @@ namespace TechArtPlayground
             sortBuffer?.Release();
             predatorsBuffer?.Release();
             attractorsBuffer?.Release();
+            splineTBuffer?.Release();
             splineBuffer?.Release();
+            
         }
 
         // --- REGISTRY METHODS ---

@@ -14,7 +14,7 @@ struct Boid
     float currentSpeed;
     float roll;
     float flapPhase;
-    float splineT; // REQUIRED: Matches the 56-byte stride in C#
+    float splineT;
 };
 
 struct Attractor
@@ -60,6 +60,7 @@ RWStructuredBuffer<Boid> WriteBoidsBuffer;
 StructuredBuffer<Obstacle> obstaclesBuffer;
 RWStructuredBuffer<int> gridOffsets;
 RWStructuredBuffer<BoidHashPair> SortBuffer;
+RWStructuredBuffer<float> SplineTBuffer;
 
 // Spline Data
 StructuredBuffer<SplineSample> splineBuffer;
@@ -86,6 +87,8 @@ float swirlStrength;
 float arrivalRadiusSq;
 float arrivalMinSpeed;
 float singularitySoften;
+float tubeRadius;
+float predatorFleeWeight;
 
 // --- UTILITY FUNCTIONS ---
 float3 SafeNormalize(float3 v, float3 fallback)
@@ -304,20 +307,19 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     WriteBoidsBuffer[id.x] = boid;
 }
 
-// --- NEW SPLINE FLOW KERNEL ---
-// --- FINALIZED SPLINE FLOW KERNEL WITH PREDATOR AVOIDANCE ---
+
+
 [numthreads(64, 1, 1)]
 void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
 {
     // 1. SAFETY & INITIALIZATION
     if (id.x >= (uint)numBoids) return;
     Boid boid = ReadBoidsBuffer[id.x];
+    float currentSplineT = SplineTBuffer[id.x]; // Read optional data
 
     // --- A. SPLINE ADVANCEMENT ---
     float targetSpeed = speed + (sin(boid.flapPhase) * 0.5f);
-    boid.splineT += (targetSpeed * deltaTime) / max(splineLength, 0.0001f);
-    if (boid.splineT > 1.0f) boid.splineT -= 1.0f;
-
+    
     // --- B. O(1) SPLINE LOOKUP ---
     float floatIndex = boid.splineT * (float)(splineResolution - 1);
     int indexFloor = (int)floor(floatIndex);
@@ -329,16 +331,23 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
     pt.tangent = normalize(lerp(splineBuffer[indexFloor].tangent, splineBuffer[indexCeil].tangent, tLerp));
     pt.width = lerp(splineBuffer[indexFloor].width, splineBuffer[indexCeil].width, tLerp);
 
-    // --- C. LANE OFFSET (Prevents Stacking) ---
-    float3 laneOffset = normalize(cross(pt.tangent, float3(0,1,0))) * (sin(id.x * 12.345f) * 2.5f);
+    // --- C. LANE OFFSET (Customizable Tube) ---
+    // Procedural distribution using boid ID to prevent clumping
+    float randomAngle = frac(sin(id.x * 12.345f) * 4567.89f) * 6.28318f; 
+    float randomRadius = frac(cos(id.x * 78.910f) * 1234.56f) * tubeRadius;
+
+    float3 upDir = float3(0, 1, 0);
+    float3 rightDir = normalize(cross(upDir, pt.tangent));
+    float3 localUp = normalize(cross(pt.tangent, rightDir));
+
+    float3 laneOffset = (rightDir * cos(randomAngle) + localUp * sin(randomAngle)) * randomRadius;
     float3 targetPathPos = pt.position + laneOffset;
 
-    // --- D. LOCAL SEPARATION (Prevents Stacking) ---
+    // --- D. LOCAL SEPARATION ---
     float3 separation = float3(0,0,0);
     int3 myCell = GetCellCoordinates(boid.position);
     float sightRadiusSq = sightRadius * sightRadius;
-    
-    // Check neighbors for separation
+
     for (int x = 0; x <= 1; x++) {
         for (int y = 0; y <= 1; y++) {
             for (int z = 0; z <= 1; z++) {
@@ -349,9 +358,11 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
                 
                 int neighborHash = GetCellHash(neighborCell);
                 int startIndex = gridOffsets[neighborHash];
+                
                 if (startIndex != -1) {
                     for (uint i = (uint)startIndex; i < (uint)numBoids; i++) {
                         if (SortBuffer[i].cellHash != (uint)neighborHash) break;
+                        
                         if (i != id.x) {
                             Boid other = ReadBoidsBuffer[i];
                             float3 diff = boid.position - other.position;
@@ -368,42 +379,54 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
 
     // --- E. PREDATOR & OBSTACLE AVOIDANCE ---
     float3 fleeDirection = float3(0,0,0);
+    bool isFleeing = false;
     
-    // Predator Checking Loop
+    // Predators
     for (int p = 0; p < numPredators; p++) {
         Predator pred = predatorsBuffer[p];
         float3 predDiff = boid.position - pred.position;
         float predDistSq = dot(predDiff, predDiff);
-        
-        // If within range, add to flee direction (Inverse Square Law for smoother repulsion)
+
         if (predDistSq < pred.radiusSq && predDistSq > 0.001f) {
-            fleeDirection += predDiff * (10.0f / predDistSq);
+            fleeDirection += predDiff * (predatorFleeWeight / predDistSq);
+            targetSpeed = max(targetSpeed, speed * 3.0f); // Panic burst
+            isFleeing = true;
         }
     }
 
-    // Obstacle Avoidance Loop
+    // Obstacles
     for (int j = 0; j < numObstacles; j++) {
         float3 obsDiff = boid.position - obstaclesBuffer[j].position;
         float obsDistSq = dot(obsDiff, obsDiff);
         if (obsDistSq < obstaclesBuffer[j].radiusSq && obsDistSq > 0.001f) {
             fleeDirection += obsDiff * (15.0f / obsDistSq);
+            targetSpeed = max(targetSpeed, speed * 2.0f);
+            isFleeing = true;
         }
     }
 
     // --- F. FINAL STEERING CALCULATION ---
-    // Containment: Pulls back to spline; Fleeing: Pushes away from dangers
-    float3 containment = (targetPathPos - boid.position) * 1.5f;
-    
-    // Combine forces: Spline Flow + Separation (Local) + Containment (Path) + Flee (Global Avoidance)
-    float3 targetDir = (pt.tangent * targetWeight) + containment + (separation * separationWeight) + fleeDirection;
+    // If fleeing, drop containment strength to 10% so they can escape the tube
+    float survivalMultiplier = isFleeing ? 0.1f : 1.0f; 
+    float3 containment = (targetPathPos - boid.position) * 1.5f * survivalMultiplier;
+
+    float3 targetDir = (pt.tangent * targetWeight * survivalMultiplier) + containment + (separation * separationWeight) + fleeDirection;
     float3 normalizedTargetDir = SafeNormalize(targetDir, boid.direction);
 
     // --- G. INTEGRATION ---
     boid.direction = lerp(boid.direction, normalizedTargetDir, deltaTime * 3.0f);
+    
+    float turnStrength = cross(boid.direction, normalizedTargetDir).y;
+    boid.roll = lerp(boid.roll, turnStrength * 3.0f, deltaTime * 4.0f);
+
     boid.currentSpeed = lerp(boid.currentSpeed, targetSpeed, deltaTime * 5.0f);
     boid.position += boid.direction * boid.currentSpeed * deltaTime;
-    
     boid.flapPhase += clamp(boid.currentSpeed / speed, 0.2f, 1.8f) * deltaTime * 10.0f;
 
+    // Update splineT directly inside the struct
+    boid.splineT += (boid.currentSpeed * deltaTime) / max(splineLength, 0.0001f);
+    if (boid.splineT > 1.0f) boid.splineT -= 1.0f;
+
+    // Write back
     WriteBoidsBuffer[id.x] = boid;
 }
