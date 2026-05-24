@@ -217,7 +217,7 @@ Transform:
   m_GameObject: {fileID: 105975322}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -23.10133, y: 0, z: 86.91307}
+  m_LocalPosition: {x: -184, y: 0, z: -25.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -370,6 +370,7 @@ GameObject:
   m_Component:
   - component: {fileID: 177766438}
   - component: {fileID: 177766439}
+  - component: {fileID: 177766440}
   m_Layer: 0
   m_Name: SplineTarget
   m_TagString: Untagged
@@ -410,6 +411,171 @@ MonoBehaviour:
   maxSpeed: 10
   noiseFrequency: 1
   noiseSeed: 0
+--- !u!114 &177766440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 177766437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidAttractor
+  weight: 1
+--- !u!1 &358960052
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 358960054}
+  - component: {fileID: 358960053}
+  m_Layer: 0
+  m_Name: Spline (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &358960053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358960052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dab5c7d4c32e743048dfca98e2d5914f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Splines::UnityEngine.Splines.SplineContainer
+  m_Spline:
+    m_EditModeType: 1
+    m_Knots: []
+    m_MetaData: []
+    m_Closed: 0
+    m_IntData:
+      m_Data: []
+    m_FloatData:
+      m_Data: []
+    m_Float4Data:
+      m_Data: []
+    m_ObjectData:
+      m_Data: []
+  m_Splines:
+  - m_EditModeType: 1
+    m_Knots:
+    - Position:
+        x: -113.70001
+        y: -0.027709961
+        z: -38.30469
+      TangentIn:
+        x: -20.542915
+        y: 0.0000010529106
+        z: -70.015144
+      TangentOut:
+        x: 3.3638525
+        y: 0.00000081284753
+        z: 18.409924
+      Rotation:
+        value:
+          x: -0.0000000042718393
+          y: 0.91875327
+          z: 7.1368544e-10
+          w: 0.39483228
+    - Position:
+        x: 38.14147
+        y: -22
+        z: -0.6104851
+      TangentIn:
+        x: 0
+        y: 0
+        z: -9.809974
+      TangentOut:
+        x: 0
+        y: 0
+        z: 68.56183
+      Rotation:
+        value:
+          x: 0.00004583597
+          y: 0.4008673
+          z: -0.000049427144
+          w: 0.9161361
+    - Position:
+        x: 74.2
+        y: -52.585556
+        z: 74.94272
+      TangentIn:
+        x: 0
+        y: 0
+        z: -16.144657
+      TangentOut:
+        x: 0
+        y: 0
+        z: 32.749706
+      Rotation:
+        value:
+          x: 1.9311832e-11
+          y: -0.037189797
+          z: -5.1891896e-10
+          w: 0.9993083
+    - Position:
+        x: -32.35853
+        y: 25.77
+        z: 92.07951
+      TangentIn:
+        x: 0
+        y: 0
+        z: -118.871826
+      TangentOut:
+        x: 0
+        y: 0
+        z: 52.54752
+      Rotation:
+        value:
+          x: 0.00021960586
+          y: 0.9676291
+          z: -0.00052431243
+          w: -0.25237605
+    m_MetaData:
+    - Mode: 4
+      Tension: 0.5
+    - Mode: 3
+      Tension: 0.5
+    - Mode: 3
+      Tension: 0.5
+    - Mode: 3
+      Tension: 0.5
+    m_Closed: 1
+    m_IntData:
+      m_Data: []
+    m_FloatData:
+      m_Data: []
+    m_Float4Data:
+      m_Data: []
+    m_ObjectData:
+      m_Data: []
+  m_Knots:
+    m_KnotsLink: []
+--- !u!4 &358960054
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358960052}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.4538829, y: -0, z: -0, w: 0.8910613}
+  m_LocalPosition: {x: -179.5, y: 24.6, z: -34.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: -53.986, y: 0, z: 0}
 --- !u!1 &565394208
 GameObject:
   m_ObjectHideFlags: 0
@@ -724,6 +890,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1041024053}
   - component: {fileID: 1041024054}
+  - component: {fileID: 1041024055}
   m_Layer: 0
   m_Name: SplineTarget
   m_TagString: Untagged
@@ -764,6 +931,19 @@ MonoBehaviour:
   maxSpeed: 10
   noiseFrequency: 1
   noiseSeed: 0
+--- !u!114 &1041024055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1041024052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidAttractor
+  weight: 1
 --- !u!1 &1444137450
 GameObject:
   m_ObjectHideFlags: 0
@@ -773,6 +953,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1444137451}
+  - component: {fileID: 1444137452}
   m_Layer: 0
   m_Name: Static
   m_TagString: Untagged
@@ -795,6 +976,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1444137452
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1444137450}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidAttractor
+  weight: 0.8
 --- !u!1 &1684813941
 GameObject:
   m_ObjectHideFlags: 0
@@ -932,6 +1126,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1744343856}
   - component: {fileID: 1744343857}
+  - component: {fileID: 1744343858}
   m_Layer: 0
   m_Name: SplineTarget
   m_TagString: Untagged
@@ -972,6 +1167,19 @@ MonoBehaviour:
   maxSpeed: 10
   noiseFrequency: 1
   noiseSeed: 0
+--- !u!114 &1744343858
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1744343855}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidAttractor
+  weight: 1
 --- !u!1 &1890962465
 GameObject:
   m_ObjectHideFlags: 0
@@ -1007,13 +1215,12 @@ MonoBehaviour:
   bitonicSortCompute: {fileID: 7200000, guid: eca7a9d318d745f8afaccdfc8a1b0780, type: 3}
   fishMesh: {fileID: 4300000, guid: 1cfa4408f005b994a91c73b71f54aeaf, type: 2}
   fishMaterial: {fileID: 2100000, guid: fb4a11342c604c14ba3bb1b737785176, type: 2}
-  playerTransform: {fileID: 1744343856}
-  numBoids: 3500
-  spawnRadius: 100
+  numBoids: 2000
+  spawnRadius: 80
   speed: 8
   sightRadius: 3
-  separationWeight: 0.31
-  targetWeight: 0.64
+  separationWeight: 1.15
+  targetWeight: 1.23
   cellSize: 3
   gridSize: 64
   separationPulseSpeed: 0.22
@@ -1030,16 +1237,13 @@ MonoBehaviour:
     m_Bits: 128
   maxObstacles: 50
   scanRadius: 50
-  attractorTransforms:
-  - {fileID: 1744343856}
-  - {fileID: 1041024053}
-  - {fileID: 177766438}
-  - {fileID: 1444137451}
-  swirlStrength: 0.85
+  useSplineFlow: 1
+  globalAttractorWeight: 1000
+  swirlStrength: 0.9
   arrivalRadius: 20
-  arrivalMinSpeed: 0.3
+  arrivalMinSpeed: 0.85
   singularitySoften: 3
-  globalAttractorWeight: 100
+  splineContainer: {fileID: 358960053}
 --- !u!4 &1890962467
 Transform:
   m_ObjectHideFlags: 0
@@ -1049,7 +1253,7 @@ Transform:
   m_GameObject: {fileID: 1890962465}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.2, y: -0, z: 81.3}
+  m_LocalPosition: {x: -10.9, y: -0, z: 56.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1219,6 +1423,7 @@ SceneRoots:
   - {fileID: 177766438}
   - {fileID: 565394210}
   - {fileID: 2053052401}
+  - {fileID: 358960054}
   - {fileID: 641715191}
   - {fileID: 105975326}
   - {fileID: 1444137451}

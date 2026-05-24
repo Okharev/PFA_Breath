@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Splines;
 
 namespace TechArtPlayground
 {
@@ -8,7 +9,8 @@ namespace TechArtPlayground
     {
         private const float OBSTACLE_SCAN_RATE = 10f;
 
-        // Property IDs
+        // --- SHADER PROPERTY IDs ---
+        // Storing IDs as ints is O(1) for the GPU, whereas passing strings is O(N) allocation per frame.
         private static readonly int CellSize = Shader.PropertyToID("cellSize");
         private static readonly int GridSize = Shader.PropertyToID("gridSize");
         private static readonly int DeltaTime = Shader.PropertyToID("deltaTime");
@@ -27,107 +29,113 @@ namespace TechArtPlayground
         private static readonly int BoidsBuffer = Shader.PropertyToID("boidsBuffer");
         private static readonly int ReadBoidsBuffer = Shader.PropertyToID("ReadBoidsBuffer");
         private static readonly int WriteBoidsBuffer = Shader.PropertyToID("WriteBoidsBuffer");
-
         private static readonly int NumAttractors = Shader.PropertyToID("numAttractors");
         private static readonly int AttractorsBuffer = Shader.PropertyToID("attractorsBuffer");
+        private static readonly int SwirlStrength = Shader.PropertyToID("swirlStrength");
+        private static readonly int ArrivalRadiusSq = Shader.PropertyToID("arrivalRadiusSq");
+        private static readonly int ArrivalMinSpeed = Shader.PropertyToID("arrivalMinSpeed");
+        private static readonly int SingularitySoften = Shader.PropertyToID("singularitySoften");
 
-        [Header("Optimization")] [Range(1, 10)]
-        public int sortFrequency = 4;
+        [Header("Optimization")] 
+        [Range(1, 10)] public int sortFrequency = 4;
 
-        [Header("Predator Settings")] public int maxPredators = 16;
+        [Header("Predator Settings")] 
+        public int maxPredators = 16;
 
-        [Header("References")] public ComputeShader boidsCompute;
-
+        [Header("References")] 
+        public ComputeShader boidsCompute;
         public ComputeShader bitonicSortCompute;
         public Mesh fishMesh;
         public Material fishMaterial;
-        public Transform playerTransform;
 
-        [Header("Banc Parameters")] public int numBoids = 10000;
-
+        [Header("Banc Parameters")] 
+        public int numBoids = 10000;
         public float spawnRadius = 40f;
         public float speed = 5f;
         public float sightRadius = 3f;
         public float separationWeight = 1.5f;
         public float targetWeight = 0.5f;
 
-        [Header("Spatial Grid")] public float cellSize = 3f;
-
+        [Header("Spatial Grid")] 
+        public float cellSize = 3f;
         public int gridSize = 64;
 
-        [Header("Variations Organiques")] public float separationPulseSpeed = 1.0f;
-
+        [Header("Variations Organiques")] 
+        public float separationPulseSpeed = 1.0f;
         public float separationPulseAmount = 0.8f;
 
-        [Header("Visuals")] public Color colorA = Color.white;
-
+        [Header("Visuals")] 
+        public Color colorA = Color.white;
         public Color colorB = Color.blue;
         public float minSize = 0.5f;
         public float maxSize = 1.5f;
         public float predatorRadius = 5f;
 
-        [Header("World Limits")] public float floorY;
-
+        [Header("World Limits")] 
+        public float floorY;
         public float floorAvoidanceMargin = 2f;
         public LayerMask obstacleLayer;
         public int maxObstacles = 50;
         public float scanRadius = 50f;
-
-        [Header("Attractors")] public List<Transform> attractorTransforms = new();
-
+        
+        [Header("Simulation Mode")]
+        public bool useSplineFlow = false;
+        
         [Header("Attractor Tuning")]
+        public float globalAttractorWeight = 1.0f;
         [Tooltip("How much the boids swirl around the attractor (0 = direct impact, 1 = perfect orbit)")]
         [Range(0f, 1f)] public float swirlStrength = 0.85f;
-
         [Tooltip("The radius at which boids begin to slow down and swirl")]
         public float arrivalRadius = 5.0f;
-
         [Tooltip("The minimum speed multiplier when exactly at the center of an attractor")]
         [Range(0.1f, 1f)] public float arrivalMinSpeed = 0.3f;
-
         [Tooltip("Prevents infinite mathematical weight when boids hit the exact center. Higher = softer pull.")]
         public float singularitySoften = 2.0f;
 
-// --- New Property IDs ---
-        private static readonly int SwirlStrength = Shader.PropertyToID("swirlStrength");
-        private static readonly int ArrivalRadiusSq = Shader.PropertyToID("arrivalRadiusSq");
-        private static readonly int ArrivalMinSpeed = Shader.PropertyToID("arrivalMinSpeed");
-        private static readonly int SingularitySoften = Shader.PropertyToID("singularitySoften");
-        
-        public float globalAttractorWeight = 1.0f;
+        // --- INTERNAL ARCHITECTURE ---
+        public static BoidsManager Instance { get; private set; }
+
+        // Component Registries (Observer Pattern)
         private readonly List<BoidPredator> activePredators = new();
+        private readonly List<BoidAttractor> activeAttractors = new();
+        
+        // Caching & Pooling Arrays
         private readonly Collider[] collBuffer = new Collider[32];
-
-        private GraphicsBuffer argsBuffer;
         private AttractorData[] attractorDataArray;
+        private Vector3[] previousAttractorPositions; // Kinematics cache for velocity calculation
+        private PredatorData[] predatorDataArray;
+        private Obstacle[] obstaclesArray;
 
+        // State Tracking (Dirty Flag Pattern)
+        private int lastAttractorCount = -1;
+        private int lastPredatorCount = -1;
+
+        // Graphics Buffers
+        private GraphicsBuffer argsBuffer;
         private GraphicsBuffer attractorsBuffer;
-
-        // PING PONG BUFFERS (Modern Unity 6.4 GraphicsBuffers)
         private GraphicsBuffer boidsBufferA;
         private GraphicsBuffer boidsBufferB;
-
-        private int clearGridKernel, populateHashesKernel, buildOffsetsKernel, csMainKernel, reorderBoidsKernel;
-
         private GraphicsBuffer currentBuffer;
-        private int frameCount;
-        private GraphicsBuffer gridOffsetsBuffer;
-        private readonly int maxAttractors = 20; // Keep a sensible cap for memory pooling
         private GraphicsBuffer nextBuffer;
-        private int obstacleCount;
-
-        private Obstacle[] obstaclesArray;
+        private GraphicsBuffer gridOffsetsBuffer;
         private GraphicsBuffer obstaclesBuffer;
-
-        private float obstacleScanTimer;
-        private int paddedCount;
-        private PredatorData[] predatorDataArray;
         private GraphicsBuffer predatorsBuffer;
         private GraphicsBuffer sortBuffer;
-        public static BoidsManager Instance { get; private set; }
+        private GraphicsBuffer splineBuffer;
+
+        // Kernel IDs
+        private int clearGridKernel, populateHashesKernel, buildOffsetsKernel, csMainKernel, reorderBoidsKernel, splineFlowKernel;
+
+        private int frameCount;
+        private readonly int maxAttractors = 20; 
+        private int obstacleCount;
+        private float obstacleScanTimer;
+        private int paddedCount;
+        [SerializeField] private SplineContainer splineContainer;
 
         private void Awake()
         {
+            // Standard Singleton implementation
             if (Instance != null && Instance != this) Destroy(this);
             else Instance = this;
         }
@@ -138,13 +146,13 @@ namespace TechArtPlayground
             populateHashesKernel = boidsCompute.FindKernel("PopulateHashes");
             buildOffsetsKernel = boidsCompute.FindKernel("BuildGridOffsets");
             csMainKernel = boidsCompute.FindKernel("CSMain");
-
-            // NOUVEAU: Find the reorder kernel
             reorderBoidsKernel = boidsCompute.FindKernel("ReorderBoids");
+            splineFlowKernel = boidsCompute.FindKernel("CSMain_SplineFlow");
 
+            // Bitonic Sort requires arrays strictly sized in Powers of Two
             paddedCount = Mathf.NextPowerOfTwo(numBoids);
 
-            // 1. Init Boids
+            // 1. INIT BOIDS
             Boid[] boidsArray = new Boid[numBoids];
             for (int i = 0; i < numBoids; i++)
             {
@@ -156,33 +164,57 @@ namespace TechArtPlayground
                 boidsArray[i].currentSpeed = speed;
                 boidsArray[i].roll = 0f;
                 boidsArray[i].flapPhase = Random.Range(0f, 100f);
+                boidsArray[i].splineT = Random.Range(0f, 1f);
             }
 
-            attractorDataArray = new AttractorData[maxAttractors];
-            attractorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxAttractors, 16);
-
-            // Allocate Two Buffers
-            int boidStride = 52;
+            // Allocate Two Buffers for the Double-Buffering / Ping-Pong technique
+            int boidStride = 56;
             boidsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
             boidsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
-
             boidsBufferA.SetData(boidsArray);
-            boidsBufferB.SetData(boidsArray); // Initialize both safely
+            boidsBufferB.SetData(boidsArray); 
 
-            // 2. Spatial Grid Buffers
+            // 2. INIT ATTRACTORS (32-byte stride alignment!)
+            attractorDataArray = new AttractorData[maxAttractors];
+            previousAttractorPositions = new Vector3[maxAttractors]; 
+            attractorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxAttractors, 32);
+
+            // 3. INIT SPATIAL GRID
             int totalCells = gridSize * gridSize * gridSize;
             gridOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, totalCells, sizeof(int));
             sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, sizeof(uint) * 2);
 
-            // 3. Obstacle & Predator Buffers
+            // 4. INIT OBSTACLES & PREDATORS
             obstaclesArray = new Obstacle[maxObstacles];
             obstaclesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxObstacles, 16);
             predatorDataArray = new PredatorData[maxPredators];
             predatorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxPredators, 16);
 
-            // 4. Static Bindings (Buffers that don't swap)
-            boidsCompute.SetBuffer(clearGridKernel, "gridOffsets", gridOffsetsBuffer);
-            boidsCompute.SetBuffer(populateHashesKernel, "SortBuffer", sortBuffer);
+            int resolution = 100; // O(K) space complexity
+            SplineSampleData[] bakedSpline = new SplineSampleData[resolution];
+            float length = splineContainer.CalculateLength();
+
+            for (int i = 0; i < resolution; i++)
+            {
+                float t = i / (float)(resolution - 1);
+                bakedSpline[i].position = splineContainer.EvaluatePosition(t);
+                bakedSpline[i].tangent = ((Vector3)splineContainer.EvaluateTangent(t)).normalized; 
+                bakedSpline[i].width = 10f; // River width
+            }
+
+// Push to GPU
+            splineBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, resolution, 28); 
+            splineBuffer.SetData(bakedSpline);
+
+            boidsCompute.SetBuffer(splineFlowKernel, "splineBuffer", splineBuffer);
+
+// Pass the required globals
+            boidsCompute.SetInt("splineResolution", resolution);
+            boidsCompute.SetFloat("splineLength", length);
+    
+            // Note: You must also bind Read/Write buffers for the new kernel!
+            boidsCompute.SetBuffer(splineFlowKernel, "gridOffsets", gridOffsetsBuffer);
+            boidsCompute.SetBuffer(splineFlowKernel, "SortBuffer", sortBuffer);
             boidsCompute.SetBuffer(buildOffsetsKernel, "SortBuffer", sortBuffer);
             boidsCompute.SetBuffer(buildOffsetsKernel, "gridOffsets", gridOffsetsBuffer);
             boidsCompute.SetBuffer(csMainKernel, "gridOffsets", gridOffsetsBuffer);
@@ -193,19 +225,49 @@ namespace TechArtPlayground
             boidsCompute.SetBuffer(csMainKernel, AttractorsBuffer, attractorsBuffer);
             
             
+            
+            // 1. ClearGrid needs the gridOffsets buffer
+            boidsCompute.SetBuffer(clearGridKernel, "gridOffsets", gridOffsetsBuffer);
 
-            // 5. Args Buffer
+// 2. PopulateHashes needs the sort buffer
+            boidsCompute.SetBuffer(populateHashesKernel, "SortBuffer", sortBuffer);
+
+// 3. BuildGridOffsets needs both
+            boidsCompute.SetBuffer(buildOffsetsKernel, "SortBuffer", sortBuffer);
+            boidsCompute.SetBuffer(buildOffsetsKernel, "gridOffsets", gridOffsetsBuffer);
+
+            int[] kernelsToBind = { csMainKernel, splineFlowKernel };
+
+            foreach (int k in kernelsToBind)
+            {
+                boidsCompute.SetBuffer(k, "gridOffsets", gridOffsetsBuffer);
+                boidsCompute.SetBuffer(k, "SortBuffer", sortBuffer);
+                boidsCompute.SetBuffer(k, "obstaclesBuffer", obstaclesBuffer);
+                boidsCompute.SetBuffer(k, "predatorsBuffer", predatorsBuffer);
+                boidsCompute.SetBuffer(k, "attractorsBuffer", attractorsBuffer);
+
+            }
+            
+            boidsCompute.SetBuffer(splineFlowKernel, "obstaclesBuffer", obstaclesBuffer);
+            boidsCompute.SetBuffer(splineFlowKernel, "predatorsBuffer", predatorsBuffer);
+
+// 5. ReorderBoids needs the sort buffer
+            boidsCompute.SetBuffer(reorderBoidsKernel, "SortBuffer", sortBuffer);
+
+            predatorsBuffer.SetData(predatorDataArray, 0, 0, activePredators.Count);
+            boidsCompute.SetInt(NumPredators, activePredators.Count);
+            lastPredatorCount = activePredators.Count;
+
+            // 6. SETUP DRAW ARGS
             uint[] args = new uint[5] { fishMesh.GetIndexCount(0), (uint)numBoids, 0, 0, 0 };
             argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, args.Length * sizeof(uint));
             argsBuffer.SetData(args);
             
-            boidsCompute.SetFloat(CellSize, cellSize);
-            boidsCompute.SetInt(GridSize, gridSize);
+            // Push static properties exactly once to save PCIe bus bandwidth
+            PushStaticGPUProperties();
+            
             boidsCompute.SetInt(NumBoids, numBoids);
             boidsCompute.SetInt(PaddedCount, paddedCount);
-            boidsCompute.SetFloat(SightRadius, sightRadius);
-            boidsCompute.SetFloat(FloorY, floorY);
-            boidsCompute.SetFloat(AvoidanceMargin, floorAvoidanceMargin);
 
             UpdateObstacles();
 
@@ -213,10 +275,41 @@ namespace TechArtPlayground
             nextBuffer = boidsBufferB;
         }
 
+        /// <summary>
+        /// Pushes variables that rarely change to the GPU. 
+        /// Called on Start and whenever Inspector values change.
+        /// </summary>
+        public void PushStaticGPUProperties()
+        {
+            if (boidsCompute == null) return;
+
+            boidsCompute.SetFloat(Speed, speed);
+            boidsCompute.SetFloat(TargetWeight, targetWeight);
+            boidsCompute.SetFloat(SwirlStrength, swirlStrength);
+            boidsCompute.SetFloat(ArrivalRadiusSq, arrivalRadius * arrivalRadius);
+            boidsCompute.SetFloat(ArrivalMinSpeed, arrivalMinSpeed);
+            boidsCompute.SetFloat(SingularitySoften, singularitySoften);
+            
+            boidsCompute.SetFloat(CellSize, cellSize);
+            boidsCompute.SetInt(GridSize, gridSize);
+            boidsCompute.SetFloat(SightRadius, sightRadius);
+            boidsCompute.SetFloat(FloorY, floorY);
+            boidsCompute.SetFloat(AvoidanceMargin, floorAvoidanceMargin);
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // Allows real-time inspector editing without pushing data every single frame
+            if (Application.isPlaying) PushStaticGPUProperties();
+        }
+#endif
+
         private void Update()
         {
             frameCount++;
 
+            // --- 1. OBSTACLE SCAN ---
             obstacleScanTimer += Time.deltaTime;
             if (obstacleScanTimer >= OBSTACLE_SCAN_RATE)
             {
@@ -224,85 +317,111 @@ namespace TechArtPlayground
                 UpdateObstacles();
             }
 
-            // --- 1. SET GLOBALS ---
-            float dynamicSeparation = Mathf.Max(0.1f,
-                separationWeight + Mathf.Sin(Time.time * separationPulseSpeed) * separationPulseAmount);
-
-            // DYNAMIC BINDINGS ONLY
+            // --- 2. DYNAMIC GLOBALS ---
             boidsCompute.SetFloat(DeltaTime, Time.deltaTime);
             boidsCompute.SetFloat(Time1, Time.time);
-            boidsCompute.SetFloat(Speed, speed);
+            
+            float dynamicSeparation = Mathf.Max(0.1f, separationWeight + Mathf.Sin(Time.time * separationPulseSpeed) * separationPulseAmount);
             boidsCompute.SetFloat(SeparationWeight, dynamicSeparation);
-            boidsCompute.SetVector(TargetPosition, transform.position);
-            boidsCompute.SetFloat(TargetWeight, targetWeight);
-            boidsCompute.SetFloat(SwirlStrength, swirlStrength);
-// PERFORMANCE: We square the radius on the CPU once, so the GPU doesn't do it 10,000 times per frame
-            boidsCompute.SetFloat(ArrivalRadiusSq, arrivalRadius * arrivalRadius); 
-            boidsCompute.SetFloat(ArrivalMinSpeed, arrivalMinSpeed);
-            boidsCompute.SetFloat(SingularitySoften, singularitySoften);
 
-            int count = activePredators.Count;
-            for (int i = 0; i < count; i++)
+            if (transform.hasChanged)
             {
-                predatorDataArray[i].position = activePredators[i].transform.position;
+                boidsCompute.SetVector(TargetPosition, transform.position);
+                transform.hasChanged = false;
+            }
+
+            // --- 3. PREDATORS UPDATE (Dirty Flag Optimization) ---
+            int currentPredatorCount = activePredators.Count;
+            bool predatorsDirty = currentPredatorCount != lastPredatorCount;
+
+            for (int i = 0; i < currentPredatorCount; i++)
+            {
+                Transform predTransform = activePredators[i].transform;
+                if (predTransform.hasChanged)
+                {
+                    predatorsDirty = true;
+                    predatorDataArray[i].position = predTransform.position;
+                    // Do not reset hasChanged in case other scripts rely on it
+                }
                 predatorDataArray[i].radiusSq = Mathf.Pow(activePredators[i].panicRadius, 2);
             }
 
-            predatorsBuffer.SetData(predatorDataArray, 0, 0, count);
-            boidsCompute.SetInt(NumPredators, count);
+            if (predatorsDirty)
+            {
+                predatorsBuffer.SetData(predatorDataArray, 0, 0, currentPredatorCount);
+                boidsCompute.SetInt(NumPredators, currentPredatorCount);
+                lastPredatorCount = currentPredatorCount;
+            }
 
+            // --- 4. ATTRACTORS UPDATE (Dirty Flag Optimization) ---
+            int currentAttractorCount = Mathf.Min(activeAttractors.Count, maxAttractors);
+            bool attractorsDirty = currentAttractorCount != lastAttractorCount;
+
+            for (int i = 0; i < currentAttractorCount; i++)
+            {
+                BoidAttractor attr = activeAttractors[i];
+                Transform attrTransform = attr.transform;
+                Vector3 currentPos = attrTransform.position;
+
+                // Update if moving OR if velocity hasn't settled to 0 yet
+                if (attrTransform.hasChanged || attractorDataArray[i].velocity.sqrMagnitude > 0.0001f)
+                {
+                    attractorsDirty = true;
+                    Vector3 velocity = (currentPos - previousAttractorPositions[i]) / Time.deltaTime;
+                    previousAttractorPositions[i] = currentPos;
+
+                    attractorDataArray[i].position = currentPos;
+                    attractorDataArray[i].velocity = velocity;
+                    attrTransform.hasChanged = false; // Reset to catch the next movement
+                }
+                
+                attractorDataArray[i].weight = attr.weight * globalAttractorWeight;
+                attractorDataArray[i].padding = 0f;
+            }
+
+            if (attractorsDirty && currentAttractorCount > 0)
+            {
+                attractorsBuffer.SetData(attractorDataArray, 0, 0, currentAttractorCount);
+                boidsCompute.SetInt(NumAttractors, currentAttractorCount);
+                lastAttractorCount = currentAttractorCount;
+            }
+
+            // Thread Group calculations
             int totalCells = gridSize * gridSize * gridSize;
             int gridThreadGroups = (totalCells + 63) / 64;
             int boidThreadGroups = (numBoids + 63) / 64;
             int paddedThreadGroups = (paddedCount + 63) / 64;
 
-            int activeAttractorsCount = Mathf.Min(attractorTransforms.Count, maxAttractors);
-            for (int i = 0; i < activeAttractorsCount; i++)
-                if (attractorTransforms[i] is not null)
-                {
-                    attractorDataArray[i].position = attractorTransforms[i].position;
-                    attractorDataArray[i].weight = globalAttractorWeight;
-                }
-
-            // Only upload to GPU if we have attractors
-            if (activeAttractorsCount > 0) attractorsBuffer.SetData(attractorDataArray, 0, 0, activeAttractorsCount);
-            boidsCompute.SetInt(NumAttractors, activeAttractorsCount);
-
-            // --- 2. THE SORTING PASS (Runs every N frames) ---
+            // --- 5. THE SORTING PASS (Runs every N frames) ---
             if (frameCount % sortFrequency == 0)
             {
                 boidsCompute.Dispatch(clearGridKernel, gridThreadGroups, 1, 1);
 
-                // Populate hashes from our current state
                 boidsCompute.SetBuffer(populateHashesKernel, ReadBoidsBuffer, currentBuffer);
                 boidsCompute.Dispatch(populateHashesKernel, paddedThreadGroups, 1, 1);
 
                 GPUSort.Sort(bitonicSortCompute, sortBuffer, paddedCount);
 
-                // Physically reorder 'currentBuffer' into 'nextBuffer'
                 boidsCompute.SetBuffer(reorderBoidsKernel, ReadBoidsBuffer, currentBuffer);
                 boidsCompute.SetBuffer(reorderBoidsKernel, WriteBoidsBuffer, nextBuffer);
                 boidsCompute.Dispatch(reorderBoidsKernel, boidThreadGroups, 1, 1);
 
                 boidsCompute.Dispatch(buildOffsetsKernel, boidThreadGroups, 1, 1);
 
-                // CRITICAL FIX: 'nextBuffer' is now perfectly sorted! 'currentBuffer' is a mess.
-                // We swap them manually so CSMain reads the cleanly sorted data.
+                // Swap pointers so CSMain reads the sorted buffer
                 (currentBuffer, nextBuffer) = (nextBuffer, currentBuffer);
             }
 
-            // --- 3. THE PHYSICS PASS (Runs EVERY frame) ---
-            // Read the current state, calculate physics, write into the empty scratchpad (nextBuffer)
-            boidsCompute.SetBuffer(csMainKernel, ReadBoidsBuffer, currentBuffer);
-            boidsCompute.SetBuffer(csMainKernel, WriteBoidsBuffer, nextBuffer);
-            boidsCompute.Dispatch(csMainKernel, boidThreadGroups, 1, 1);
+            // --- 6. THE PHYSICS PASS (Runs EVERY frame) ---
+            int activeKernel = useSplineFlow ? splineFlowKernel : csMainKernel;
 
-            // --- 4. PREPARE FOR RENDER ---
-            // nextBuffer now contains the newly calculated frame. 
-            // Swap references so nextBuffer becomes currentBuffer for rendering and the next frame!
+            boidsCompute.SetBuffer(activeKernel, ReadBoidsBuffer, currentBuffer);
+            boidsCompute.SetBuffer(activeKernel, WriteBoidsBuffer, nextBuffer);
+            boidsCompute.Dispatch(activeKernel, boidThreadGroups, 1, 1);
+
+            // --- 7. PREPARE FOR RENDER ---
             (currentBuffer, nextBuffer) = (nextBuffer, currentBuffer);
 
-            // Render the final calculated state
             fishMaterial.SetBuffer(BoidsBuffer, currentBuffer);
             Graphics.DrawMeshInstancedIndirect(fishMesh, 0, fishMaterial,
                 new Bounds(transform.position, Vector3.one * 1000f), argsBuffer);
@@ -318,8 +437,10 @@ namespace TechArtPlayground
             sortBuffer?.Release();
             predatorsBuffer?.Release();
             attractorsBuffer?.Release();
+            splineBuffer?.Release();
         }
 
+        // --- REGISTRY METHODS ---
         public void RegisterPredator(BoidPredator predator)
         {
             if (!activePredators.Contains(predator) && activePredators.Count < maxPredators)
@@ -331,6 +452,17 @@ namespace TechArtPlayground
             activePredators.Remove(predator);
         }
 
+        public void RegisterAttractor(BoidAttractor attractor)
+        {
+            if (!activeAttractors.Contains(attractor) && activeAttractors.Count < maxAttractors)
+                activeAttractors.Add(attractor);
+        }
+
+        public void UnregisterAttractor(BoidAttractor attractor)
+        {
+            activeAttractors.Remove(attractor);
+        }
+        
         private void UpdateObstacles()
         {
             int size = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, collBuffer, obstacleLayer);
@@ -345,22 +477,32 @@ namespace TechArtPlayground
             boidsCompute.SetInt(NumObstacles, obstacleCount);
         }
 
+        // --- DATA STRUCTURES ---
         private struct AttractorData
         {
             public Vector3 position;
             public float weight;
+            public Vector3 velocity; 
+            public float padding; // Critical for 32-byte GPU alignment
         }
 
         private struct PredatorData
         {
             public Vector3 position;
-            public float radiusSq; // Changed from radius
+            public float radiusSq; 
         }
 
         private struct Obstacle
         {
             public Vector3 position;
-            public float radiusSq; // Changed from radius
+            public float radiusSq; 
+        }
+        
+        public struct SplineSampleData
+        {
+            public Vector3 position;
+            public Vector3 tangent;
+            public float width; // Optional: allows the current to widen or narrow
         }
 
         private struct Boid
@@ -372,6 +514,7 @@ namespace TechArtPlayground
             public float currentSpeed;
             public float roll;
             public float flapPhase;
+            public float splineT;
         }
     }
 }

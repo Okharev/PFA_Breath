@@ -10,6 +10,7 @@ struct Boid
     float currentSpeed;
     float roll;
     float flapPhase;
+    float splineT;
 };
 
 StructuredBuffer<Boid> boidsBuffer;
