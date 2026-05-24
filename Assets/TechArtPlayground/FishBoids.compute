@@ -15,24 +15,32 @@ struct Boid
     float flapPhase;
 };
 
+struct Attractor
+{
+    float3 position;
+    float weight;
+};
+
 struct Obstacle
 {
     float3 position;
-    float radius;
+    float radiusSq;
 };
 
-// The new Key-Value pair for sorting
+struct Predator
+{
+    float3 position;
+    float radiusSq;
+};
+
 struct BoidHashPair
 {
     uint boidIndex;
     uint cellHash;
 };
 
-struct Predator
-{
-    float3 position;
-    float radius;
-};
+StructuredBuffer<Attractor> attractorsBuffer;
+int numAttractors;
 
 StructuredBuffer<Predator> predatorsBuffer;
 int numPredators;
@@ -41,13 +49,13 @@ StructuredBuffer<Boid> ReadBoidsBuffer;
 RWStructuredBuffer<Boid> WriteBoidsBuffer;
 
 StructuredBuffer<Obstacle> obstaclesBuffer;
-RWStructuredBuffer<int> gridOffsets; // Stores the START index in the sorted array for a given cell
-RWStructuredBuffer<BoidHashPair> SortBuffer; // The buffer we will sort!
+RWStructuredBuffer<int> gridOffsets;
+RWStructuredBuffer<BoidHashPair> SortBuffer;
 
 float cellSize;
 int gridSize;
 int numBoids;
-int paddedCount; // Needed for Power of 2 sorting
+int paddedCount;
 int numObstacles;
 float deltaTime;
 float speed;
@@ -60,8 +68,20 @@ float predatorRadius;
 float time;
 float floorY;
 float avoidanceMargin;
+float swirlStrength;
+float arrivalRadiusSq;
+float arrivalMinSpeed;
+float singularitySoften;
 
-// Fast Wrap to avoid expensive modulo operations
+// --- UTILITY FUNCTIONS ---
+
+// Safe Normalization to prevent NaN explosions
+float3 SafeNormalize(float3 v, float3 fallback)
+{
+    float len = length(v);
+    return len > 0.00001f ? (v / len) : fallback;
+}
+
 int FastWrap(int val, int maxVal)
 {
     int res = val % maxVal;
@@ -82,16 +102,16 @@ int GetCellHash(int3 cell)
     return cell.x + (cell.y * gridSize) + (cell.z * gridSize * gridSize);
 }
 
-// --- KERNEL 1: Clear the grid ---
+// --- KERNELS ---
+
 [numthreads(64, 1, 1)]
 void ClearGrid(uint3 id : SV_DispatchThreadID)
 {
     int totalCells = gridSize * gridSize * gridSize;
     if (id.x >= (uint)totalCells) return;
-    gridOffsets[id.x] = -1; // -1 means empty
+    gridOffsets[id.x] = -1;
 }
 
-// --- KERNEL 2: Assign Hashes to Boids ---
 [numthreads(64, 1, 1)]
 void PopulateHashes(uint3 id : SV_DispatchThreadID)
 {
@@ -99,57 +119,45 @@ void PopulateHashes(uint3 id : SV_DispatchThreadID)
 
     if (id.x < (uint)numBoids)
     {
-        // CHANGED: Now reading from the stable ReadBoidsBuffer
         int3 cellCoords = GetCellCoordinates(ReadBoidsBuffer[id.x].position);
         SortBuffer[id.x].boidIndex = id.x;
         SortBuffer[id.x].cellHash = (uint)GetCellHash(cellCoords);
     }
     else
     {
-        // Pad the rest of the array with max values so they sort to the very end
         SortBuffer[id.x].boidIndex = id.x;
         SortBuffer[id.x].cellHash = 0xFFFFFFFF;
     }
 }
 
-// --- KERNEL 3: Build Offsets after Sorting ---
 [numthreads(64, 1, 1)]
 void BuildGridOffsets(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)numBoids) return;
-
     uint currentHash = SortBuffer[id.x].cellHash;
 
-    // If we are the very first element, or our hash is different from the one to our left...
     if (id.x == 0 || currentHash != SortBuffer[id.x - 1].cellHash)
     {
-        // ...we are the start of a new cell block!
         gridOffsets[currentHash] = id.x;
     }
 }
-
 
 [numthreads(64, 1, 1)]
 void ReorderBoids(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)numBoids) return;
-
-    // Read the scattered index from the sort buffer
     uint originalIndex = SortBuffer[id.x].boidIndex;
-
-    // Write sequentially to the new contiguous memory buffer
     WriteBoidsBuffer[id.x] = ReadBoidsBuffer[originalIndex];
 }
 
-// --- KERNEL 4: The Brains (Optimized) ---
+// --- MAIN PHYSICS KERNEL ---
+
 [numthreads(64, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)numBoids) return;
 
-    // 1. Read from the clean, stable Read buffer
     Boid boid = ReadBoidsBuffer[id.x];
-
 
     float3 separation = float3(0, 0, 0);
     float3 alignment = float3(0, 0, 0);
@@ -157,15 +165,25 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     int boidsInRange = 0;
 
     int3 myCell = GetCellCoordinates(boid.position);
-    float sightRadiusSq = sightRadius * sightRadius; // Optimization: Squared Distance
+    float sightRadiusSq = sightRadius * sightRadius;
 
-    for (int x = -1; x <= 1; x++)
+    // Calculate the center of the current cell in world space
+    float3 cellCenter = (myCell * cellSize) + (cellSize * 0.5f);
+
+    // step() returns 0 if position < center, 1 if position >= center. 
+    // Multiplying by 2 and subtracting 1 gives us a directional offset of -1 or 1 for each axis.
+    int3 offset = int3(step(cellCenter, boid.position) * 2.0f - 1.0f);
+
+    // We now only iterate 2 times per axis (0 and 1), checking exactly 8 cells total.
+    for (int x = 0; x <= 1; x++)
     {
-        for (int y = -1; y <= 1; y++)
+        for (int y = 0; y <= 1; y++)
         {
-            for (int z = -1; z <= 1; z++)
+            for (int z = 0; z <= 1; z++)
             {
-                int3 neighborCell = myCell + int3(x, y, z);
+                // Apply the offset based on which corner of the cell the boid is in
+                int3 neighborCell = myCell + int3(x * offset.x, y * offset.y, z * offset.z);
+
                 neighborCell.x = FastWrap(neighborCell.x, gridSize);
                 neighborCell.y = FastWrap(neighborCell.y, gridSize);
                 neighborCell.z = FastWrap(neighborCell.z, gridSize);
@@ -175,24 +193,25 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
                 if (startIndex != -1)
                 {
-                    // Linear memory read achieving 100% L1 cache utilization!
                     for (uint i = (uint)startIndex; i < (uint)numBoids; i++)
                     {
                         if (SortBuffer[i].cellHash != (uint)neighborHash) break;
 
-                        // NO MORE SCATTERED READS! 
-                        // Because we physically reordered the buffer, 'i' directly points to the correct Boid.
                         if (i != id.x)
                         {
-                            Boid otherBoid = ReadBoidsBuffer[i]; // <--- This line is now blazingly fast
-
+                            Boid otherBoid = ReadBoidsBuffer[i];
                             float3 diff = boid.position - otherBoid.position;
                             float distSq = dot(diff, diff);
 
                             if (distSq < sightRadiusSq && distSq > 0.001f)
                             {
+                                float alignmentSimilarity = dot(boid.direction, otherBoid.direction);
+                                if (alignmentSimilarity > 0.5f)
+                                {
+                                    alignment += otherBoid.direction;
+                                }
+
                                 separation += diff / distSq;
-                                alignment += otherBoid.direction;
                                 cohesion += otherBoid.position;
                                 boidsInRange++;
                             }
@@ -205,35 +224,32 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
     if (boidsInRange > 0)
     {
-        alignment = normalize(alignment / boidsInRange);
-        cohesion = normalize((cohesion / boidsInRange) - boid.position);
+        // SAFE NORMALIZATION to prevent NaN
+        alignment = SafeNormalize(alignment / boidsInRange, boid.direction);
+        cohesion = SafeNormalize((cohesion / boidsInRange) - boid.position, float3(0, 0, 0));
     }
 
-    float3 directionToTarget = normalize(targetPosition - boid.position);
-    float3 organicNoise = float3(sin(time * 2.0f + boid.position.z), cos(time * 1.5f + boid.position.x),
-                                 sin(time * 2.0f + boid.position.y)) * 0.2f;
+    float phase = time * 2.0f + boid.position.z * 0.1f;
+    float s, c;
+    sincos(phase, s, c); // Calculates sine and cosine simultaneously
+    // We reuse s and c to create a cheap 3D wiggle without extra trig calls
+    float3 organicNoise = float3(s, c, s * c) * 0.2f;
 
     float3 fleeDirection = float3(0, 0, 0);
     float targetSpeed = speed;
 
-    // Loop through all active predators
     for (int p = 0; p < numPredators; p++)
     {
         Predator pred = predatorsBuffer[p];
         float3 predDiff = boid.position - pred.position;
         float predDistSq = dot(predDiff, predDiff);
-
-        // Optimization: Compare squared distances
-        if (predDistSq < (pred.radius * pred.radius))
+        if (predDistSq < pred.radiusSq && predDistSq > 0.001f) // Early Exit + Division by zero safety
         {
-            // If the boid is very close to the predator, use a stronger push
-            // We avoid normalize() by scaling the diff directly by the distance inverse
             fleeDirection += predDiff * (5.0f / predDistSq);
             targetSpeed = max(targetSpeed, speed * 3.0f);
         }
     }
 
-    // Ensure we normalize the final flee direction if multiple predators are nearby
     if (length(fleeDirection) > 0.01f)
     {
         fleeDirection = normalize(fleeDirection) * 5.0f;
@@ -244,12 +260,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         Obstacle obs = obstaclesBuffer[j];
         float3 obsDiff = boid.position - obs.position;
-        float obsDistSq = dot(obsDiff, obsDiff);
-        float avoidRad = obs.radius + 1.0f;
 
-        if (obsDistSq < (avoidRad * avoidRad))
+        float obsDistSq = dot(obsDiff, obsDiff);
+        if (obsDistSq < obs.radiusSq && obsDistSq > 0.001f) // Early Exit + Division by zero safety
         {
-            // No sqrt, no normalize! Just fast floating point math.
             obstacleAvoidance += obsDiff * (10.0f / obsDistSq);
             targetSpeed = max(targetSpeed, speed * 1.5f);
         }
@@ -262,22 +276,79 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         targetSpeed = max(targetSpeed, speed * 1.5f);
     }
 
-    float3 targetDir = alignment + (cohesion * 1.5f) + (separation * separationWeight) + (directionToTarget *
-        targetWeight) + organicNoise + fleeDirection + obstacleAvoidance + boundaryAvoidance;
-    float3 normalizedTargetDir = normalize(targetDir);
+    // --- IDW Attractor Logic ---
+    float3 groupDirection = float3(0, 0, 0);
+    float totalWeight = 0.0001f;
+    float speedMultiplier = 1.0f; 
+
+    for(int a = 0; a < numAttractors; a++)
+    {
+        Attractor attr = attractorsBuffer[a];
+        float3 toAttractor = attr.position - boid.position;
+        float distSq = dot(toAttractor, toAttractor);
+        
+        float3 dirToAttractor = SafeNormalize(toAttractor, boid.direction);
+        
+        // OPTIMIZED SPHERICAL SWIRL (Vector Rejection)
+        // We reject the component of the boid's direction that points towards the attractor.
+        // This leaves us with a vector perfectly perpendicular to the attractor, preserving the boid's approach plane.
+        float3 tangent = boid.direction - (dot(boid.direction, dirToAttractor) * dirToAttractor);
+        
+        // Safety fallback: If the boid is flying dead-straight into the center, 
+        // the tangent length will be 0. We nudge it using an arbitrary axis.
+        if (dot(tangent, tangent) < 0.0001f)
+        {
+            tangent = cross(float3(0, 1, 0), dirToAttractor);
+        }
+        tangent = normalize(tangent);
+        
+        // Swirl factor scales based on the dynamic arrival radius
+        float swirlFactor = saturate(1.0f - (distSq / arrivalRadiusSq));
+        
+        // Blend seeking the center with swirling based on the exposed swirlStrength
+        float3 finalPush = SafeNormalize(lerp(dirToAttractor, tangent, swirlFactor * swirlStrength), boid.direction);
+        
+        // Use the exposed singularitySoften variable
+        float weight = attr.weight / (distSq + singularitySoften);
+        groupDirection += finalPush * weight;
+        totalWeight += weight;
+
+        // ARRIVAL BEHAVIOR
+        if (distSq < arrivalRadiusSq) 
+        {
+            float slowDown = lerp(arrivalMinSpeed, 1.0f, distSq / arrivalRadiusSq);
+            speedMultiplier = min(speedMultiplier, slowDown);
+        }
+    }
+
+    // Average the cumulative influence
+    float3 directionToTarget = groupDirection / totalWeight;
+
+    if (totalWeight < 0.001f)
+    {
+        directionToTarget = SafeNormalize(targetPosition - boid.position, boid.direction) * targetWeight;
+    }
+    else 
+    {
+        // Apply the arrival brakes if we are being influenced by an attractor
+        targetSpeed *= speedMultiplier; 
+    }
+
+    float3 targetDir = alignment + (cohesion * 1.5f) + (separation * separationWeight) + directionToTarget +
+        organicNoise + fleeDirection + obstacleAvoidance + boundaryAvoidance;
+
+    // FINAL SAFE NORMALIZATION
+    float3 normalizedTargetDir = SafeNormalize(targetDir, boid.direction);
     float turnStrength = cross(boid.direction, normalizedTargetDir).y;
 
     boid.roll = lerp(boid.roll, turnStrength * 3.0f, deltaTime * 4.0f);
     boid.direction = lerp(boid.direction, normalizedTargetDir, deltaTime * 3.0f);
     boid.currentSpeed = lerp(boid.currentSpeed, targetSpeed, deltaTime * 5.0f);
+
     boid.position += boid.direction * boid.currentSpeed * deltaTime;
 
-    // 2. Calculate a safe animation speed (capped at 1.8x normal speed)
     float animSpeedMultiplier = clamp(boid.currentSpeed / speed, 0.2f, 1.8f);
+    boid.flapPhase += animSpeedMultiplier * deltaTime * 10.0f;
 
-    // 3. ACCUMULATE the phase purely based on deltaTime. No more time teleportation!
-    boid.flapPhase += animSpeedMultiplier * deltaTime * 10.0f; // 10.0f is a base speed scaler
-
-    // Save back to buffer
     WriteBoidsBuffer[id.x] = boid;
 }
