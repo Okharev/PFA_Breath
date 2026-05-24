@@ -1213,9 +1213,9 @@ MonoBehaviour:
   maxPredators: 16
   boidsCompute: {fileID: 7200000, guid: cceb64b1de6972d41b4d389cac87bddb, type: 3}
   bitonicSortCompute: {fileID: 7200000, guid: eca7a9d318d745f8afaccdfc8a1b0780, type: 3}
-  fishMesh: {fileID: 4300000, guid: 1cfa4408f005b994a91c73b71f54aeaf, type: 2}
+  fishMesh: {fileID: -1618843694119852381, guid: 54df58f7fb678824587213c36c0c46ab, type: 3}
   fishMaterial: {fileID: 2100000, guid: fb4a11342c604c14ba3bb1b737785176, type: 2}
-  numBoids: 2000
+  numBoids: 10000
   spawnRadius: 80
   speed: 8
   sightRadius: 3
@@ -1237,7 +1237,7 @@ MonoBehaviour:
     m_Bits: 128
   maxObstacles: 50
   scanRadius: 50
-  useSplineFlow: 1
+  useSplineFlow: 0
   globalAttractorWeight: 1000
   swirlStrength: 0.9
   arrivalRadius: 20
