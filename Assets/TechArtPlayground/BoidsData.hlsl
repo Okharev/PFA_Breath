@@ -9,6 +9,7 @@ struct Boid
     float size;
     float currentSpeed;
     float roll;
+    float flapPhase;
 };
 
 StructuredBuffer<Boid> boidsBuffer;
@@ -39,15 +40,15 @@ void GetCubePosition_float(float instanceID_input, float3 objectPosition, float 
     float3 rolledUp = up * c - right * s;
     // --------------------------------------
     float3 scaledPos = objectPosition * b.size;
-    float randomOffset = instanceID_input * 12.345;
-
-    // --- CORRECTION : Adoucissement de l'animation en panique ---
-    // La fonction sqrt() courbe la progression. Le "* 5.0" sert à garder le même rythme de base qu'avant.
-    float safeAnimSpeed = sqrt(b.currentSpeed * 5.0);
     
-    // On remplace 'b.currentSpeed' par notre nouvelle 'safeAnimSpeed'
-    float wag = sin(time * safeAnimSpeed * flapSpeed + scaledPos.z * 5.0 + randomOffset) * (scaledPos.z < 0 ? -scaledPos.z * flapAmplitude : 0.0);
-    scaledPos.x += wag; 
+    // --- NOUVEAU : Pure Smooth Animation ---
+    // We completely drop the "time *" logic and use our safe, GPU-integrated phase.
+    // The flapSpeed from Shader Graph is multiplied directly against the phase.
+    
+    float wag = sin(b.flapPhase * flapSpeed + scaledPos.z * 5.0) * (scaledPos.z < 0 ? -scaledPos.z * flapAmplitude : 0.0);
+    
+    scaledPos.x += wag;
+    // -------------------------------------------------------------
     // -------------------------------------------------------------
 
     float3 rotatedPos = rolledRight * scaledPos.x + rolledUp * scaledPos.y + boidDir * scaledPos.z;

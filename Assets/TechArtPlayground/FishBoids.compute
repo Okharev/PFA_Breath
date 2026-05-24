@@ -1,5 +1,6 @@
 #pragma kernel ClearGrid
-#pragma kernel PopulateGrid
+#pragma kernel PopulateHashes
+#pragma kernel BuildGridOffsets
 #pragma kernel CSMain
 
 struct Boid
@@ -10,28 +11,27 @@ struct Boid
     float size;
     float currentSpeed;
     float roll;
+    float flapPhase;
 };
 
-struct Obstacle
+struct Obstacle { float3 position; float radius; };
+
+// The new Key-Value pair for sorting
+struct BoidHashPair
 {
-    float3 position;
-    float radius;
+    uint boidIndex;
+    uint cellHash;
 };
 
 RWStructuredBuffer<Boid> boidsBuffer;
 StructuredBuffer<Obstacle> obstaclesBuffer;
+RWStructuredBuffer<int> gridOffsets;     // Stores the START index in the sorted array for a given cell
+RWStructuredBuffer<BoidHashPair> SortBuffer; // The buffer we will sort!
 
-// --- NOUVEAU : Buffers pour le Tri Spatial ---
-// gridOffsets stocke l'ID du PREMIER poisson dans un casier
-RWStructuredBuffer<int> gridOffsets; 
-// boidOffsets stocke l'ID du poisson SUIVANT dans le même casier (Création d'une chaîne)
-RWStructuredBuffer<int> boidOffsets; 
-
-// Paramètres de la grille spatiale
 float cellSize;
-int gridSize; // On fera une grille cubique (ex: 64x64x64)
-
+int gridSize;
 int numBoids;
+int paddedCount; // Needed for Power of 2 sorting
 int numObstacles;
 float deltaTime;
 float speed;
@@ -45,57 +45,78 @@ float time;
 float floorY;
 float avoidanceMargin;
 
-// --- FONCTIONS MATHEMATIQUES POUR LA GRILLE ---
-// Convertit une position 3D dans le monde en coordonnées de casier 3D
+// Fast Wrap to avoid expensive modulo operations
+int FastWrap(int val, int maxVal)
+{
+    int res = val % maxVal;
+    return res < 0 ? res + maxVal : res;
+}
+
 int3 GetCellCoordinates(float3 pos)
 {
     int3 cell = int3(floor(pos / cellSize));
-    // Modulo mathématique pour créer un monde infini (Wrap around) et éviter les crashs !
-    cell.x = (cell.x % gridSize + gridSize) % gridSize;
-    cell.y = (cell.y % gridSize + gridSize) % gridSize;
-    cell.z = (cell.z % gridSize + gridSize) % gridSize;
+    cell.x = FastWrap(cell.x, gridSize);
+    cell.y = FastWrap(cell.y, gridSize);
+    cell.z = FastWrap(cell.z, gridSize);
     return cell;
 }
 
-// Convertit des coordonnées de casier 3D en un index 1D (pour lire notre tableau)
 int GetCellHash(int3 cell)
 {
     return cell.x + (cell.y * gridSize) + (cell.z * gridSize * gridSize);
 }
-// ----------------------------------------------
 
-// KERNEL 1 : Vider la grille à chaque nouvelle image
+// --- KERNEL 1: Clear the grid ---
 [numthreads(64, 1, 1)]
 void ClearGrid (uint3 id : SV_DispatchThreadID)
 {
     int totalCells = gridSize * gridSize * gridSize;
     if (id.x >= (uint)totalCells) return;
-    
-    // -1 signifie "Ce casier est vide"
-    gridOffsets[id.x] = -1;
+    gridOffsets[id.x] = -1; // -1 means empty
 }
 
-// KERNEL 2 : Ranger les poissons dans leurs casiers
+// --- KERNEL 2: Assign Hashes to Boids ---
 [numthreads(64, 1, 1)]
-void PopulateGrid (uint3 id : SV_DispatchThreadID)
+void PopulateHashes (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)paddedCount) return;
+
+    if (id.x < (uint)numBoids)
+    {
+        int3 cellCoords = GetCellCoordinates(boidsBuffer[id.x].position);
+        SortBuffer[id.x].boidIndex = id.x;
+        SortBuffer[id.x].cellHash = (uint)GetCellHash(cellCoords);
+    }
+    else
+    {
+        // Pad the rest of the array with max values so they sort to the very end
+        SortBuffer[id.x].boidIndex = id.x;
+        SortBuffer[id.x].cellHash = 0xFFFFFFFF; 
+    }
+}
+
+// --- KERNEL 3: Build Offsets after Sorting ---
+[numthreads(64, 1, 1)]
+void BuildGridOffsets (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)numBoids) return;
 
-    int3 cellCoords = GetCellCoordinates(boidsBuffer[id.x].position);
-    int cellHash = GetCellHash(cellCoords);
-
-    // MAGIE GPU : "InterlockedExchange" insère ce poisson en tête de liste sans bloquer les autres !
-    int originalValue;
-    InterlockedExchange(gridOffsets[cellHash], id.x, originalValue);
-    boidOffsets[id.x] = originalValue;
+    uint currentHash = SortBuffer[id.x].cellHash;
+    
+    // If we are the very first element, or our hash is different from the one to our left...
+    if (id.x == 0 || currentHash != SortBuffer[id.x - 1].cellHash)
+    {
+        // ...we are the start of a new cell block!
+        gridOffsets[currentHash] = id.x;
+    }
 }
 
-// KERNEL 3 : Le mouvement (Notre cerveau d'origine, optimisé !)
+// --- KERNEL 4: The Brains (Optimized) ---
 [numthreads(64, 1, 1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= (uint)numBoids) return;
-
+    
     Boid boid = boidsBuffer[id.x];
     
     float3 separation = float3(0, 0, 0);
@@ -104,9 +125,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     int boidsInRange = 0;
 
     int3 myCell = GetCellCoordinates(boid.position);
+    float sightRadiusSq = sightRadius * sightRadius; // Optimization: Squared Distance
 
-    // --- LA BOUCLE OPTIMISEE ---
-    // Au lieu de tester 1000 poissons, on ne teste que les 27 casiers autour de nous !
     for (int x = -1; x <= 1; x++)
     {
         for (int y = -1; y <= 1; y++)
@@ -114,42 +134,43 @@ void CSMain (uint3 id : SV_DispatchThreadID)
             for (int z = -1; z <= 1; z++)
             {
                 int3 neighborCell = myCell + int3(x, y, z);
-                // On sécurise les bords de la grille
-                neighborCell.x = (neighborCell.x % gridSize + gridSize) % gridSize;
-                neighborCell.y = (neighborCell.y % gridSize + gridSize) % gridSize;
-                neighborCell.z = (neighborCell.z % gridSize + gridSize) % gridSize;
+                neighborCell.x = FastWrap(neighborCell.x, gridSize);
+                neighborCell.y = FastWrap(neighborCell.y, gridSize);
+                neighborCell.z = FastWrap(neighborCell.z, gridSize);
                 
                 int neighborHash = GetCellHash(neighborCell);
-                int currentBoidIndex = gridOffsets[neighborHash];
+                int startIndex = gridOffsets[neighborHash];
 
-                // On lit la liste en chaîne des poissons présents dans ce casier spécifique
-                while (currentBoidIndex != -1)
+                if (startIndex != -1)
                 {
-                    if (currentBoidIndex != (int)id.x)
+                    // Linear memory read! Maximum cache hits!
+                    for (uint i = (uint)startIndex; i < (uint)numBoids; i++)
                     {
-                        Boid otherBoid = boidsBuffer[currentBoidIndex];
-                        float dist = distance(boid.position, otherBoid.position);
-
-                        if (dist < sightRadius)
+                        // If the hash changes, we've exited this cell's block. Break early.
+                        if (SortBuffer[i].cellHash != (uint)neighborHash) break;
+                        
+                        uint currentBoidIndex = SortBuffer[i].boidIndex;
+                        if (currentBoidIndex != id.x)
                         {
-                            if (dist > 0.001f)
+                            Boid otherBoid = boidsBuffer[currentBoidIndex];
+                            float3 diff = boid.position - otherBoid.position;
+                            float distSq = dot(diff, diff);
+
+                            // Optimization: Only run sqrt() if absolutely necessary
+                            if (distSq < sightRadiusSq && distSq > 0.001f)
                             {
-                                separation += (boid.position - otherBoid.position) / (dist * dist); 
+                                separation += diff / distSq;
+                                alignment += otherBoid.direction;
+                                cohesion += otherBoid.position;
+                                boidsInRange++;
                             }
-                            alignment += otherBoid.direction;
-                            cohesion += otherBoid.position;
-                            boidsInRange++;
                         }
                     }
-                    // On passe au poisson suivant dans la liste
-                    currentBoidIndex = boidOffsets[currentBoidIndex];
                 }
             }
         }
     }
-    // ----------------------------
 
-    // Le reste ne change absolument pas !
     if (boidsInRange > 0)
     {
         alignment = normalize(alignment / boidsInRange);
@@ -158,12 +179,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     float3 directionToTarget = normalize(targetPosition - boid.position);
     float3 organicNoise = float3(sin(time * 2.0f + boid.position.z), cos(time * 1.5f + boid.position.x), sin(time * 2.0f + boid.position.y)) * 0.2f;
-
+    
     float3 fleeDirection = float3(0, 0, 0);
     float targetSpeed = speed;
-    if (distance(boid.position, predatorPosition) < predatorRadius)
+    
+    float3 predDiff = boid.position - predatorPosition;
+    if (dot(predDiff, predDiff) < (predatorRadius * predatorRadius))
     {
-        fleeDirection = normalize(boid.position - predatorPosition) * 5.0f;
+        fleeDirection = normalize(predDiff) * 5.0f;
         targetSpeed = speed * 3.0f;
     }
 
@@ -171,10 +194,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     for (int j = 0; j < numObstacles; j++)
     {
         Obstacle obs = obstaclesBuffer[j];
-        float distToObstacle = distance(boid.position, obs.position);
-        if (distToObstacle < obs.radius + 1.0f)
+        float3 obsDiff = boid.position - obs.position;
+        float obsDistSq = dot(obsDiff, obsDiff);
+        float avoidRad = obs.radius + 1.0f;
+        
+        if (obsDistSq < (avoidRad * avoidRad))
         {
-            obstacleAvoidance += normalize(boid.position - obs.position) * (10.0f / distToObstacle);
+            float distToObstacle = sqrt(obsDistSq);
+            obstacleAvoidance += normalize(obsDiff) * (10.0f / distToObstacle);
             targetSpeed = max(targetSpeed, speed * 1.5f); 
         }
     }
@@ -187,22 +214,20 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
 
     float3 targetDir = alignment + (cohesion * 1.5f) + (separation * separationWeight) + (directionToTarget * targetWeight) + organicNoise + fleeDirection + obstacleAvoidance + boundaryAvoidance;
-    
-    // NOUVEAU : Calcul de l'inclinaison (Banking)
     float3 normalizedTargetDir = normalize(targetDir);
-    
-    // Le "Cross Product" (Produit Vectoriel) entre la direction actuelle et la cible.
-    // L'axe Y de ce résultat nous dit avec quelle force on tourne à gauche ou à droite !
     float turnStrength = cross(boid.direction, normalizedTargetDir).y;
     
-    // On calcule le nouveau roulis et on le lisse (lerp) pour éviter les saccades
-    // Le multiplicateur "3.0f" accentue l'angle d'inclinaison.
     boid.roll = lerp(boid.roll, turnStrength * 3.0f, deltaTime * 4.0f);
-    
-    // On applique la nouvelle direction et vitesse comme avant
     boid.direction = lerp(boid.direction, normalizedTargetDir, deltaTime * 3.0f);
     boid.currentSpeed = lerp(boid.currentSpeed, targetSpeed, deltaTime * 5.0f);
     boid.position += boid.direction * boid.currentSpeed * deltaTime;
 
+    // 2. Calculate a safe animation speed (capped at 1.8x normal speed)
+    float animSpeedMultiplier = clamp(boid.currentSpeed / speed, 0.2f, 1.8f);
+    
+    // 3. ACCUMULATE the phase purely based on deltaTime. No more time teleportation!
+    boid.flapPhase += animSpeedMultiplier * deltaTime * 10.0f; // 10.0f is a base speed scaler
+
+    // Save back to buffer
     boidsBuffer[id.x] = boid;
 }

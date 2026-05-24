@@ -4,12 +4,14 @@ namespace TechArtPlayground
 {
     public class BoidsManager : MonoBehaviour
     {
+        // Property IDs for slight performance gain over strings
         private static readonly int CellSize = Shader.PropertyToID("cellSize");
         private static readonly int GridSize = Shader.PropertyToID("gridSize");
         private static readonly int DeltaTime = Shader.PropertyToID("deltaTime");
         private static readonly int Time1 = Shader.PropertyToID("time");
         private static readonly int Speed = Shader.PropertyToID("speed");
         private static readonly int NumBoids = Shader.PropertyToID("numBoids");
+        private static readonly int PaddedCount = Shader.PropertyToID("paddedCount");
         private static readonly int SightRadius = Shader.PropertyToID("sightRadius");
         private static readonly int SeparationWeight = Shader.PropertyToID("separationWeight");
         private static readonly int TargetPosition = Shader.PropertyToID("targetPosition");
@@ -20,41 +22,42 @@ namespace TechArtPlayground
         private static readonly int PredatorPosition = Shader.PropertyToID("predatorPosition");
         private static readonly int PredatorRadius = Shader.PropertyToID("predatorRadius");
 
-        struct Boid { public Vector3 position; public Vector3 direction; public Vector3 color; public float size; public float currentSpeed; public float roll; }
+        struct Boid { public Vector3 position; public Vector3 direction; public Vector3 color; public float size; public float currentSpeed; public float roll; public float flapPhase;
+        }
         struct Obstacle { public Vector3 position; public float radius; }
 
-        [Header("Références")]
+        [Header("References")]
         public ComputeShader boidsCompute;
+        public ComputeShader bitonicSortCompute; // NOUVEAU: Add this in inspector!
         public Mesh fishMesh;
         public Material fishMaterial;
         public Transform playerTransform;
 
-        [Header("Paramètres du banc")]
-        public int numBoids = 10000; // ON AUGMENTE MASSIVEMENT LE NOMBRE !
+        [Header("Banc Parameters")]
+        public int numBoids = 10000;
+        private int paddedCount; // Power of 2 requirement
         public float spawnRadius = 40f;
         public float speed = 5f;
         public float sightRadius = 3f;
         public float separationWeight = 1.5f;
         public float targetWeight = 0.5f;
 
-        [Header("Paramètres Spatiaux (Optimisation GPU)")]
-        [Tooltip("La taille de la zone d'une cellule de la grille. Idéalement égale à ton Sight Radius.")]
+        [Header("Spatial Grid")]
         public float cellSize = 3f;
-        [Tooltip("La taille 3D de ta grille (ex: 64 = grille de 64x64x64)")]
         public int gridSize = 64; 
 
         [Header("Variations Organiques")]
         public float separationPulseSpeed = 1.0f; 
         public float separationPulseAmount = 0.8f; 
 
-        [Header("Paramètres Visuels")]
+        [Header("Visuals")]
         public Color colorA = Color.white;
         public Color colorB = Color.blue;
         public float minSize = 0.5f;
         public float maxSize = 1.5f;
         public float predatorRadius = 5f;
 
-        [Header("Limites du Monde & Décor")]
+        [Header("World Limits")]
         public float floorY = 0f; 
         public float floorAvoidanceMargin = 2f; 
         public LayerMask obstacleLayer;
@@ -64,24 +67,30 @@ namespace TechArtPlayground
         private ComputeBuffer boidsBuffer;
         private ComputeBuffer argsBuffer;
         private ComputeBuffer obstaclesBuffer; 
-    
-        // NOUVEAUX BUFFERS POUR LA GRILLE
         private ComputeBuffer gridOffsetsBuffer;
-        private ComputeBuffer boidOffsetsBuffer;
+        private ComputeBuffer sortBuffer; // NOUVEAU
 
         private Obstacle[] obstaclesArray;
         private Collider[] collBuffer = new Collider[32];
     
-        // IDs des 3 Kernels
-        private int clearGridKernel, populateGridKernel, csMainKernel;
+        private int clearGridKernel, populateHashesKernel, buildOffsetsKernel, csMainKernel;
+        private int obstacleCount = 0;
+        
+        // Physics Throttle
+        private float obstacleScanTimer = 0f;
+        private const float OBSTACLE_SCAN_RATE = 10f;
 
         void Start()
         {
             clearGridKernel = boidsCompute.FindKernel("ClearGrid");
-            populateGridKernel = boidsCompute.FindKernel("PopulateGrid");
+            populateHashesKernel = boidsCompute.FindKernel("PopulateHashes");
+            buildOffsetsKernel = boidsCompute.FindKernel("BuildGridOffsets");
             csMainKernel = boidsCompute.FindKernel("CSMain");
 
-            // 1. Initialisation des poissons
+            // Calculate Power of 2 for Sorting
+            paddedCount = Mathf.NextPowerOfTwo(numBoids);
+
+            // 1. Init Boids
             Boid[] boidsArray = new Boid[numBoids];
             for (int i = 0; i < numBoids; i++)
             {
@@ -92,30 +101,33 @@ namespace TechArtPlayground
                 boidsArray[i].size = Random.Range(minSize, maxSize);
                 boidsArray[i].currentSpeed = speed;
                 boidsArray[i].roll = 0f;
+                boidsArray[i].flapPhase = Random.Range(0f, 100f);
             }
 
-            boidsBuffer = new ComputeBuffer(numBoids, 48);
+            boidsBuffer = new ComputeBuffer(numBoids, 52);
             boidsBuffer.SetData(boidsArray);
 
-            // 2. Initialisation des buffers de Grille Spatiale
+            // 2. Spatial Grid Buffers
             int totalCells = gridSize * gridSize * gridSize;
             gridOffsetsBuffer = new ComputeBuffer(totalCells, sizeof(int));
-            boidOffsetsBuffer = new ComputeBuffer(numBoids, sizeof(int));
+            sortBuffer = new ComputeBuffer(paddedCount, sizeof(uint) * 2);
 
-            // 3. Buffer d'obstacles
+            // 3. Obstacle Buffers
             obstaclesArray = new Obstacle[maxObstacles];
             obstaclesBuffer = new ComputeBuffer(maxObstacles, 16); 
 
-            // 4. Assignation des buffers aux bons Kernels
+            // 4. Assign Buffers
             boidsCompute.SetBuffer(clearGridKernel, "gridOffsets", gridOffsetsBuffer);
         
-            boidsCompute.SetBuffer(populateGridKernel, "boidsBuffer", boidsBuffer);
-            boidsCompute.SetBuffer(populateGridKernel, "gridOffsets", gridOffsetsBuffer);
-            boidsCompute.SetBuffer(populateGridKernel, "boidOffsets", boidOffsetsBuffer);
+            boidsCompute.SetBuffer(populateHashesKernel, "boidsBuffer", boidsBuffer);
+            boidsCompute.SetBuffer(populateHashesKernel, "SortBuffer", sortBuffer);
+
+            boidsCompute.SetBuffer(buildOffsetsKernel, "SortBuffer", sortBuffer);
+            boidsCompute.SetBuffer(buildOffsetsKernel, "gridOffsets", gridOffsetsBuffer);
 
             boidsCompute.SetBuffer(csMainKernel, "boidsBuffer", boidsBuffer);
             boidsCompute.SetBuffer(csMainKernel, "gridOffsets", gridOffsetsBuffer);
-            boidsCompute.SetBuffer(csMainKernel, "boidOffsets", boidOffsetsBuffer);
+            boidsCompute.SetBuffer(csMainKernel, "SortBuffer", sortBuffer);
             boidsCompute.SetBuffer(csMainKernel, "obstaclesBuffer", obstaclesBuffer);
 
             fishMaterial.SetBuffer("boidsBuffer", boidsBuffer);
@@ -125,32 +137,32 @@ namespace TechArtPlayground
             args[1] = (uint)numBoids;
             argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
             argsBuffer.SetData(args);
+            
+            // Initial scan
+            UpdateObstacles();
         }
 
         void Update()
         {
-            var size = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, collBuffer, obstacleLayer);
-            int obstacleCount = Mathf.Min(size, maxObstacles);
-
-            for (int i = 0; i < obstacleCount; i++)
+            // CPU OPTIMIZATION: Throttle physics scan
+            obstacleScanTimer += Time.deltaTime;
+            if (obstacleScanTimer >= OBSTACLE_SCAN_RATE)
             {
-                obstaclesArray[i].position = collBuffer[i].bounds.center;
-                obstaclesArray[i].radius = collBuffer[i].bounds.extents.magnitude; 
+                obstacleScanTimer = 0f;
+                UpdateObstacles();
             }
-
-            obstaclesBuffer.SetData(obstaclesArray);
-            boidsCompute.SetInt(NumObstacles, obstacleCount);
 
             float pulse = Mathf.Sin(Time.time * separationPulseSpeed) * separationPulseAmount;
             float dynamicSeparation = Mathf.Max(0.1f, separationWeight + pulse);
 
-            // Envoi des variables globales (Valables pour tous les Kernels)
+            // Send globals
             boidsCompute.SetFloat(CellSize, cellSize);
             boidsCompute.SetInt(GridSize, gridSize);
             boidsCompute.SetFloat(DeltaTime, Time.deltaTime);
             boidsCompute.SetFloat(Time1, Time.time);
             boidsCompute.SetFloat(Speed, speed);
             boidsCompute.SetInt(NumBoids, numBoids);
+            boidsCompute.SetInt(PaddedCount, paddedCount);
             boidsCompute.SetFloat(SightRadius, sightRadius);
             boidsCompute.SetFloat(SeparationWeight, dynamicSeparation);
             boidsCompute.SetVector(TargetPosition, transform.position);
@@ -164,22 +176,47 @@ namespace TechArtPlayground
                 boidsCompute.SetFloat(PredatorRadius, predatorRadius);
             }
 
-            // --- EXECUTION EN 3 ETAPES DE LA CARTE GRAPHIQUE ---
+            // CPU OPTIMIZATION: Integer division instead of floats and CeilToInt
             int totalCells = gridSize * gridSize * gridSize;
-            int gridThreadGroups = Mathf.CeilToInt(totalCells / 64f);
-            int boidThreadGroups = Mathf.CeilToInt(numBoids / 64f);
+            int gridThreadGroups = (totalCells + 63) / 64;
+            int boidThreadGroups = (numBoids + 63) / 64;
+            int paddedThreadGroups = (paddedCount + 63) / 64;
 
-            // Étape 1 : On vide la grille
+            // --- THE 5-STEP GPU PIPELINE ---
+            
+            // Step 1: Clear grid
             boidsCompute.Dispatch(clearGridKernel, gridThreadGroups, 1, 1);
         
-            // Étape 2 : On range les poissons
-            boidsCompute.Dispatch(populateGridKernel, boidThreadGroups, 1, 1);
+            // Step 2: Hash calculation (Uses paddedCount)
+            boidsCompute.Dispatch(populateHashesKernel, paddedThreadGroups, 1, 1);
         
-            // Étape 3 : On calcule le mouvement !
+            // Step 3: Execute Bitonic Sort
+            GPUSort.Sort(bitonicSortCompute, sortBuffer, paddedCount);
+
+            // Step 4: Map the sorted array to grid offsets (Uses numBoids)
+            boidsCompute.Dispatch(buildOffsetsKernel, boidThreadGroups, 1, 1);
+
+            // Step 5: Execute boid physics
             boidsCompute.Dispatch(csMainKernel, boidThreadGroups, 1, 1);
+
             // ---------------------------------------------------
 
             Graphics.DrawMeshInstancedIndirect(fishMesh, 0, fishMaterial, new Bounds(transform.position, Vector3.one * 1000f), argsBuffer);
+        }
+        
+        private void UpdateObstacles()
+        {
+            var size = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, collBuffer, obstacleLayer);
+            obstacleCount = Mathf.Min(size, maxObstacles);
+
+            for (int i = 0; i < obstacleCount; i++)
+            {
+                obstaclesArray[i].position = collBuffer[i].bounds.center;
+                obstaclesArray[i].radius = collBuffer[i].bounds.extents.magnitude; 
+            }
+
+            obstaclesBuffer.SetData(obstaclesArray);
+            boidsCompute.SetInt(NumObstacles, obstacleCount);
         }
 
         void OnDestroy()
@@ -188,7 +225,7 @@ namespace TechArtPlayground
             if (argsBuffer != null) argsBuffer.Release();
             if (obstaclesBuffer != null) obstaclesBuffer.Release();
             if (gridOffsetsBuffer != null) gridOffsetsBuffer.Release();
-            if (boidOffsetsBuffer != null) boidOffsetsBuffer.Release();
+            if (sortBuffer != null) sortBuffer.Release();
         }
     }
 }
