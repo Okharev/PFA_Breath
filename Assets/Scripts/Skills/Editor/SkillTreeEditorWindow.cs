@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Skills.Skills;
+using Skills.UI;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -10,13 +13,19 @@ namespace Skills.Editor
     public class SkillTreeEditorWindow : EditorWindow
     {
         private SkillTreeGraph activeTreeAsset;
+
+        // --- PREVIEW CONTAINERS ---
+        private TwoPaneSplitView editContainer;
         private SkillTreeGraphView graphView;
         private ScrollView inspectorPanel;
+        private bool isPreviewMode;
+        private SkillTreeCanvas previewCanvas;
+        private VisualElement previewContainer;
 
         private void OnEnable()
         {
             GenerateToolbar();
-            ConstructLayout(); // Replaced ConstructGraphView with our new split layout
+            ConstructLayout();
         }
 
         [MenuItem("Window/Custom Tools/Skill Tree Editor")]
@@ -28,35 +37,43 @@ namespace Skills.Editor
 
         private void ConstructLayout()
         {
-            // 1. Create the Split View container
-            TwoPaneSplitView splitView = new(0, 250, TwoPaneSplitViewOrientation.Horizontal);
-            splitView.style.flexGrow = 1; // Fill the space below the toolbar
+            // --- 1. EDIT MODE CONTAINER (Graph + Inspector) ---
+            editContainer = new TwoPaneSplitView(0, 250, TwoPaneSplitViewOrientation.Horizontal);
+            editContainer.style.flexGrow = 1;
 
-            // 2. Create the Left Panel (Graph)
             graphView = new SkillTreeGraphView { name = "Skill Tree Graph" };
 
-            // 3. Create the Right Panel (Inspector)
             inspectorPanel = new ScrollView(ScrollViewMode.VerticalAndHorizontal);
-            inspectorPanel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f); // Dark background
+            inspectorPanel.style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
             inspectorPanel.style.paddingLeft = 10;
             inspectorPanel.style.paddingTop = 10;
-
-            // Default text when nothing is selected
             inspectorPanel.Add(new Label("Select a node to edit properties.")
                 { style = { unityFontStyleAndWeight = FontStyle.Bold } });
 
-            // Add them to the split view
-            splitView.Add(graphView);
-            splitView.Add(inspectorPanel);
+            editContainer.Add(graphView);
+            editContainer.Add(inspectorPanel);
 
-            rootVisualElement.Add(splitView);
+            // --- 2. PREVIEW MODE CONTAINER (Runtime UI Canvas) ---
+            previewContainer = new VisualElement();
+            previewContainer.style.flexGrow = 1;
+            previewContainer.style.display = DisplayStyle.None; // Hidden by default
+            previewContainer.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 1f); // Dark BG for contrast
+
+            // Enable panning/zooming in the preview just like the game
+            previewCanvas = new SkillTreeCanvas();
+            previewCanvas.style.flexGrow = 1;
+            previewContainer.Add(previewCanvas);
+            previewContainer.AddManipulator(new PanAndZoomManipulator(previewCanvas));
+
+            // --- 3. ASSEMBLE ROOT ---
+            rootVisualElement.Add(editContainer);
+            rootVisualElement.Add(previewContainer);
         }
 
         private void GenerateToolbar()
         {
             Toolbar toolbar = new();
 
-            // 1. The Asset Selector (Drag and drop your SO here)
             ObjectField treeSelector = new("Active Tree")
             {
                 objectType = typeof(SkillTreeGraph),
@@ -65,20 +82,14 @@ namespace Skills.Editor
             };
             treeSelector.RegisterValueChangedCallback(evt => { activeTreeAsset = evt.newValue as SkillTreeGraph; });
 
-            // 2. Buttons
-            Button nodeCreateButton = new(() =>
-            {
-                if (graphView != null)
-                {
-                    SkillNodeView newNode = graphView.CreateNode("New Skill");
-                    newNode.OnNodeSelected += UpdateInspector;
-                }
-            }) { text = "Create Node" };
+            Button btnCreateGeneric = new(() => { CreateNewNode(typeof(GenericNodeData), "New Generic Skill"); })
+                { text = "Create Generic Node" };
+            Button btnCreateEmotion = new(() => { CreateNewNode(typeof(EmotionNodeData), "New Emotion Skill"); })
+                { text = "Create Emotion Node" };
 
             Button saveButton = new(() =>
             {
                 if (activeTreeAsset != null) GraphSaveUtility.GetInstance(graphView, activeTreeAsset).SaveGraph();
-                else Debug.LogWarning("Please assign an Active Tree asset in the toolbar first!");
             }) { text = "Save Graph" };
 
             Button loadButton = new(() =>
@@ -86,42 +97,79 @@ namespace Skills.Editor
                 if (activeTreeAsset != null)
                 {
                     GraphSaveUtility.GetInstance(graphView, activeTreeAsset).LoadGraph();
-                    // Re-hook up the inspector click events for all loaded nodes
                     foreach (SkillNodeView node in graphView.nodes.ToList().Cast<SkillNodeView>())
                         node.OnNodeSelected += UpdateInspector;
-                    inspectorPanel.Clear(); // Clear inspector on load
-                }
-                else
-                {
-                    Debug.LogWarning("Please assign an Active Tree asset in the toolbar first!");
+                    inspectorPanel.Clear();
                 }
             }) { text = "Load Graph" };
 
-            // Add elements to toolbar
+            // --- NEW PREVIEW TOGGLE BUTTON ---
+            Button previewToggleBtn = new(TogglePreviewMode)
+            {
+                text = "Toggle UI Preview",
+                style =
+                {
+                    backgroundColor = new Color(0.2f, 0.5f, 0.8f, 1f), color = Color.white,
+                    unityFontStyleAndWeight = FontStyle.Bold
+                }
+            };
+
             toolbar.Add(treeSelector);
-            toolbar.Add(nodeCreateButton);
-
-            // Add a flexible spacer to push Save/Load buttons to the right side
-            toolbar.Add(new VisualElement { style = { flexGrow = 1 } });
-
+            toolbar.Add(btnCreateGeneric);
+            toolbar.Add(btnCreateEmotion);
+            toolbar.Add(new VisualElement { style = { flexGrow = 1 } }); // Spacer
+            toolbar.Add(previewToggleBtn); // Add to right side
             toolbar.Add(saveButton);
             toolbar.Add(loadButton);
 
             rootVisualElement.Add(toolbar);
         }
 
-        // --- THE INSPECTOR LOGIC ---
+        private void TogglePreviewMode()
+        {
+            if (activeTreeAsset == null)
+            {
+                Debug.LogWarning("[Skill Tree Editor] Please load a graph before previewing.");
+                return;
+            }
+
+            isPreviewMode = !isPreviewMode;
+
+            if (isPreviewMode)
+            {
+                // Ensure latest node positions are saved before previewing
+                GraphSaveUtility.GetInstance(graphView, activeTreeAsset).SaveGraph();
+
+                editContainer.style.display = DisplayStyle.None;
+                previewContainer.style.display = DisplayStyle.Flex;
+
+                // Populate the runtime canvas (isEditor = true disables runtime logic)
+                previewCanvas.Populate(activeTreeAsset, true);
+            }
+            else
+            {
+                previewContainer.style.display = DisplayStyle.None;
+                editContainer.style.display = DisplayStyle.Flex;
+            }
+        }
+
+        private void CreateNewNode(Type type, string defaultName)
+        {
+            if (graphView == null) return;
+            SkillNodeView newNode = graphView.CreateNode(type, defaultName);
+            newNode.OnNodeSelected += UpdateInspector;
+        }
+
         private void UpdateInspector(SkillNodeView selectedNode)
         {
             inspectorPanel.Clear();
             if (selectedNode == null) return;
 
-            // Header
+            // --- 1. BASE IDENTITY (Shared across all node types) ---
             Label header = new($"Editing: {selectedNode.NodeData.NodeName}")
                 { style = { fontSize = 16, unityFontStyleAndWeight = FontStyle.Bold, marginBottom = 10 } };
             inspectorPanel.Add(header);
 
-            // --- 1. Basic Identity ---
             TextField nameField = new("Node Name") { value = selectedNode.NodeData.NodeName };
             nameField.RegisterValueChangedCallback(evt =>
             {
@@ -134,95 +182,77 @@ namespace Skills.Editor
             descField.RegisterValueChangedCallback(evt => selectedNode.NodeData.Description = evt.newValue);
             inspectorPanel.Add(descField);
 
-            // ==========================================
-            // --- 2. EXCLUSIVE TYPE & COSTS ---
-            // ==========================================
-            inspectorPanel.Add(new Label("Node Type & Costs")
-                { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 15, marginBottom = 5 } });
-
-            // Containers for exclusive fields so we can hide/show them in bulk
-            VisualElement genericCostContainer = new();
-            VisualElement emotionCostContainer = new();
-
-            // The Type Dropdown
-            EnumField typeField = new("Node Type", selectedNode.NodeData.NodeType);
-            typeField.RegisterValueChangedCallback(evt =>
+            // --- 2. POLYMORPHIC DRAWING ---
+            if (selectedNode.NodeData is GenericNodeData genericData)
             {
-                selectedNode.NodeData.NodeType = (NodeType)evt.newValue;
+                DrawGenericNodeInspector(genericData);
+                DrawStatsSection(genericData.GrantedStats);
+            }
+            else if (selectedNode.NodeData is EmotionNodeData emotionData)
+            {
+                DrawEmotionNodeInspector(selectedNode, emotionData);
+                DrawStatsSection(emotionData.GrantedStats);
+            }
+        }
 
-                // Hide/Show logic
-                genericCostContainer.style.display = selectedNode.NodeData.NodeType == NodeType.Generic
-                    ? DisplayStyle.Flex
-                    : DisplayStyle.None;
-                emotionCostContainer.style.display = selectedNode.NodeData.NodeType == NodeType.Emotion
-                    ? DisplayStyle.Flex
-                    : DisplayStyle.None;
+        private void DrawGenericNodeInspector(GenericNodeData data)
+        {
+            inspectorPanel.Add(new Label("Generic Properties")
+                { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 15 } });
 
-                // Zero out the costs of the opposite type to prevent accidental data contamination
-                if (selectedNode.NodeData.NodeType == NodeType.Generic) selectedNode.NodeData.Cost.EmotionPoints = 0;
-                else selectedNode.NodeData.Cost.GenericPoints = 0;
+            IntegerField costField = new("Generic Cost") { value = data.GenericCost };
+            costField.RegisterValueChangedCallback(evt => data.GenericCost = evt.newValue);
+            inspectorPanel.Add(costField);
+        }
 
-                selectedNode.RefreshVisuals(); // Update the color!
-            });
-            inspectorPanel.Add(typeField);
+        private void DrawEmotionNodeInspector(SkillNodeView node, EmotionNodeData data)
+        {
+            inspectorPanel.Add(new Label("Emotion Properties")
+                { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 15 } });
 
-            // --- GENERIC CONTAINER ---
-            IntegerField genericCostField = new("Generic Cost") { value = selectedNode.NodeData.Cost.GenericPoints };
-            genericCostField.RegisterValueChangedCallback(evt =>
-                selectedNode.NodeData.Cost.GenericPoints = evt.newValue);
-            genericCostContainer.Add(genericCostField);
-
-            // Set initial visibility
-            genericCostContainer.style.display = selectedNode.NodeData.NodeType == NodeType.Generic
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
-            inspectorPanel.Add(genericCostContainer);
-
-            // --- EMOTION CONTAINER ---
-            EnumField emotionTypeField = new("Emotion Color", selectedNode.NodeData.Cost.RequiredEmotion);
+            EnumField emotionTypeField = new("Emotion Color", data.RequiredEmotion);
             emotionTypeField.RegisterValueChangedCallback(evt =>
             {
-                selectedNode.NodeData.Cost.RequiredEmotion = (EmotionType)evt.newValue;
-                selectedNode.RefreshVisuals(); // Change color instantly when dropdown changes
+                data.RequiredEmotion = (EmotionType)evt.newValue;
+                node.RefreshVisuals();
             });
-            emotionCostContainer.Add(emotionTypeField);
+            inspectorPanel.Add(emotionTypeField);
 
-            IntegerField emotionCostField = new("Emotion Cost") { value = selectedNode.NodeData.Cost.EmotionPoints };
-            emotionCostField.RegisterValueChangedCallback(evt =>
-                selectedNode.NodeData.Cost.EmotionPoints = evt.newValue);
-            emotionCostContainer.Add(emotionCostField);
+            IntegerField costField = new("Base Emotion Cost") { value = data.BaseEmotionCost };
+            costField.RegisterValueChangedCallback(evt => data.BaseEmotionCost = evt.newValue);
+            inspectorPanel.Add(costField);
 
-            // Set initial visibility
-            emotionCostContainer.style.display = selectedNode.NodeData.NodeType == NodeType.Emotion
-                ? DisplayStyle.Flex
-                : DisplayStyle.None;
-            inspectorPanel.Add(emotionCostContainer);
+            IntegerField maxLevelField = new("Max Level") { value = data.MaxLevel };
+            maxLevelField.RegisterValueChangedCallback(evt => data.MaxLevel = evt.newValue);
+            inspectorPanel.Add(maxLevelField);
 
-
-            // --- 3. Abilities ---
-            inspectorPanel.Add(new Label("Ability Unlocks")
-                { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 15, marginBottom = 5 } });
-
-            Toggle abilityToggle = new("Unlocks Ability?") { value = selectedNode.NodeData.UnlocksAbility };
-            abilityToggle.RegisterValueChangedCallback(evt => selectedNode.NodeData.UnlocksAbility = evt.newValue);
+            Toggle abilityToggle = new("Unlocks Ability?") { value = data.UnlocksAbility };
+            abilityToggle.RegisterValueChangedCallback(evt => data.UnlocksAbility = evt.newValue);
             inspectorPanel.Add(abilityToggle);
 
-            TextField abilityIdField = new("Ability ID") { value = selectedNode.NodeData.GrantedAbilityId };
-            abilityIdField.RegisterValueChangedCallback(evt => selectedNode.NodeData.GrantedAbilityId = evt.newValue);
+            TextField abilityIdField = new("Granted Ability ID") { value = data.GrantedAbilityId };
+            abilityIdField.RegisterValueChangedCallback(evt => data.GrantedAbilityId = evt.newValue);
             inspectorPanel.Add(abilityIdField);
 
-            // --- 4. PASSIVE STATS ---
+            // --- THE FIX: Expose the AbilitySlot to the Graph Inspector ---
+            EnumField intendedSlotField = new("Intended Slot", data.IntendedSlot);
+            intendedSlotField.RegisterValueChangedCallback(evt => data.IntendedSlot = (AbilitySlot)evt.newValue);
+            inspectorPanel.Add(intendedSlotField);
+        }
+
+        // Separated Stats Drawing to pass the specific stat list directly
+        private void DrawStatsSection(List<StatModifierData> statList)
+        {
             inspectorPanel.Add(new Label("Granted Stats")
                 { style = { unityFontStyleAndWeight = FontStyle.Bold, marginTop = 15, marginBottom = 5 } });
             VisualElement statsContainer = new();
             inspectorPanel.Add(statsContainer);
-            RedrawStatsList(selectedNode, statsContainer);
+            RedrawStatsList(statList, statsContainer);
 
             Button addStatBtn = new(() =>
             {
-                selectedNode.NodeData.GrantedStats.Add(new StatModifierData
-                    { Stat = StatType.Damage, Type = ModifierType.Flat, Value = 0f });
-                RedrawStatsList(selectedNode, statsContainer);
+                statList.Add(new StatModifierData { Stat = StatType.Damage, Type = ModifierType.Flat, Value = 0f });
+                RedrawStatsList(statList, statsContainer);
             })
             {
                 text = "+ Add Stat Modifier",
@@ -231,78 +261,60 @@ namespace Skills.Editor
             inspectorPanel.Add(addStatBtn);
         }
 
-        // Helper method to draw the dynamic list of stats
-        private void RedrawStatsList(SkillNodeView selectedNode, VisualElement container)
+        private static void RedrawStatsList(List<StatModifierData> stats, VisualElement container)
         {
             container.Clear();
-
-            List<StatModifierData> stats = selectedNode.NodeData.GrantedStats;
-
             for (int i = 0; i < stats.Count; i++)
             {
-                int index = i; // Critical: Capture the index locally for the UI callbacks
+                int index = i;
                 StatModifierData statMod = stats[index];
 
-                // Create a horizontal row with a slightly lighter background to group the items
                 VisualElement row = new()
                 {
                     style =
                     {
-                        flexDirection = FlexDirection.Row,
-                        marginBottom = 5,
+                        flexDirection = FlexDirection.Row, marginBottom = 5,
                         backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f),
                         paddingTop = 5, paddingBottom = 5, paddingLeft = 5, paddingRight = 5,
-                        borderBottomLeftRadius = 3,
-                        borderBottomRightRadius = 3,
-                        borderTopLeftRadius = 3,
-                        borderTopRightRadius = 3,
                         alignItems = Align.Center
                     }
                 };
 
-                // 1. Stat Enum Dropdown
                 EnumField statDropdown = new(statMod.Stat) { style = { width = 100 } };
                 statDropdown.RegisterValueChangedCallback(evt =>
                 {
-                    StatModifierData temp = stats[index]; // Copy struct
-                    temp.Stat = (StatType)evt.newValue; // Modify copy
-                    stats[index] = temp; // Save back to list
+                    StatModifierData t = stats[index];
+                    t.Stat = (StatType)evt.newValue;
+                    stats[index] = t;
                 });
-                row.Add(statDropdown);
 
-                // 2. Modifier Type Enum Dropdown
                 EnumField typeDropdown = new(statMod.Type) { style = { width = 130 } };
                 typeDropdown.RegisterValueChangedCallback(evt =>
                 {
-                    StatModifierData temp = stats[index];
-                    temp.Type = (ModifierType)evt.newValue;
-                    stats[index] = temp;
+                    StatModifierData t = stats[index];
+                    t.Type = (ModifierType)evt.newValue;
+                    stats[index] = t;
                 });
-                row.Add(typeDropdown);
 
-                // 3. Value Input
                 FloatField valueField = new() { value = statMod.Value, style = { flexGrow = 1, minWidth = 40 } };
                 valueField.RegisterValueChangedCallback(evt =>
                 {
-                    StatModifierData temp = stats[index];
-                    temp.Value = evt.newValue;
-                    stats[index] = temp;
+                    StatModifierData t = stats[index];
+                    t.Value = evt.newValue;
+                    stats[index] = t;
                 });
-                row.Add(valueField);
 
-                // 4. Remove Button
                 Button removeBtn = new(() =>
-                {
-                    stats.RemoveAt(index);
-                    RedrawStatsList(selectedNode, container); // Refresh UI
-                })
-                {
-                    text = "X",
-                    style = { color = Color.red, unityFontStyleAndWeight = FontStyle.Bold, width = 25 }
-                };
-                row.Add(removeBtn);
+                    {
+                        stats.RemoveAt(index);
+                        RedrawStatsList(stats, container);
+                    })
+                    { text = "X", style = { color = Color.red, unityFontStyleAndWeight = FontStyle.Bold, width = 25 } };
 
-                // Add the completed row to the container
+                row.Add(statDropdown);
+                row.Add(typeDropdown);
+                row.Add(valueField);
+                row.Add(removeBtn);
                 container.Add(row);
             }
         }

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Skills.Skills;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -19,48 +21,39 @@ namespace Skills.Editor
             Insert(0, grid);
             grid.StretchToParentSize();
 
-
             StyleSheet styleSheet =
                 AssetDatabase.LoadAssetAtPath<StyleSheet>("Assets/Scripts/Skills/Editor/SkillTreeGraph.uss");
-
-            if (styleSheet != null)
-                styleSheets.Add(styleSheet);
-            else
-                Debug.LogWarning(
-                    "[Skill Tree Tool] Could not find SkillTreeGraph.uss! Ensure the file exists at Assets/Scripts/Skills/Editor/SkillTreeGraph.uss");
+            if (styleSheet != null) styleSheets.Add(styleSheet);
         }
 
-        public SkillNodeView CreateNode(SkillNodeData existingData)
+        // 1. Creation from Load
+        public SkillNodeView CreateNode(BaseNodeData existingData)
         {
-            SkillNodeView node = new(existingData.NodeName);
-            node.NodeData = existingData;
+            SkillNodeView node = new(existingData);
             node.SetPosition(existingData.Position);
-
-            node.RefreshVisuals(); 
-
             AddElement(node);
             return node;
         }
 
-// Keep your existing CreateNode method for when clicking the "Create Node" button
-        public SkillNodeView CreateNode(string nodeName)
+        // 2. Creation from Editor Button (Polymorphic Factory)
+        public SkillNodeView CreateNode(Type nodeDataType, string defaultName)
         {
-            SkillNodeView node = new(nodeName);
-            node.SetPosition(new Rect(100, 100, 200, 150));
+            // Dynamically instantiate the requested subclass
+            BaseNodeData newData = (BaseNodeData)Activator.CreateInstance(nodeDataType);
+            newData.NodeName = defaultName;
+
+            SkillNodeView node = new(newData);
+            node.SetPosition(new Rect(100, 100, 200, 150)); // Default spawn pos
             AddElement(node);
             return node;
         }
 
-        // Logic preventing invalid wire connections (e.g., Input to Input, or a node to itself)
         public override List<Port> GetCompatiblePorts(Port startPort, NodeAdapter nodeAdapter)
         {
             List<Port> compatiblePorts = new();
             foreach (Port port in ports)
-            {
                 if (startPort != port && startPort.node != port.node && startPort.direction != port.direction)
                     compatiblePorts.Add(port);
-            }
-
             return compatiblePorts;
         }
     }

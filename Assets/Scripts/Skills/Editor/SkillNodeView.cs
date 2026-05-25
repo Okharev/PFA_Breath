@@ -1,4 +1,5 @@
 ﻿using System;
+using Skills.Skills;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
@@ -6,23 +7,35 @@ namespace Skills.Editor
 {
     public class SkillNodeView : Node
     {
-        public SkillNodeData NodeData;
+        // Define our grid spacing - 25 is the greatest common divisor for center-aligning 150 and 100 width nodes
+        private const float GridSnapSize = 25f;
+        public BaseNodeData NodeData;
         public Action<SkillNodeView> OnNodeSelected;
 
-        public SkillNodeView(string nodeName)
+        public SkillNodeView(BaseNodeData nodeData)
         {
-            title = nodeName;
-
-            NodeData = new SkillNodeData
-            {
-                GUID = Guid.NewGuid().ToString(),
-                NodeName = nodeName
-            };
+            NodeData = nodeData;
+            title = nodeData.NodeName;
 
             mainContainer.style.backgroundColor = new Color(0.17f, 0.17f, 0.17f, 1f);
 
             GeneratePorts();
-            RefreshVisuals(); // Apply color on creation
+            RefreshVisuals();
+        }
+
+        // --- GRID SNAPPING IMPLEMENTATION ---
+        public override void SetPosition(Rect newPos)
+        {
+            // O(1) mathematical rounding to the nearest grid step (25 units)
+            newPos.x = Mathf.Round(newPos.x / GridSnapSize) * GridSnapSize;
+            newPos.y = Mathf.Round(newPos.y / GridSnapSize) * GridSnapSize;
+
+            base.SetPosition(newPos);
+
+            // Sync immediately with the underlying data model
+            if (NodeData != null)
+                // FIX: Assign the entire snapped Rect back to the data model
+                NodeData.Position = newPos;
         }
 
         public override void OnSelected()
@@ -31,18 +44,15 @@ namespace Skills.Editor
             OnNodeSelected?.Invoke(this);
         }
 
-        // --- NEW: Dynamic Coloring Logic ---
         public void RefreshVisuals()
         {
-            if (NodeData.NodeType == NodeType.Generic)
-                // Default dark grey for Generic nodes
+            if (NodeData is GenericNodeData)
                 titleContainer.style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
-            else
-                // Apply specific colors for Emotion nodes
-                titleContainer.style.backgroundColor = GetEmotionColor(NodeData.Cost.RequiredEmotion);
+            else if (NodeData is EmotionNodeData emotionData)
+                titleContainer.style.backgroundColor = GetEmotionColor(emotionData.RequiredEmotion);
         }
 
-        private Color GetEmotionColor(EmotionType emotion)
+        private static Color GetEmotionColor(EmotionType emotion)
         {
             return emotion switch
             {
@@ -50,7 +60,7 @@ namespace Skills.Editor
                 EmotionType.Green => new Color(0.2f, 0.6f, 0.2f, 1f),
                 EmotionType.Blue => new Color(0.2f, 0.4f, 0.7f, 1f),
                 EmotionType.Yellow => new Color(0.7f, 0.7f, 0.1f, 1f),
-                EmotionType.White => new Color(0.8f, 0.8f, 0.8f, 1f), // Off-white to keep text readable
+                EmotionType.White => new Color(0.8f, 0.8f, 0.8f, 1f),
                 _ => new Color(0.25f, 0.25f, 0.25f, 1f)
             };
         }
