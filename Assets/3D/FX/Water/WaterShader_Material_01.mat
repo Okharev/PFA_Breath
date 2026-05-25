@@ -60,24 +60,24 @@ Material:
     m_Ints: []
     m_Floats:
     - _Absorption_Coefficient: 0
-    - _Alpha: 0.5
-    - _Ambient_Occlusion: 1
+    - _Alpha: 0.62
+    - _Ambient_Occlusion: 5.22
     - _Deep_Water: 0
     - _Density: 20
     - _Depth: 0
-    - _Distance: 0
+    - _Distance: 2.82
     - _Foam_CutOff: 0
     - _Gradient_Noise: 4
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _Shallow_Water: 0
+    - _Shallow_Water: 3.72
     - _Smoothsness: 6
     - _Smothsness: 5
     - _Speed: 1
     - _WaterSpeed: 0.05
     - _WaterTide: 0.05
     - _WaveSpeed: 10
-    - _wavenoisecontrast: 0
+    - _wavenoisecontrast: 0.195
     m_Colors:
     - _Absorption_Color: {r: 0.8018868, g: 0.5098375, b: 0.38959596, a: 1}
     - _BaseColor: {r: 0.4039216, g: 0.6901961, b: 0.9176471, a: 1}
@@ -85,6 +85,6 @@ Material:
     - _D2: {r: 0, g: 0, b: 0, a: 0}
     - _RippleColor: {r: 0.3054468, g: 1.216994, b: 1.660377, a: 1}
     - _Water_color: {r: 0.8679245, g: 0.56324553, b: 0.33161268, a: 1}
-    - _Waves_sizes: {r: 0.2, g: 0.2, b: 0, a: 0}
+    - _Waves_sizes: {r: 2.28, g: 0.2, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

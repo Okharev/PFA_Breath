@@ -9,18 +9,12 @@ namespace TechArtPlayground
 
         private void OnEnable()
         {
-            if (BoidsManager.Instance != null) 
-            {
-                BoidsManager.Instance.RegisterAttractor(this);
-            }
+            if (BoidsManager.Instance != null) BoidsManager.Instance.RegisterAttractor(this);
         }
 
         private void OnDisable()
         {
-            if (BoidsManager.Instance != null) 
-            {
-                BoidsManager.Instance.UnregisterAttractor(this);
-            }
+            if (BoidsManager.Instance != null) BoidsManager.Instance.UnregisterAttractor(this);
         }
     }
 }
