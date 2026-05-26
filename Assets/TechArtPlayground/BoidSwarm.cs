@@ -95,6 +95,9 @@ namespace TechArtPlayground
         public GraphicsBuffer readBuffer { get; private set; }
         public GraphicsBuffer writeBuffer { get; private set; }
         public GraphicsBuffer sortBuffer { get; private set; }
+        public GraphicsBuffer tempSortBuffer { get; private set; }
+        public GraphicsBuffer globalHistBuffer { get; private set; }
+        public GraphicsBuffer localOffsetsBuffer { get; private set; }
         public GraphicsBuffer gridOffsets { get; private set; }
         public GraphicsBuffer splineBuffer { get; private set; }
         public GraphicsBuffer argsBuffer { get; private set; }
@@ -116,6 +119,9 @@ namespace TechArtPlayground
             attractorsBuffer?.Release();
             predatorsBuffer?.Release();
             obstaclesBuffer?.Release();
+            tempSortBuffer?.Release();
+            globalHistBuffer?.Release();
+            localOffsetsBuffer?.Release();
         }
 
 // --- REGISTRATION METHODS ---
@@ -164,6 +170,15 @@ namespace TechArtPlayground
             readBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 32);
             writeBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 32);
             sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 8);
+            
+            int numBlocks = Mathf.Max(1, Mathf.CeilToInt(paddedCount / 256f));
+            tempSortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 8); 
+
+// 256 bins * numBlocks (uints)
+            globalHistBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 256 * numBlocks, 4); 
+
+// Cache for localized scatter offsets (uints)
+            localOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 4);
 // NEW
             int totalGridCells = gridSize * gridSize * gridSize;
             gridOffsets = new GraphicsBuffer(GraphicsBuffer.Target.Structured, totalGridCells, 4);

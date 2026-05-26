@@ -357,7 +357,6 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
     // --- 8. FINAL INTEGRATION ---
     // Combine all behaviors into one master steering vector
-    // --- 8. FINAL INTEGRATION (CSMain) ---
     float3 targetDir = (alignment * alignmentWeight) + (cohesion * cohesionWeight) + (separation * separationWeight) + directionToTarget + organicNoise + fleeDirection + obstacleAvoidance + boundaryAvoidance;
     float3 normalizedTargetDir = FastSafeNormalize(targetDir, boidDirection);
     
@@ -514,7 +513,6 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
     float3 normalizedTargetDir = FastSafeNormalize(targetDir, boidDirection);
 
     // --- 8. INTEGRATION ---
-    // --- INTEGRATION ---
     float turnStrength = cross(boidDirection, normalizedTargetDir).y;
     roll = lerp(roll, turnStrength * 3.0f, deltaTime * 4.0f);
     
