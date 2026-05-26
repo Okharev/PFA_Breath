@@ -4,9 +4,13 @@
 struct Boid
 {
     float3 position;
-    float3 velocity; 
-    uint packedData; // Replaces roll
+    float randomSeed;
+    float3 velocity;
+    float colorSeed;
+    uint packedData; 
     float splineT;
+    float pad1;
+    float pad2;
 };
 
 StructuredBuffer<Boid> boidsBuffer;
