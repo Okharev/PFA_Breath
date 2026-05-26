@@ -15,6 +15,13 @@ namespace TechArtPlayground.Water
         private static readonly int OutputBuffer = Shader.PropertyToID("OutputBuffer");
         private static readonly int OutputBufferZ = Shader.PropertyToID("OutputBufferZ");
         private static readonly int InputBufferZ = Shader.PropertyToID("InputBufferZ");
+        private static readonly int FFTScale = Shader.PropertyToID("_FFTScale");
+        private static readonly int Choppiness = Shader.PropertyToID("_Choppiness");
+        private static readonly int WindDirection1 = Shader.PropertyToID("_WindDirection1");
+        private static readonly int NumStages = Shader.PropertyToID("_NumStages");
+        private static readonly int WindSpeed = Shader.PropertyToID("_WindSpeed");
+        private static readonly int WindDir = Shader.PropertyToID("_WindDir");
+        private static readonly int PhillipsA = Shader.PropertyToID("_PhillipsA");
 
         [Header("Simulation References")]
         public ComputeShader fftCompute;
@@ -93,49 +100,65 @@ namespace TechArtPlayground.Water
 
         void Update()
         {
-            if (fftCompute == null || oceanMaterial == null) return;
 
             DispatchFFT();
 
+            // 1. Bind the simulation textures
             oceanMaterial.SetTexture(DispTex, displacementMap);
             oceanMaterial.SetTexture(DerivTex, derivativeMap);
+
+            // =========================================================
+            // AUTOMATED MATERIAL SETTINGS
+            // =========================================================
+        
+            // 2. Auto-calculate the UV Scale (1.0 / Domain Size)
+            oceanMaterial.SetFloat(FFTScale, 1.0f / oceanSize);
+        
+            // 3. Sync Choppiness so the shader and compute always match
+            oceanMaterial.SetFloat(Choppiness, choppiness);
+        
+            // 4. (Optional) Sync the material's micro-normal wind to match the FFT wind
+            oceanMaterial.SetVector(WindDirection1, windDirection.normalized * (windSpeed * 0.05f));
         }
 
         private void DispatchFFT()
         {
-            // Standard threads for initialization and packing (N)
             int threadsX = resolution / 8; 
-        
-            // Butterfly threads for the FFT passes (N / 2)
             int threadsHalf = (resolution / 2) / 8; 
-        
             int numStages = (int)Mathf.Log(resolution, 2);
+
+            // Compensate for the IFFT Normalizer (1 / N^2) dynamically.
+            // Since h0 = sqrt(Phillips), we multiply Phillips by N^4 to scale h0 by N^2.
+            float normalizedPhillips = phillipsAmplitude * Mathf.Pow(resolution, 4);
 
             // --- 0. Set Global Simulation Parameters ---
             fftCompute.SetFloat(Time1, Time.time * timeScale);
             fftCompute.SetInt(Resolution1, resolution);
-            fftCompute.SetInt("_NumStages", numStages); // FIX 1: Pass exact stages
+            fftCompute.SetInt(NumStages, numStages); 
             fftCompute.SetFloat(Size, oceanSize);
-            fftCompute.SetFloat("_WindSpeed", windSpeed);
-            fftCompute.SetVector("_WindDir", windDirection.normalized);
-            fftCompute.SetFloat("_PhillipsA", phillipsAmplitude);
-            fftCompute.SetFloat("_Choppiness", choppiness);
+            fftCompute.SetFloat(WindSpeed, windSpeed);
+            fftCompute.SetVector(WindDir, windDirection.normalized);
+    
+            // Pass the massively boosted amplitude here
+            fftCompute.SetFloat(PhillipsA, normalizedPhillips); 
+    
+            fftCompute.SetFloat(Choppiness, choppiness);
 
             // --- 1. Initialization (Spectrum Generation) ---
-            fftCompute.SetTexture(initKernel, "OutputBuffer", pingBuffer);
-            fftCompute.SetTexture(initKernel, "OutputBufferZ", pingBufferZ); 
+            fftCompute.SetTexture(initKernel, OutputBuffer, pingBuffer);
+            fftCompute.SetTexture(initKernel, OutputBufferZ, pingBufferZ); 
             fftCompute.Dispatch(initKernel, threadsX, threadsX, 1);
 
             // --- 2. Horizontal FFT Passes ---
             bool pingPong = true; 
             for (int i = 0; i < numStages; i++)
             {
-                fftCompute.SetInt("_Step", i);
+                fftCompute.SetInt(Step, i);
             
-                fftCompute.SetTexture(horizontalKernel, "InputBuffer", pingPong ? pingBuffer : pongBuffer);
+                fftCompute.SetTexture(horizontalKernel, InputBuffer, pingPong ? pingBuffer : pongBuffer);
                 fftCompute.SetTexture(horizontalKernel, OutputBuffer, pingPong ? pongBuffer : pingBuffer);
-                fftCompute.SetTexture(horizontalKernel, "InputBufferZ", pingPong ? pingBufferZ : pongBufferZ);
-                fftCompute.SetTexture(horizontalKernel, "OutputBufferZ", pingPong ? pongBufferZ : pingBufferZ);
+                fftCompute.SetTexture(horizontalKernel, InputBufferZ, pingPong ? pingBufferZ : pongBufferZ);
+                fftCompute.SetTexture(horizontalKernel, OutputBufferZ, pingPong ? pongBufferZ : pingBufferZ);
             
                 // FIX 2: Dispatch N/2 threads horizontally, N threads vertically
                 fftCompute.Dispatch(horizontalKernel, threadsHalf, threadsX, 1);
