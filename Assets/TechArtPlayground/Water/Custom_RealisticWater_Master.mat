@@ -39,43 +39,43 @@ Material:
     m_Floats:
     - _CausticsScale: 0.19
     - _CausticsSpeed: 0.2
-    - _CausticsStrength: 0.604
+    - _CausticsStrength: 0.56
     - _CrestFoamCutoff: 0.962
     - _CrestFoamStrength: 0.61
     - _CrestGlowPower: 1.45
     - _CrestGlowSpread: 1
     - _CrestGlowStrength: 0.55
-    - _DepthMultiplier: 0.28
+    - _DepthMultiplier: 0.1
     - _EdgeRimWidth: 0.05
     - _FoamCutoff: 0.44
-    - _FoamDistance: 4.7
+    - _FoamDistance: 4.22
     - _FoamScale: 1.18
     - _FoamSpeed: 7.89
     - _GlobalAlpha: 1
     - _Metallic: 0
     - _MicroWaveDistance: 100
     - _MicroWaveFadeDistance: 64.67
-    - _MicroWaveIntensity: 0.611
+    - _MicroWaveIntensity: 0.434
     - _NormalScale: 0.1
     - _NormalStrength: 0.236
     - _ReflectionStrength: 0.8
-    - _RefractionStrength: 0.0503
+    - _RefractionStrength: 0.0555
     - _Smoothness: 0.967
     - _SpecularStrength: 0.004
     - _WaveScale: 3.06
-    - _WaveSpeed: 0.2
+    - _WaveSpeed: 0.75
     - _WhitecapDistortion: 0.286
-    - _WhitecapStrength: 0.425
-    - _WhitecapThreshold: 0.618
+    - _WhitecapStrength: 0.89
+    - _WhitecapThreshold: 0.399
     m_Colors:
     - _CrestGlowColor: {r: 0.2, g: 0.9, b: 0.8, a: 1}
-    - _DeepColor: {r: 0.06918471, g: 0.2981131, b: 0.25033674, a: 1}
+    - _DeepColor: {r: 0.13743679, g: 0.3217135, b: 0.3660378, a: 1}
     - _FoamColor: {r: 1, g: 1, b: 1, a: 1}
     - _MicroWave1: {r: 0.8, g: 0.2, b: 0.53, a: 5.58}
     - _MicroWave2: {r: 0.91, g: 1.28, b: 0.45, a: 15.65}
-    - _ShallowColor: {r: 0.20419356, g: 0.90943396, b: 0.7972366, a: 1}
-    - _Wave1: {r: 1, g: 0.79, b: 0.26, a: 8.2}
-    - _Wave2: {r: 0.3, g: 0.78, b: 0.01, a: 16.46}
+    - _ShallowColor: {r: 0.20392157, g: 0.79607844, b: 0.51851743, a: 1}
+    - _Wave1: {r: 1, g: 0.96, b: 0.37, a: 8.2}
+    - _Wave2: {r: 0.3, g: 0.7, b: 0.04, a: 16.51}
     - _Wave3: {r: 0.04, g: 0.77, b: 0.24, a: 21.4}
     - _WindDirection1: {r: -0.1, g: 0, b: 0, a: 0}
     - _WindDirection2: {r: 0.1, g: 0, b: 0, a: 0}

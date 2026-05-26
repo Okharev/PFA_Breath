@@ -45,6 +45,7 @@ namespace TechArtPlayground
         [Header("Core References")]
         public ComputeShader boidsCompute;
         public ComputeShader radixSortCompute;
+        private CommandBuffer asyncComputeCmd; // NEW
         
         private MaterialPropertyBlock propertyBlock;
 
@@ -55,8 +56,12 @@ namespace TechArtPlayground
         private void Start()
         {
             propertyBlock = new MaterialPropertyBlock();
-            swarms = FindObjectsByType<BoidSwarm>(FindObjectsSortMode.None);
-            foreach (BoidSwarm swarm in swarms) swarm.Initialize(); // Mesh is now handled internally by the swarm
+            swarms = FindObjectsByType<BoidSwarm>();
+            foreach (BoidSwarm swarm in swarms) swarm.Initialize();
+            
+            // Initialize Command Buffer and flag for Async execution
+            asyncComputeCmd = new CommandBuffer { name = "Boids Async Physics" };
+            asyncComputeCmd.SetExecutionFlags(CommandBufferExecutionFlags.AsyncCompute);
         }
 
         private void Update()
@@ -70,123 +75,106 @@ namespace TechArtPlayground
             int kernelBuildOffsets = boidsCompute.FindKernel("BuildGridOffsets");
             int kernelReorder = boidsCompute.FindKernel("ReorderBoids");
 
+            // 1. Clear the command buffer for this frame
+            asyncComputeCmd.Clear();
+
+            asyncComputeCmd.SetExecutionFlags(CommandBufferExecutionFlags.AsyncCompute);
+
             foreach (BoidSwarm swarm in swarms)
             {
                 swarm.SyncEnvironmentData();
-
-                // ==========================================
-                // 1. SPATIAL GRID & SORTING (Amortized per Swarm)
-                // ==========================================
-                // Check if this specific swarm is scheduled to sort this frame
                 bool shouldSort = (Time.frameCount + swarm.frameOffset) % swarm.sortFrequency == 0;
 
+                // ==========================================
+                // RECORD ASYNC COMPUTE COMMANDS
+                // ==========================================
                 if (shouldSort)
                 {
-                    // Clear Grid
                     int totalCells = swarm.gridSize * swarm.gridSize * swarm.gridSize;
-                    boidsCompute.SetBuffer(kernelClearGrid, "gridOffsets", swarm.gridOffsets);
-                    boidsCompute.Dispatch(kernelClearGrid, Mathf.CeilToInt(totalCells / 64f), 1, 1);
+                    
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelClearGrid, GridOffsets, swarm.gridOffsets);
+                    asyncComputeCmd.DispatchCompute(boidsCompute, kernelClearGrid, Mathf.CeilToInt(totalCells / 64f), 1, 1);
 
-                    // Populate Hashes
-                    boidsCompute.SetBuffer(kernelPopulate, "ReadBoidsBuffer", swarm.readBuffer);
-                    boidsCompute.SetBuffer(kernelPopulate, "SortBuffer", swarm.sortBuffer);
-                    boidsCompute.SetInt("numBoids", swarm.boidCount);
-                    boidsCompute.SetInt("paddedCount", swarm.paddedCount);
-                    boidsCompute.Dispatch(kernelPopulate, Mathf.CeilToInt(swarm.paddedCount / 64f), 1, 1);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelPopulate, ReadBoidsBuffer, swarm.readBuffer);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelPopulate, SortBuffer, swarm.sortBuffer);
+                    asyncComputeCmd.SetComputeIntParam(boidsCompute, NumBoids, swarm.boidCount);
+                    asyncComputeCmd.SetComputeIntParam(boidsCompute, PaddedCount, swarm.paddedCount);
+                    asyncComputeCmd.DispatchCompute(boidsCompute, kernelPopulate, Mathf.CeilToInt(swarm.paddedCount / 64f), 1, 1);
 
-                    // Sort (Using GraphicsBuffer natively)
-                    GPUSort.RadixSort(
-                        radixSortCompute, 
-                        swarm.sortBuffer, 
-                        swarm.tempSortBuffer, 
-                        swarm.globalHistBuffer, 
-                        swarm.localOffsetsBuffer, 
-                        swarm.paddedCount
-                    );
+                    // Sort using the async command buffer
+                    GPUSort.RadixSort(asyncComputeCmd, radixSortCompute, swarm.sortBuffer, swarm.tempSortBuffer, swarm.globalHistBuffer, swarm.localOffsetsBuffer, swarm.paddedCount);
 
-                    // Build Offsets & Reorder
-                    boidsCompute.SetBuffer(kernelBuildOffsets, "SortBuffer", swarm.sortBuffer);
-                    boidsCompute.SetBuffer(kernelBuildOffsets, "gridOffsets", swarm.gridOffsets);
-                    boidsCompute.Dispatch(kernelBuildOffsets, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelBuildOffsets, SortBuffer, swarm.sortBuffer);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelBuildOffsets, GridOffsets, swarm.gridOffsets);
+                    asyncComputeCmd.DispatchCompute(boidsCompute, kernelBuildOffsets, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
 
-                    boidsCompute.SetBuffer(kernelReorder, "ReadBoidsBuffer", swarm.readBuffer);
-                    boidsCompute.SetBuffer(kernelReorder, "WriteBoidsBuffer", swarm.writeBuffer);
-                    boidsCompute.SetBuffer(kernelReorder, "SortBuffer", swarm.sortBuffer);
-                    boidsCompute.Dispatch(kernelReorder, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelReorder, ReadBoidsBuffer, swarm.readBuffer);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelReorder, WriteBoidsBuffer, swarm.writeBuffer);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelReorder, SortBuffer, swarm.sortBuffer);
+                    asyncComputeCmd.DispatchCompute(boidsCompute, kernelReorder, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
 
-                    // Ping-pong sorted data to ReadBuffer so Physics can use it
                     swarm.PingPongBuffers();
                 }
 
-                // ==========================================
-                // 2. FLOCKING / SPLINE PHYSICS
-                // ==========================================
                 int activeKernel = swarm.followSpline ? kernelSpline : kernelFreeRoam;
 
-// --- NEW: Bind Spline Data if active ---
                 if (swarm.followSpline && swarm.splineBuffer != null)
                 {
-                    boidsCompute.SetBuffer(activeKernel, SplineBuffer, swarm.splineBuffer);
-                    boidsCompute.SetInt(SplineResolution, swarm.splineResolution);
-                    boidsCompute.SetFloat(SplineLength, swarm.splineLength);
+                    asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, SplineBuffer, swarm.splineBuffer);
+                    asyncComputeCmd.SetComputeIntParam(boidsCompute, SplineResolution, swarm.splineResolution);
+                    asyncComputeCmd.SetComputeFloatParam(boidsCompute, SplineLength, swarm.splineLength);
                 }
 
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, AttractorsBuffer, swarm.attractorsBuffer);
+                asyncComputeCmd.SetComputeIntParam(boidsCompute, NumAttractors, swarm.CurrentAttractorCount);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, PredatorsBuffer, swarm.predatorsBuffer);
+                asyncComputeCmd.SetComputeIntParam(boidsCompute, NumPredators, swarm.CurrentPredatorCount);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, ObstaclesBuffer, swarm.obstaclesBuffer);
+                asyncComputeCmd.SetComputeIntParam(boidsCompute, NumObstacles, 0);
+                
+                asyncComputeCmd.SetComputeIntParam(boidsCompute, NumBoids, swarm.boidCount);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, ReadBoidsBuffer, swarm.readBuffer);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, WriteBoidsBuffer, swarm.writeBuffer);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, GridOffsets, swarm.gridOffsets);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, SortBuffer, swarm.sortBuffer);
 
-// Bind Environment Buffers & Counts (Using the dynamic counts!)
-                boidsCompute.SetBuffer(activeKernel, AttractorsBuffer, swarm.attractorsBuffer);
-                boidsCompute.SetInt(NumAttractors, swarm.CurrentAttractorCount);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, DeltaTime, Time.deltaTime);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, Time1, Time.time);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, CellSize, swarm.cellSize);
+                asyncComputeCmd.SetComputeIntParam(boidsCompute, GridSize, swarm.gridSize);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, Speed, swarm.speed);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, SightRadius, swarm.sightRadius);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, SeparationWeight, swarm.separationWeight);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, AlignmentWeight, swarm.alignmentWeight);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, CohesionWeight, swarm.cohesionWeight);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, FloorY, swarm.floorY);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, AvoidanceMargin, swarm.avoidanceMargin);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, PredatorFleeWeight, swarm.predatorFleeWeight);
+                
+                asyncComputeCmd.SetComputeVectorParam(boidsCompute, TargetPosition, swarm.defaultWaypoint);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, TargetWeight, swarm.targetWeight);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, SwirlStrength, swarm.swirlStrength);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, ArrivalRadiusSq, swarm.arrivalRadiusSq);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, ArrivalMinSpeed, swarm.arrivalMinSpeed);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, SingularitySoften, swarm.singularitySoften);
+                asyncComputeCmd.SetComputeFloatParam(boidsCompute, TubeRadius, swarm.tubeRadius);
 
-                boidsCompute.SetBuffer(activeKernel, PredatorsBuffer, swarm.predatorsBuffer);
-                boidsCompute.SetInt(NumPredators, swarm.CurrentPredatorCount);
-
-                boidsCompute.SetBuffer(activeKernel, ObstaclesBuffer, swarm.obstaclesBuffer);
-                boidsCompute.SetInt(NumObstacles, 0);
-
-// Bind Core Buffers
-                boidsCompute.SetInt(NumBoids, swarm.boidCount);
-                boidsCompute.SetBuffer(activeKernel, ReadBoidsBuffer, swarm.readBuffer);
-                boidsCompute.SetBuffer(activeKernel, WriteBoidsBuffer, swarm.writeBuffer);
-                boidsCompute.SetBuffer(activeKernel, GridOffsets, swarm.gridOffsets);
-                boidsCompute.SetBuffer(activeKernel, SortBuffer, swarm.sortBuffer);
-
-// Time & Grid Mechanics
-                boidsCompute.SetFloat(DeltaTime, Time.deltaTime);
-                boidsCompute.SetFloat(Time1, Time.time);
-                boidsCompute.SetFloat(CellSize, swarm.cellSize);
-                boidsCompute.SetInt(GridSize, swarm.gridSize);
-// Flocking Physics
-                boidsCompute.SetFloat(Speed, swarm.speed);
-                boidsCompute.SetFloat(SightRadius, swarm.sightRadius);
-                boidsCompute.SetFloat(SeparationWeight, swarm.separationWeight);
-                boidsCompute.SetFloat(AlignmentWeight, swarm.alignmentWeight);
-                boidsCompute.SetFloat(CohesionWeight, swarm.cohesionWeight);
-
-// Environment
-                boidsCompute.SetFloat(FloorY, swarm.floorY);
-                boidsCompute.SetFloat(AvoidanceMargin, swarm.avoidanceMargin);
-                boidsCompute.SetFloat(PredatorFleeWeight, swarm.predatorFleeWeight);
-
-// Attractors
-                boidsCompute.SetVector(TargetPosition, swarm.defaultWaypoint);
-                boidsCompute.SetFloat(TargetWeight, swarm.targetWeight);
-                boidsCompute.SetFloat(SwirlStrength, swarm.swirlStrength);
-                boidsCompute.SetFloat(ArrivalRadiusSq, swarm.arrivalRadiusSq);
-                boidsCompute.SetFloat(ArrivalMinSpeed, swarm.arrivalMinSpeed);
-                boidsCompute.SetFloat(SingularitySoften, swarm.singularitySoften);
-
-// Spline (If applicable)
-                boidsCompute.SetFloat(TubeRadius, swarm.tubeRadius);
-// boidsCompute.SetFloat("splineLength", swarm.splineLength); // Ensure you pass this if following splines!
-
-                boidsCompute.SetInt(NumBoids, swarm.boidCount);
-
-// Finally, dispatch the compute shader
-                boidsCompute.Dispatch(activeKernel, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
-
+                asyncComputeCmd.DispatchCompute(boidsCompute, activeKernel, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
+                
+                // Note: The Ping-pong occurs immediately on the CPU side. Since CommandBuffer records the buffer reference
+                // at the time 'SetComputeBufferParam' is called, this is completely safe and guarantees the graphics queue
+                // renders the currently calculated frame while the compute queue calculates the next one.
                 swarm.PingPongBuffers();
+            }
 
-                // 3. Rendering (Now using per-swarm materials and meshes)
+            // 2. Dispatch the Command Buffer to the GPU's Async Compute Queue
+            Graphics.ExecuteCommandBufferAsync(asyncComputeCmd, ComputeQueueType.Default);
+            // 3. GRAPHICS QUEUE RENDERING
+            // ==========================================
+            foreach (BoidSwarm swarm in swarms)
+            {
                 propertyBlock.Clear();
+                // Because we ping-ponged immediately above, we bind the newly calculated readBuffer for rendering
                 propertyBlock.SetBuffer(BoidsBuffer, swarm.readBuffer);
                 
                 RenderParams renderParams = new(swarm.swarmMaterial)
@@ -196,11 +184,12 @@ namespace TechArtPlayground
                     shadowCastingMode = ShadowCastingMode.On
                 };
 
-
-
-                // Issue the draw call for THIS specific mesh
                 Graphics.RenderMeshIndirect(renderParams, swarm.swarmMesh, swarm.argsBuffer);
             }
+        }
+        private void OnDestroy()
+        {
+            asyncComputeCmd?.Release();
         }
     }
 }

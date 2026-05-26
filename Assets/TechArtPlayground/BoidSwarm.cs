@@ -174,8 +174,8 @@ namespace TechArtPlayground
             predatorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, safePredCount, 16);
 
 // 2. Core Data Buffers
-            readBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 32);
-            writeBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 32);
+            readBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 48);
+            writeBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 48);
             sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 8);
 
 // NEW RADIX BUFFERS
@@ -306,9 +306,15 @@ namespace TechArtPlayground
                 boids[i] = new Boid
                 {
                     position = transform.position + Random.insideUnitSphere * 10f,
+                    randomSeed = Random.value, // Precompute Size/Wag Seed (0.0 to 1.0)
+    
                     velocity = Random.onUnitSphere,
-                    packedData = packed, // Assign the packed integer
-                    splineT = Random.value // Pure fraction now! Zero precision loss!
+                    colorSeed = Random.value,  // Precompute Color Seed (0.0 to 1.0)
+    
+                    packedData = packed, 
+                    splineT = Random.value,
+                    pad1 = 0f, 
+                    pad2 = 0f
                 };
             }
             readBuffer.SetData(boids);
@@ -328,14 +334,19 @@ namespace TechArtPlayground
             public float radiusSq;
         }
 
-        // --- C# Structs matching HLSL ---
         [StructLayout(LayoutKind.Sequential)]
         public struct Boid
         {
-            public Vector3 position;
-            public Vector3 velocity;
-            public uint packedData; // <-- Replaces 'roll'. Holds 16-bit ID and 16-bit Roll
-            public float splineT;
+            public Vector3 position;    // 12 bytes
+            public float randomSeed;    // 4 bytes  (Total 16)
+    
+            public Vector3 velocity;    // 12 bytes
+            public float colorSeed;     // 4 bytes  (Total 32)
+    
+            public uint packedData;     // 4 bytes  (ID + Roll)
+            public float splineT;       // 4 bytes
+            public float pad1;          // 4 bytes  (Alignment padding)
+            public float pad2;          // 4 bytes  (Total 48 bytes)
         }
 
         [Serializable]
