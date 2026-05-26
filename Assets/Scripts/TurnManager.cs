@@ -1,6 +1,25 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+
+public interface ITurnEntity
+{
+    /// <summary>
+    /// Called during the strategic pause. The entity decides its next move here.
+    /// </summary>
+    void PlanAction();
+
+    /// <summary>
+    /// Called on frame-1 of the turn execution. The entity commits the action.
+    /// </summary>
+    void ExecuteAction();
+
+    /// <summary>
+    /// Called when the turn finishes. Used for decrementing cooldowns or status effects.
+    /// </summary>
+    void EndTurn();
+}
 
 /// <summary>
 ///     Manages discrete turns in the game. Implements the Singleton and Observer patterns.
@@ -18,22 +37,98 @@ public class TurnManager : MonoBehaviour
     public bool IsExecuting { get; private set; }
     public int CurrentTurn { get; private set; }
 
+    
+    // Observer Pattern: Broadcasts when a turn finishes
+    public static event Action<int> OnTurnTicked;
+    
+    
+    private readonly HashSet<ITurnEntity> activeTurnEntities = new HashSet<ITurnEntity>();
+
+    public void RegisterEntity(ITurnEntity entity) => activeTurnEntities.Add(entity);
+    public void UnregisterEntity(ITurnEntity entity) => activeTurnEntities.Remove(entity);
+
+    
     private void Awake()
     {
         if (!Instance) Instance = this;
         else Destroy(gameObject);
 
         defaultFixedDeltaTime = Time.fixedDeltaTime;
-        SetTimeScale(0f); // Start paused
     }
 
+    private void OnEnable()
+    {
+        GameModeManager.OnGameModeChanged += HandleGameModeChanged;
+    }
+
+    private void OnDisable()
+    {
+        GameModeManager.OnGameModeChanged -= HandleGameModeChanged;
+    }
+    
     private void Update()
     {
-        Shader.SetGlobalFloat(GlobalUnscaledTime, Time.unscaledTime);
+        // Let entities dynamically plan their moves while time is paused
+        if (GameModeManager.Instance.CurrentMode == GameMode.Combat && !IsExecuting)
+        {
+            foreach (var entity in activeTurnEntities)
+            {
+                entity.PlanAction();
+            }
+        }
     }
 
-    // Observer Pattern: Broadcasts when a turn finishes
-    public static event Action<int> OnTurnTicked;
+    // Your existing coroutine, upgraded to trigger the interface methods
+    private IEnumerator ExecuteTurnsRoutine(int turnCost)
+    {
+        IsExecuting = true;
+        SetTimeScale(1f); 
+
+        for (int i = 0; i < turnCost; i++)
+        {
+            // 1. EXECUTE phase: Tell all entities to fire their queued actions
+            foreach (var entity in activeTurnEntities)
+            {
+                entity.ExecuteAction();
+            }
+
+            // 2. WAIT for the real-time turn duration
+            float elapsed = 0f;
+            while (elapsed < secondsPerTurn)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            CurrentTurn++;
+            
+            // 3. CLEANUP phase: Process cooldowns
+            foreach (var entity in activeTurnEntities)
+            {
+                entity.EndTurn();
+            }
+        }
+
+        if (GameModeManager.Instance.CurrentMode == GameMode.Combat)
+        {
+            SetTimeScale(0f); 
+        }
+    
+        IsExecuting = false;
+    }
+    
+    private void HandleGameModeChanged(GameMode mode)
+    {
+        if (mode == GameMode.Exploration)
+        {
+            SetTimeScale(1f); // Free movement, real-time
+        }
+        else if (mode == GameMode.Combat)
+        {
+            SetTimeScale(0f); // Pause time, await turn commands
+        }
+    }
+
 
     /// <summary>
     ///     Queues the execution of a set number of turns.
@@ -43,29 +138,6 @@ public class TurnManager : MonoBehaviour
         if (!IsExecuting && turnCost > 0) StartCoroutine(ExecuteTurnsRoutine(turnCost));
     }
 
-    private IEnumerator ExecuteTurnsRoutine(int turnCost)
-    {
-        IsExecuting = true;
-        SetTimeScale(1f); // Resume time
-
-        for (int i = 0; i < turnCost; i++)
-        {
-            float elapsed = 0f;
-
-            // Wait for exactly 'secondsPerTurn'
-            while (elapsed < secondsPerTurn)
-            {
-                elapsed += Time.deltaTime;
-                yield return null;
-            }
-
-            CurrentTurn++;
-            OnTurnTicked?.Invoke(CurrentTurn); // Notify all listeners that a turn completed
-        }
-
-        SetTimeScale(0f); // Pause time
-        IsExecuting = false;
-    }
 
     private void SetTimeScale(float targetTimeScale)
     {

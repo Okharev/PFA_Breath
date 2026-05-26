@@ -1,0 +1,533 @@
+#pragma kernel ClearGrid
+#pragma kernel PopulateHashes
+#pragma kernel ReorderBoids
+#pragma kernel BuildGridOffsets
+#pragma kernel CSMain
+#pragma kernel CSMain_SplineFlow
+
+struct Boid
+{
+    float3 position;
+    float3 velocity;
+    uint packedData; // Replaces float roll
+    float splineT;
+};
+
+struct Attractor
+{
+    float3 position;
+    float weight;
+    float3 velocity;
+    float padding;
+};
+
+struct Obstacle
+{
+    float3 position;
+    float radiusSq;
+};
+
+struct Predator
+{
+    float3 position;
+    float radiusSq;
+};
+
+struct BoidHashPair
+{
+    uint boidIndex;
+    uint cellHash;
+};
+
+struct SplineSample
+{
+    float3 position;
+    float3 tangent;
+    float width;
+};
+
+// --- BUFFERS & GLOBALS ---
+StructuredBuffer<Attractor> attractorsBuffer;
+int numAttractors;
+StructuredBuffer<Predator> predatorsBuffer;
+int numPredators;
+StructuredBuffer<Boid> ReadBoidsBuffer;
+RWStructuredBuffer<Boid> WriteBoidsBuffer;
+StructuredBuffer<Obstacle> obstaclesBuffer;
+RWStructuredBuffer<int> gridOffsets;
+RWStructuredBuffer<BoidHashPair> SortBuffer;
+RWStructuredBuffer<float> SplineTBuffer;
+
+// Spline Data
+StructuredBuffer<SplineSample> splineBuffer;
+int splineResolution;
+float splineLength;
+
+float cellSize;
+int gridSize;
+int numBoids;
+int paddedCount;
+int numObstacles;
+float deltaTime;
+float speed;
+float sightRadius;
+float separationWeight;
+float alignmentWeight; // <-- ADD THIS
+float cohesionWeight;  // <-- ADD THIS
+float3 targetPosition;
+float targetWeight;
+float3 predatorPosition;
+float predatorRadius;
+float time;
+float floorY;
+float avoidanceMargin;
+float swirlStrength;
+float arrivalRadiusSq;
+float arrivalMinSpeed;
+float singularitySoften;
+float tubeRadius;
+float predatorFleeWeight;
+
+// --- UTILITY FUNCTIONS ---
+inline float3 FastSafeNormalize(float3 v, float3 fallback)
+{
+    float sqLen = dot(v, v);
+    // rsqrt is hardware-accelerated. Branchless condition using ternary.
+    return sqLen > 1e-8f ? v * rsqrt(sqLen) : fallback; 
+}
+
+int FastWrap(int val, int maxVal)
+{
+    int res = val % maxVal;
+    return res < 0 ? res + maxVal : res;
+}
+
+int3 GetCellCoordinates(float3 pos)
+{
+    int3 cell = int3(floor(pos / cellSize));
+    cell.x = FastWrap(cell.x, gridSize);
+    cell.y = FastWrap(cell.y, gridSize);
+    cell.z = FastWrap(cell.z, gridSize);
+    return cell;
+}
+
+int GetCellHash(int3 cell)
+{
+    return cell.x + (cell.y * gridSize) + (cell.z * gridSize * gridSize);
+}
+
+// --- GRID KERNELS ---
+[numthreads(64, 1, 1)]
+void ClearGrid(uint3 id : SV_DispatchThreadID)
+{
+    int totalCells = gridSize * gridSize * gridSize;
+    if (id.x >= (uint)totalCells) return;
+    gridOffsets[id.x] = -1;
+}
+
+[numthreads(64, 1, 1)]
+void PopulateHashes(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)paddedCount) return;
+    if (id.x < (uint)numBoids)
+    {
+        int3 cellCoords = GetCellCoordinates(ReadBoidsBuffer[id.x].position);
+        SortBuffer[id.x].boidIndex = id.x;
+        SortBuffer[id.x].cellHash = (uint)GetCellHash(cellCoords);
+    }
+    else
+    {
+        SortBuffer[id.x].boidIndex = id.x;
+        SortBuffer[id.x].cellHash = 0xFFFFFFFF;
+    }
+}
+
+[numthreads(64, 1, 1)]
+void BuildGridOffsets(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)numBoids) return;
+    uint currentHash = SortBuffer[id.x].cellHash;
+    if (id.x == 0 || currentHash != SortBuffer[id.x - 1].cellHash)
+    {
+        gridOffsets[currentHash] = id.x;
+    }
+}
+
+[numthreads(64, 1, 1)]
+void ReorderBoids(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)numBoids) return;
+    uint originalIndex = SortBuffer[id.x].boidIndex;
+    WriteBoidsBuffer[id.x] = ReadBoidsBuffer[originalIndex];
+}
+
+// --- ORIGINAL PHYSICS KERNEL ---
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    // --- 1. SAFETY CHECK & INITIALIZATION ---
+    // Ensure we don't process threads outside our actual boid count
+    if (id.x >= (uint)numBoids) return;
+    
+    // Read the current boid's data from the sorted buffer
+    Boid boid = ReadBoidsBuffer[id.x];
+
+    // --- 2. EXTRACT SPEED & DIRECTION (32-Byte Optimization) ---
+    // Because we removed the 'direction' and 'currentSpeed' floats to fit 
+    // perfectly into a 32-byte cache line, we calculate them on the fly from velocity.
+    float currentSpeed = length(boid.velocity);
+    float3 boidDirection = currentSpeed > 0.001f ? (boid.velocity / currentSpeed) : float3(0, 0, 1);
+
+    // Initialize core flocking force vectors
+    float3 separation = float3(0, 0, 0);
+    float3 alignment = float3(0, 0, 0);
+    float3 cohesion = float3(0, 0, 0);
+    int boidsInRange = 0;
+
+    // --- 3. SPATIAL GRID SETUP ---
+    // Determine which cell this boid is in
+    int3 myCell = GetCellCoordinates(boid.position);
+    float sightRadiusSq = sightRadius * sightRadius;
+    float3 cellCenter = (myCell * cellSize) + (cellSize * 0.5f);
+    
+    // Determine the offset (-1 or +1) to check the 8 closest cells 
+    // rather than checking all 27 surrounding cells.
+    int3 offset = int3(step(cellCenter, boid.position) * 2.0f - 1.0f);
+
+    // --- 4. NEIGHBOR SEARCH (Unrolled Loop Optimization) ---
+    // Forcing the compiler to unroll this exact 2x2x2 grid search 
+    // eliminates branch evaluation and loop counter overhead.
+    [unroll]
+    for (int x = 0; x <= 1; x++)
+    {
+        [unroll]
+        for (int y = 0; y <= 1; y++)
+        {
+            [unroll]
+            for (int z = 0; z <= 1; z++)
+            {
+                // Calculate wrapped neighbor cell coordinates
+                int3 neighborCell = myCell + int3(x * offset.x, y * offset.y, z * offset.z);
+                neighborCell.x = FastWrap(neighborCell.x, gridSize);
+                neighborCell.y = FastWrap(neighborCell.y, gridSize);
+                neighborCell.z = FastWrap(neighborCell.z, gridSize);
+
+                // Fetch the start index for this cell from the grid offsets buffer
+                int neighborHash = GetCellHash(neighborCell);
+                int startIndex = gridOffsets[neighborHash];
+                
+                if (startIndex != -1)
+                {
+                    // Iterate through all boids in this specific cell
+                    for (uint i = (uint)startIndex; i < (uint)numBoids; i++)
+                    {
+                        // Stop if we hit a boid belonging to a different cell
+                        if (SortBuffer[i].cellHash != (uint)neighborHash) break;
+                        
+                        if (i != id.x) // Don't compare the boid to itself
+                        {
+                            Boid otherBoid = ReadBoidsBuffer[i];
+                            float3 diff = boid.position - otherBoid.position;
+                            float distSq = dot(diff, diff);
+
+                            if (distSq < sightRadiusSq && distSq > 0.001f)
+                            {
+                                // Extract neighbor's direction from its velocity
+                                float otherSpeed = length(otherBoid.velocity);
+                                float3 otherDir = otherSpeed > 0.001f ? (otherBoid.velocity / otherSpeed) : float3(0, 0, 1);
+
+                                // Alignment: Match direction of neighbors looking the same way
+                                float alignmentSimilarity = dot(boidDirection, otherDir);
+                                if (alignmentSimilarity > 0.5f) alignment += otherDir;
+                                
+                                // Separation (Optimization): Use hardware reciprocal (rcp) instead of division (/)
+                                separation += diff * rcp(distSq); 
+                                cohesion += otherBoid.position;
+                                boidsInRange++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- 5. FINALIZE FLOCKING FORCES ---
+    // Average out the alignment and cohesion forces
+    if (boidsInRange > 0)
+    {
+        alignment = FastSafeNormalize(alignment / boidsInRange, boidDirection);
+        cohesion = FastSafeNormalize((cohesion / boidsInRange) - boid.position, float3(0, 0, 0));
+    }
+
+    // --- 6. ORGANIC NOISE & ENVIRONMENT AVOIDANCE ---
+    // Generate a pseudo-random wobble based on time and world position
+    float phase = time * 2.0f + boid.position.z * 0.1f;
+    float s, c;
+    sincos(phase, s, c);
+    float3 organicNoise = float3(s, c, s * c) * 0.2f;
+
+    // Initialize default target speed
+    float targetSpeed = speed; 
+    
+    // Predator Avoidance
+    float3 fleeDirection = float3(0, 0, 0);
+    for (int p = 0; p < numPredators; p++)
+    {
+        Predator pred = predatorsBuffer[p];
+        float3 predDiff = boid.position - pred.position;
+        float predDistSq = dot(predDiff, predDiff);
+        
+        if (predDistSq < pred.radiusSq && predDistSq > 0.001f)
+        {
+            fleeDirection += predDiff * (5.0f / predDistSq);
+            targetSpeed = max(targetSpeed, speed * 3.0f); // Panic burst
+        }
+    }
+    if (length(fleeDirection) > 0.01f) fleeDirection = normalize(fleeDirection) * 5.0f;
+
+    // Obstacle Avoidance
+    float3 obstacleAvoidance = float3(0, 0, 0);
+    for (int j = 0; j < numObstacles; j++)
+    {
+        Obstacle obs = obstaclesBuffer[j];
+        float3 obsDiff = boid.position - obs.position;
+        float obsDistSq = dot(obsDiff, obsDiff);
+        if (obsDistSq < obs.radiusSq && obsDistSq > 0.001f)
+        {
+            obstacleAvoidance += obsDiff * (10.0f / obsDistSq);
+            targetSpeed = max(targetSpeed, speed * 1.5f);
+        }
+    }
+
+    // Floor / Boundary Avoidance
+    float3 boundaryAvoidance = float3(0, 0, 0);
+    if (boid.position.y < floorY + avoidanceMargin)
+    {
+        boundaryAvoidance.y += ((floorY + avoidanceMargin) - boid.position.y) * 10.0f;
+        targetSpeed = max(targetSpeed, speed * 1.5f);
+    }
+
+    // --- 7. ATTRACTORS (Swirl and Waypoints) ---
+    float3 groupDirection = float3(0, 0, 0);
+    float totalWeight = 0.0001f;
+    float speedMultiplier = 1.0f;
+
+    for (int a = 0; a < numAttractors; a++)
+    {
+        Attractor attr = attractorsBuffer[a];
+        float3 toAttractor = attr.position - boid.position;
+        float distSq = dot(toAttractor, toAttractor);
+        float3 dirToAttractor = FastSafeNormalize(toAttractor, boidDirection);
+        
+        // Calculate tangent for swirling orbit
+        float3 tangent = boidDirection - (dot(boidDirection, dirToAttractor) * dirToAttractor);
+        if (dot(tangent, tangent) < 0.0001f) tangent = cross(float3(0, 1, 0), dirToAttractor);
+        tangent = normalize(tangent);
+
+        float attractorSpeed = length(attr.velocity);
+        float dynamicSwirlDampen = saturate(1.0f - (attractorSpeed / speed));
+        float currentSwirlStrength = swirlStrength * dynamicSwirlDampen;
+        float swirlFactor = saturate(1.0f - (distSq / arrivalRadiusSq));
+        
+        float3 finalPush = FastSafeNormalize(lerp(dirToAttractor, tangent, swirlFactor * currentSwirlStrength), boidDirection);
+        float weight = attr.weight / (distSq + singularitySoften);
+        
+        groupDirection += finalPush * weight;
+        totalWeight += weight;
+
+        // Slow down as boids arrive at the attractor
+        if (distSq < arrivalRadiusSq)
+        {
+            float slowDown = lerp(arrivalMinSpeed, 1.0f, distSq / arrivalRadiusSq);
+            speedMultiplier = min(speedMultiplier, slowDown);
+        }
+    }
+
+    // Resolve final target steering direction
+    float3 directionToTarget = groupDirection / totalWeight;
+    if (totalWeight < 0.001f)
+    {
+        directionToTarget = FastSafeNormalize(targetPosition - boid.position, boidDirection) * targetWeight;
+    }
+    else
+    {
+        targetSpeed *= speedMultiplier;
+    }
+
+    // --- 8. FINAL INTEGRATION ---
+    // Combine all behaviors into one master steering vector
+    float3 targetDir = (alignment * alignmentWeight) + (cohesion * cohesionWeight) + (separation * separationWeight) + directionToTarget + organicNoise + fleeDirection + obstacleAvoidance + boundaryAvoidance;
+    float3 normalizedTargetDir = FastSafeNormalize(targetDir, boidDirection);
+    
+    // UNPACK ID & ROLL
+    uint pID = boid.packedData >> 16;
+    float roll = ((float)(boid.packedData & 0xFFFF) / 65535.0f) * 6.28318f - 3.14159f;
+
+    float turnStrength = cross(boidDirection, normalizedTargetDir).y;
+    roll = lerp(roll, turnStrength * 3.0f, deltaTime * 4.0f);
+    
+    // RE-PACK ROLL
+    uint newRoll16 = (uint)(saturate((roll + 3.14159f) / 6.28318f) * 65535.0f);
+    boid.packedData = (pID << 16) | newRoll16;
+    
+    float3 newDirection = lerp(boidDirection, normalizedTargetDir, deltaTime * 3.0f);
+    float newSpeed = lerp(currentSpeed, targetSpeed, deltaTime * 5.0f);
+    
+    boid.velocity = newDirection * newSpeed;
+    boid.position += boid.velocity * deltaTime;
+
+    WriteBoidsBuffer[id.x] = boid;
+}
+
+[numthreads(64, 1, 1)]
+void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
+{
+    // --- 1. SAFETY & INITIALIZATION ---
+    if (id.x >= (uint)numBoids) return;
+    
+    Boid boid = ReadBoidsBuffer[id.x];
+
+    // --- 2. EXTRACT SPEED & DIRECTION ---
+    float currentSpeed = length(boid.velocity);
+    float3 boidDirection = currentSpeed > 0.001f ? (boid.velocity / currentSpeed) : float3(0, 0, 1);
+
+    // Procedural target speed fluctuation 
+    float targetSpeed = speed + (sin(time * 2.0f + (float)id.x) * 0.5f);
+
+    // ==========================================
+    // THE FIX PART 1: Extract only the fraction!
+    // ==========================================
+    float currentT = frac(boid.splineT);
+
+    // --- 3. O(1) SPLINE LOOKUP ---
+    // Safely use currentT (0.0 to 1.0) for the buffer lookup
+    float floatIndex = boid.splineT * (float)(splineResolution - 1);
+    int indexFloor = (int)floor(floatIndex);
+    int indexCeil = min(indexFloor + 1, splineResolution - 1);
+    float tLerp = frac(floatIndex);
+
+    SplineSample pt;
+    pt.position = lerp(splineBuffer[indexFloor].position, splineBuffer[indexCeil].position, tLerp);
+    pt.tangent = normalize(lerp(splineBuffer[indexFloor].tangent, splineBuffer[indexCeil].tangent, tLerp));
+    pt.width = lerp(splineBuffer[indexFloor].width, splineBuffer[indexCeil].width, tLerp);
+    
+    uint pID = boid.packedData >> 16;
+    float roll = ((float)(boid.packedData & 0xFFFF) / 65535.0f) * 6.28318f - 3.14159f;
+    
+    // --- 4. LANE OFFSET (Procedural Tube Distribution) ---
+    float randomAngle = frac(sin((float)pID * 123.45f) * 4567.89f) * 6.28318f;
+    float randomRadius = frac(cos((float)pID * 789.10f) * 1234.56f) * tubeRadius;
+
+    float3 upDir = float3(0, 1, 0);
+    float3 rightDir = normalize(cross(upDir, pt.tangent));
+    float3 localUp = normalize(cross(pt.tangent, rightDir));
+
+    float3 laneOffset = (rightDir * cos(randomAngle) + localUp * sin(randomAngle)) * randomRadius;
+    float3 targetPathPos = pt.position + laneOffset;
+
+    // --- 5. LOCAL SEPARATION (Unrolled Grid Search) ---
+    float3 separation = float3(0, 0, 0);
+    int3 myCell = GetCellCoordinates(boid.position);
+    float sightRadiusSq = sightRadius * sightRadius;
+    
+    float3 cellCenter = (myCell * cellSize) + (cellSize * 0.5f);
+    int3 offset = int3(step(cellCenter, boid.position) * 2.0f - 1.0f);
+
+    [unroll]
+    for (int x = 0; x <= 1; x++)
+    {
+        [unroll]
+        for (int y = 0; y <= 1; y++)
+        {
+            [unroll]
+            for (int z = 0; z <= 1; z++)
+            {
+                int3 neighborCell = myCell + int3(x * offset.x, y * offset.y, z * offset.z);
+                neighborCell.x = FastWrap(neighborCell.x, gridSize);
+                neighborCell.y = FastWrap(neighborCell.y, gridSize);
+                neighborCell.z = FastWrap(neighborCell.z, gridSize);
+
+                int neighborHash = GetCellHash(neighborCell);
+                int startIndex = gridOffsets[neighborHash];
+
+                if (startIndex != -1)
+                {
+                    for (uint i = (uint)startIndex; i < (uint)numBoids; i++)
+                    {
+                        if (SortBuffer[i].cellHash != (uint)neighborHash) break;
+
+                        if (i != id.x)
+                        {
+                            Boid other = ReadBoidsBuffer[i];
+                            float3 diff = boid.position - other.position;
+                            float distSq = dot(diff, diff);
+                            if (distSq < sightRadiusSq && distSq > 0.001f)
+                            {
+                                separation += diff * rcp(distSq);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- 6. PREDATOR & OBSTACLE AVOIDANCE ---
+    float3 fleeDirection = float3(0, 0, 0);
+    bool isFleeing = false;
+
+    // Predators
+    for (int p = 0; p < numPredators; p++)
+    {
+        Predator pred = predatorsBuffer[p];
+        float3 predDiff = boid.position - pred.position;
+        float predDistSq = dot(predDiff, predDiff);
+
+        if (predDistSq < pred.radiusSq && predDistSq > 0.001f)
+        {
+            fleeDirection += predDiff * (predatorFleeWeight / predDistSq);
+            targetSpeed = max(targetSpeed, speed * 3.0f); 
+            isFleeing = true;
+        }
+    }
+
+    // Obstacles
+    for (int j = 0; j < numObstacles; j++)
+    {
+        float3 obsDiff = boid.position - obstaclesBuffer[j].position;
+        float obsDistSq = dot(obsDiff, obsDiff);
+        if (obsDistSq < obstaclesBuffer[j].radiusSq && obsDistSq > 0.001f)
+        {
+            fleeDirection += obsDiff * (15.0f / obsDistSq);
+            targetSpeed = max(targetSpeed, speed * 2.0f);
+            isFleeing = true;
+        }
+    }
+
+    // --- 7. FINAL STEERING CALCULATION ---
+    float survivalMultiplier = isFleeing ? 0.1f : 1.0f;
+    float3 containment = (targetPathPos - boid.position) * 1.5f * survivalMultiplier;
+
+    float3 targetDir = (pt.tangent * targetWeight * survivalMultiplier) + containment + (separation * separationWeight) + fleeDirection;
+    float3 normalizedTargetDir = FastSafeNormalize(targetDir, boidDirection);
+
+    // --- 8. INTEGRATION ---
+    float turnStrength = cross(boidDirection, normalizedTargetDir).y;
+    roll = lerp(roll, turnStrength * 3.0f, deltaTime * 4.0f);
+    
+    uint newRoll16 = (uint)(saturate((roll + 3.14159f) / 6.28318f) * 65535.0f);
+    boid.packedData = (pID << 16) | newRoll16;
+
+    float3 newDirection = lerp(boidDirection, normalizedTargetDir, deltaTime * 3.0f);
+    float newSpeed = lerp(currentSpeed, targetSpeed, deltaTime * 5.0f);
+    
+    boid.velocity = newDirection * newSpeed;
+    boid.position += boid.velocity * deltaTime;
+    
+    // Pure, perfect float looping. No truncation.
+    boid.splineT += (newSpeed * deltaTime) / max(splineLength, 0.0001f);
+    if (boid.splineT > 1.0f) boid.splineT -= 1.0f;
+
+    WriteBoidsBuffer[id.x] = boid;
+}

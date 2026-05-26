@@ -1,0 +1,185 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d2e81b027d744b5b6828da3a09afddc, type: 3}
+  m_Name: SkillTree
+  m_EditorClassIdentifier: Assembly-CSharp::Skills.SkillTreeGraph
+  AllNodes:
+  - rid: 2913246723371696218
+  - rid: 2913246723371696219
+  - rid: 2913246723371696222
+  - rid: 2913246723371696217
+  - rid: 2913246723371696223
+  - rid: 996992594153046079
+  - rid: 996992594153046078
+  - rid: 2913246723371696220
+  references:
+    version: 2
+    RefIds:
+    - rid: 996992594153046078
+      type: {class: EmotionNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 4d1b39f6-003c-488f-beb0-e598e6e1a7f5
+        Position:
+          serializedVersion: 2
+          x: 625
+          y: 250
+          width: 161
+          height: 77
+        NodeName: Verbal anger
+        Description: 
+        PrerequisiteGUIDs:
+        - c21043d4-8cb4-4561-ae02-9c15af838b6a
+        RequiredEmotion: 0
+        BaseEmotionCost: 1
+        MaxLevel: 4
+        UnlocksAbility: 1
+        GrantedAbilityId: Shotgun_Blast1
+        IntendedSlot: 0
+        GrantedStats: []
+    - rid: 996992594153046079
+      type: {class: EmotionNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: f26aac92-904b-4e99-a7a7-0f493e3a6859
+        Position:
+          serializedVersion: 2
+          x: 1175
+          y: 25
+          width: 161
+          height: 77
+        NodeName: Barrel through
+        Description: 
+        PrerequisiteGUIDs:
+        - 4afa15d0-37d8-4723-a61e-9d8cdf8d24a8
+        - 12b59707-4470-4a31-8ebb-3fa4c59184a8
+        RequiredEmotion: 0
+        BaseEmotionCost: 1
+        MaxLevel: 4
+        UnlocksAbility: 1
+        GrantedAbilityId: BarrelThrough_Dash
+        IntendedSlot: 4
+        GrantedStats: []
+    - rid: 2913246723371696217
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 6683bc25-37b2-4687-9290-e7734be7bab0
+        Position:
+          serializedVersion: 2
+          x: 75
+          y: 25
+          width: 161
+          height: 77
+        NodeName: Damage +5
+        Description: add 5 dmg to projectile
+        PrerequisiteGUIDs: []
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 0
+          Type: 100
+          Value: 5
+    - rid: 2913246723371696218
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 63751b21-2ee5-4077-9956-040f0068278e
+        Position:
+          serializedVersion: 2
+          x: 350
+          y: -100
+          width: 161
+          height: 77
+        NodeName: Speed +10%
+        Description: 
+        PrerequisiteGUIDs:
+        - 6683bc25-37b2-4687-9290-e7734be7bab0
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 4
+          Type: 200
+          Value: 10
+    - rid: 2913246723371696219
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: c21043d4-8cb4-4561-ae02-9c15af838b6a
+        Position:
+          serializedVersion: 2
+          x: 350
+          y: 100
+          width: 161
+          height: 77
+        NodeName: Oxygen cost -5%
+        Description: 
+        PrerequisiteGUIDs:
+        - 6683bc25-37b2-4687-9290-e7734be7bab0
+        GenericCost: 0
+        GrantedStats:
+        - Stat: 2
+          Type: 200
+          Value: 5
+    - rid: 2913246723371696220
+      type: {class: EmotionNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 4c4a5a96-1be0-463a-8f51-6eba41778733
+        Position:
+          serializedVersion: 2
+          x: 600
+          y: -225
+          width: 161
+          height: 77
+        NodeName: Lashing out
+        Description: YOur primary shooting ability is now a short range sotgun
+        PrerequisiteGUIDs:
+        - 63751b21-2ee5-4077-9956-040f0068278e
+        - 63751b21-2ee5-4077-9956-040f0068278e
+        RequiredEmotion: 0
+        BaseEmotionCost: 1
+        MaxLevel: 4
+        UnlocksAbility: 1
+        GrantedAbilityId: Shotgun_Blast
+        IntendedSlot: 0
+        GrantedStats: []
+    - rid: 2913246723371696222
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 4afa15d0-37d8-4723-a61e-9d8cdf8d24a8
+        Position:
+          serializedVersion: 2
+          x: 850
+          y: -100
+          width: 161
+          height: 77
+        NodeName: Damage +10%
+        Description: 
+        PrerequisiteGUIDs:
+        - 4c4a5a96-1be0-463a-8f51-6eba41778733
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 0
+          Type: 200
+          Value: 10
+    - rid: 2913246723371696223
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 12b59707-4470-4a31-8ebb-3fa4c59184a8
+        Position:
+          serializedVersion: 2
+          x: 850
+          y: 100
+          width: 161
+          height: 77
+        NodeName: Oxygen cost -5%
+        Description: 
+        PrerequisiteGUIDs:
+        - 4d1b39f6-003c-488f-beb0-e598e6e1a7f5
+        GenericCost: 1
+        GrantedStats:
+        - Stat: 2
+          Type: 200
+          Value: 5
