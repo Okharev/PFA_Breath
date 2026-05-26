@@ -171,23 +171,21 @@ namespace TechArtPlayground
             paddedCount = Mathf.NextPowerOfTwo(numBoids);
 
             // --- 1. INIT BOIDS (Core Data) ---
-// Inside Start():
+            // Inside Start():
             Boid[] boidsArray = new Boid[numBoids];
             for (int i = 0; i < numBoids; i++)
             {
                 boidsArray[i].position = transform.position + Random.insideUnitSphere * spawnRadius;
-                boidsArray[i].direction = Random.onUnitSphere;
-                Color randomColor = Color.Lerp(colorA, colorB, Random.value);
-                boidsArray[i].color = new Vector3(randomColor.r, randomColor.g, randomColor.b);
-                boidsArray[i].size = Random.Range(minSize, maxSize);
-                boidsArray[i].currentSpeed = speed;
+                boidsArray[i].velocity = Random.onUnitSphere * speed;
                 boidsArray[i].roll = 0f;
-                boidsArray[i].flapPhase = Random.Range(0f, 100f);
-                boidsArray[i].splineT = Random.value; // <-- INIT HERE AGAIN
+
+                // THE FIX: Pack the persistent ID (i) into the integer portion of the float.
+                // The fractional part (Random.value) remains the path progress!
+                boidsArray[i].splineT = i + Random.value;
             }
 
-            // Change stride back to 56
-            int boidStride = 56;
+// OPTIMIZATION: Stride is now exactly 32 bytes (4 floats * 8)
+            int boidStride = 32;
             boidsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
             boidsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
             boidsBufferA.SetData(boidsArray);
@@ -482,7 +480,7 @@ namespace TechArtPlayground
         {
             int size = Physics.OverlapSphereNonAlloc(transform.position, scanRadius, collBuffer, obstacleLayer);
             obstacleCount = Mathf.Min(size, maxObstacles);
-            
+
             for (int i = 0; i < obstacleCount; i++)
             {
                 obstaclesArray[i].position = collBuffer[i].bounds.center;
@@ -524,12 +522,8 @@ namespace TechArtPlayground
         private struct Boid
         {
             public Vector3 position;
-            public Vector3 direction;
-            public Vector3 color;
-            public float size;
-            public float currentSpeed;
+            public Vector3 velocity; // Length = speed, Normalize = direction
             public float roll;
-            public float flapPhase;
             public float splineT;
         }
     }
