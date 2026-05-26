@@ -8,7 +8,6 @@ struct BoidHashPair
     uint cellHash;
 };
 
-// Buffers
 StructuredBuffer<BoidHashPair> InputBuffer;
 RWStructuredBuffer<BoidHashPair> OutputBuffer;
 
@@ -20,60 +19,87 @@ uint numElements;
 uint numBlocks;
 uint bitShift;
 
-// Shared memory tailored for 256 threads (8-bit radix = 256 bins)
-groupshared uint localCount[256];
-groupshared uint digitTotals[256];
-groupshared uint digitPrefix[256];
+// 16 bins for a 4-bit radix, across 256 threads. Flattened to a 1D array (16 * 256 = 4096) to fit in 16KB of shared memory.
+groupshared uint counts[4096];
+groupshared uint digitTotals[16];
+groupshared uint digitPrefix[16];
 
 [numthreads(256, 1, 1)]
-void LocalHistogram(uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex)
+void LocalHistogram(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex, uint3 groupID : SV_GroupID)
 {
-    // 1. Initialize shared memory
-    localCount[groupIndex] = 0;
-    GroupMemoryBarrierWithGroupSync();
-
-    // 2. Count digit occurrences locally
+    uint digit = 0;
     if (id.x < numElements)
     {
-        uint digit = (InputBuffer[id.x].cellHash >> bitShift) & 0xFF;
-        uint localOffset;
-        InterlockedAdd(localCount[digit], 1, localOffset);
-        
-        // Cache the local offset so we don't recalculate it during the Scatter phase
-        LocalOffsets[id.x] = localOffset;
+        digit = (InputBuffer[id.x].cellHash >> bitShift) & 0xF;
+    }
+
+    // 1. Initialize the 16 bins for this specific thread
+    [unroll]
+    for (uint i = 0; i < 16; i++)
+    {
+        counts[(i * 256) + groupIndex] = (digit == i && id.x < numElements) ? 1 : 0;
     }
     GroupMemoryBarrierWithGroupSync();
 
-    // 3. Write local block counts to global memory
-    // Because we have 256 threads and 256 digits, thread 'groupIndex' writes the count for digit 'groupIndex'
-    GlobalHist[groupIndex * numBlocks + groupID.x] = localCount[groupIndex];
+    // 2. Hillis-Steele Parallel Prefix Scan (8 steps for 256 elements)
+    [unroll]
+    for (uint offset = 1; offset < 256; offset *= 2)
+    {
+        uint temp[16];
+        [unroll]
+        for (uint i = 0; i < 16; i++)
+        {
+            temp[i] = (groupIndex >= offset) ? counts[(i * 256) + groupIndex - offset] : 0;
+        }
+        GroupMemoryBarrierWithGroupSync();
+
+        [unroll]
+        for (uint j = 0; j < 16; j++)
+        {
+            counts[(j * 256) + groupIndex] += temp[j];
+        }
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    // 3. Store exclusive prefix sum as the local offset
+    if (id.x < numElements)
+    {
+        LocalOffsets[id.x] = counts[(digit * 256) + groupIndex] - 1;
+    }
+
+    // 4. Thread 255 writes the total block counts to the global histogram
+    if (groupIndex == 255)
+    {
+        [unroll]
+        for (uint k = 0; k < 16; k++)
+        {
+            GlobalHist[k * numBlocks + groupID.x] = counts[(k * 256) + 255];
+        }
+    }
 }
 
-
-[numthreads(256, 1, 1)]
-void GlobalScan(uint groupIndex : SV_GroupIndex)
+[numthreads(16, 1, 1)]
+void GlobalScan(uint3 id : SV_DispatchThreadID)
 {
-    uint digit = groupIndex;
+    uint digit = id.x;
     uint sum = 0;
 
-    // 1. Thread 'digit' scans across all blocks for its specific digit
+    // 1. Thread 'digit' scans across all blocks for its specific bin
     for (uint b = 0; b < numBlocks; b++)
     {
         uint idx = digit * numBlocks + b;
         uint count = GlobalHist[idx];
-        GlobalHist[idx] = sum;
+        GlobalHist[idx] = sum; // Write exclusive sum back
         sum += count;
     }
-
     digitTotals[digit] = sum;
     GroupMemoryBarrierWithGroupSync();
 
-    // 2. Compute prefix sum of total digit counts across the whole grid
-    // Using thread 0 for simplicity since 256 iterations inside shared memory is lightning fast (~256 cycles)
+    // 2. Thread 0 calculates the global prefix sum across the 16 digits
     if (digit == 0)
     {
         uint total = 0;
-        for (uint i = 0; i < 256; i++)
+        for (uint i = 0; i < 16; i++)
         {
             digitPrefix[i] = total;
             total += digitTotals[i];
@@ -89,17 +115,16 @@ void GlobalScan(uint groupIndex : SV_GroupIndex)
     }
 }
 
-
 [numthreads(256, 1, 1)]
 void Scatter(uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
 {
     if (id.x < numElements)
     {
-        uint digit = (InputBuffer[id.x].cellHash >> bitShift) & 0xFF;
+        uint digit = (InputBuffer[id.x].cellHash >> bitShift) & 0xF;
         uint localOffset = LocalOffsets[id.x];
         uint globalOffset = GlobalHist[digit * numBlocks + groupID.x];
 
-        // Final deterministic index
+        // Deterministic, perfectly stable index
         uint finalIndex = globalOffset + localOffset;
         OutputBuffer[finalIndex] = InputBuffer[id.x];
     }

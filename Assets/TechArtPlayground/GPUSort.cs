@@ -17,11 +17,11 @@ namespace TechArtPlayground
         private static readonly int NumBlocks = Shader.PropertyToID("numBlocks");
         private static readonly int BitShift = Shader.PropertyToID("bitShift");
 
+
         /// <summary>
-        /// Executes an O(N) 4-Pass Radix Sort on the GPU (8-bit digits).
+        /// Executes an O(N) 8-Pass Stable Radix Sort on the GPU (4-bit digits).
         /// </summary>
-        public static void RadixSort(ComputeShader radixShader, GraphicsBuffer sortBuffer,
-            GraphicsBuffer tempSortBuffer, GraphicsBuffer globalHist, GraphicsBuffer localOffsets, int paddedCount)
+        public static void RadixSort(ComputeShader radixShader, GraphicsBuffer sortBuffer, GraphicsBuffer tempSortBuffer, GraphicsBuffer globalHist, GraphicsBuffer localOffsets, int paddedCount)
         {
             int kernelHistogram = radixShader.FindKernel("LocalHistogram");
             int kernelScan = radixShader.FindKernel("GlobalScan");
@@ -36,24 +36,23 @@ namespace TechArtPlayground
             GraphicsBuffer input = sortBuffer;
             GraphicsBuffer output = tempSortBuffer;
 
-            // 4 passes for 32-bit hash (shift by 0, 8, 16, 24)
-            for (int pass = 0; pass < 4; pass++)
+            // 8 passes for 32-bit hash (shift by 0, 4, 8, 12, 16, 20, 24, 28)
+            for (int pass = 0; pass < 8; pass++)
             {
-                int bitShift = pass * 8;
+                int bitShift = pass * 4;
                 radixShader.SetInt(BitShift, bitShift);
 
-                // Pass 1: Local Histogram (Write counts into GlobalHist)
+                // Pass 1: Local Stable Histogram
                 radixShader.SetBuffer(kernelHistogram, InputBuffer, input);
                 radixShader.SetBuffer(kernelHistogram, GlobalHist, globalHist);
                 radixShader.SetBuffer(kernelHistogram, LocalOffsets, localOffsets);
                 radixShader.Dispatch(kernelHistogram, numBlocks, 1, 1);
 
-                // Pass 2: Global Scan (Prefix sum across all blocks)
-                // Dispatches exactly 1 group of 256 threads to handle the 256 digits
+                // Pass 2: Global Scan (1 group of 16 threads)
                 radixShader.SetBuffer(kernelScan, GlobalHist, globalHist);
-                radixShader.Dispatch(kernelScan, 1, 1, 1);
+                radixShader.Dispatch(kernelScan, 1, 1, 1); 
 
-                // Pass 3: Scatter (Move data to Output Buffer)
+                // Pass 3: Deterministic Scatter
                 radixShader.SetBuffer(kernelScatter, InputBuffer, input);
                 radixShader.SetBuffer(kernelScatter, OutputBuffer, output);
                 radixShader.SetBuffer(kernelScatter, GlobalHist, globalHist);
@@ -63,6 +62,9 @@ namespace TechArtPlayground
                 // Ping-pong buffers
                 (input, output) = (output, input);
             }
+            
+            // Because we run exactly 8 passes (an even number), the correctly 
+            // sorted array naturally ends up back in the original 'sortBuffer'.
         }
 
         /// <summary>

@@ -42,6 +42,8 @@ namespace TechArtPlayground
         
         [Header("Flocking Behaviors")] [Range(0.1f, 20f)]
         public float speed = 4.0f;
+        
+        
 
         [Header("Optimization")]
         [Tooltip(
@@ -95,12 +97,14 @@ namespace TechArtPlayground
         public GraphicsBuffer readBuffer { get; private set; }
         public GraphicsBuffer writeBuffer { get; private set; }
         public GraphicsBuffer sortBuffer { get; private set; }
-        public GraphicsBuffer tempSortBuffer { get; private set; }
-        public GraphicsBuffer globalHistBuffer { get; private set; }
-        public GraphicsBuffer localOffsetsBuffer { get; private set; }
+
         public GraphicsBuffer gridOffsets { get; private set; }
         public GraphicsBuffer splineBuffer { get; private set; }
         public GraphicsBuffer argsBuffer { get; private set; }
+        
+        public GraphicsBuffer tempSortBuffer { get; private set; }
+        public GraphicsBuffer globalHistBuffer { get; private set; }
+        public GraphicsBuffer localOffsetsBuffer { get; private set; }
 
         // New Environment Buffers
         public GraphicsBuffer attractorsBuffer { get; private set; }
@@ -119,6 +123,9 @@ namespace TechArtPlayground
             attractorsBuffer?.Release();
             predatorsBuffer?.Release();
             obstaclesBuffer?.Release();
+            tempSortBuffer?.Release();
+            globalHistBuffer?.Release();
+            localOffsetsBuffer?.Release();
             tempSortBuffer?.Release();
             globalHistBuffer?.Release();
             localOffsetsBuffer?.Release();
@@ -166,13 +173,17 @@ namespace TechArtPlayground
             attractorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, safeAttCount, 32);
             predatorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, safePredCount, 16);
 
-            // 2. Core Data Buffers
+// 2. Core Data Buffers
             readBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 32);
             writeBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 32);
             sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 8);
-            
+
+// NEW RADIX BUFFERS
             int numBlocks = Mathf.Max(1, Mathf.CeilToInt(paddedCount / 256f));
             tempSortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 8); 
+            globalHistBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 16 * numBlocks, 4); // 16 bins * blocks
+            localOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 4);
+
 
 // 256 bins * numBlocks (uints)
             globalHistBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 256 * numBlocks, 4); 
