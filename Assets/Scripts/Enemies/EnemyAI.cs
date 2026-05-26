@@ -14,7 +14,7 @@ namespace Enemies
         [Header("Standard AI Settings")] public AIState currentState = AIState.Chasing;
 
         public Transform target;
-        public LayerMask lineOfSightMask;
+        public LayerMask lineOfSightMask;	
         public float moveSpeed = 3.5f;
         public float rotationSpeed = 10f;
 
@@ -34,10 +34,10 @@ namespace Enemies
             base.Start(); // Ensure BaseTurnAI registers this entity with TurnManager
 
             // --- Target Acquisition ---
-            if (target is null)
+            if (target == null)
             {
                 GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-                if (playerObj is not null) 
+                if (playerObj != null) 
                 {
                     target = playerObj.transform;
                 }
