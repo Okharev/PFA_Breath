@@ -15,12 +15,12 @@ MonoBehaviour:
   AllNodes:
   - rid: 2913246723371696218
   - rid: 2913246723371696219
-  - rid: 2913246723371696223
   - rid: 2913246723371696222
+  - rid: 2913246723371696217
+  - rid: 2913246723371696223
+  - rid: 996992594153046079
   - rid: 996992594153046078
   - rid: 2913246723371696220
-  - rid: 2913246723371696217
-  - rid: 996992594153046079
   references:
     version: 2
     RefIds:
@@ -30,10 +30,10 @@ MonoBehaviour:
         GUID: 4d1b39f6-003c-488f-beb0-e598e6e1a7f5
         Position:
           serializedVersion: 2
-          x: 600
-          y: 249.59999
-          width: 160.79999
-          height: 76.80002
+          x: 625
+          y: 250
+          width: 161
+          height: 77
         NodeName: Verbal anger
         Description: 
         PrerequisiteGUIDs:
@@ -51,10 +51,10 @@ MonoBehaviour:
         GUID: f26aac92-904b-4e99-a7a7-0f493e3a6859
         Position:
           serializedVersion: 2
-          x: 1175.2
-          y: 24.8
-          width: 160.80005
-          height: 76.8
+          x: 1175
+          y: 25
+          width: 161
+          height: 77
         NodeName: Barrel through
         Description: 
         PrerequisiteGUIDs:
@@ -73,10 +73,10 @@ MonoBehaviour:
         GUID: 6683bc25-37b2-4687-9290-e7734be7bab0
         Position:
           serializedVersion: 2
-          x: 75.2
-          y: 24.8
-          width: 160.8
-          height: 76.8
+          x: 75
+          y: 25
+          width: 161
+          height: 77
         NodeName: Damage +5
         Description: add 5 dmg to projectile
         PrerequisiteGUIDs: []
@@ -91,10 +91,10 @@ MonoBehaviour:
         GUID: 63751b21-2ee5-4077-9956-040f0068278e
         Position:
           serializedVersion: 2
-          x: 350.4
+          x: 350
           y: -100
-          width: 160.80002
-          height: 76.8
+          width: 161
+          height: 77
         NodeName: Speed +10%
         Description: 
         PrerequisiteGUIDs:
@@ -110,10 +110,10 @@ MonoBehaviour:
         GUID: c21043d4-8cb4-4561-ae02-9c15af838b6a
         Position:
           serializedVersion: 2
-          x: 350.4
+          x: 350
           y: 100
-          width: 160.80002
-          height: 76.8
+          width: 161
+          height: 77
         NodeName: Oxygen cost -5%
         Description: 
         PrerequisiteGUIDs:
@@ -130,9 +130,9 @@ MonoBehaviour:
         Position:
           serializedVersion: 2
           x: 600
-          y: -224.8
-          width: 160.79999
-          height: 76.8
+          y: -225
+          width: 161
+          height: 77
         NodeName: Lashing out
         Description: YOur primary shooting ability is now a short range sotgun
         PrerequisiteGUIDs:
@@ -151,10 +151,10 @@ MonoBehaviour:
         GUID: 4afa15d0-37d8-4723-a61e-9d8cdf8d24a8
         Position:
           serializedVersion: 2
-          x: 850.4
+          x: 850
           y: -100
-          width: 160.79999
-          height: 76.8
+          width: 161
+          height: 77
         NodeName: Damage +10%
         Description: 
         PrerequisiteGUIDs:
@@ -170,10 +170,10 @@ MonoBehaviour:
         GUID: 12b59707-4470-4a31-8ebb-3fa4c59184a8
         Position:
           serializedVersion: 2
-          x: 850.4
+          x: 850
           y: 100
-          width: 160.79999
-          height: 76.8
+          width: 161
+          height: 77
         NodeName: Oxygen cost -5%
         Description: 
         PrerequisiteGUIDs:
