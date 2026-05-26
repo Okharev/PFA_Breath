@@ -42,9 +42,10 @@ namespace TechArtPlayground
         private static readonly int TargetWeight = Shader.PropertyToID("targetWeight");
         private static readonly int TargetPosition = Shader.PropertyToID("targetPosition");
 
-        [Header("Core References")] public ComputeShader boidsCompute;
-
-        public ComputeShader bitonicSortCompute;
+        [Header("Core References")]
+        public ComputeShader boidsCompute;
+        public ComputeShader radixSortCompute;
+        
         private MaterialPropertyBlock propertyBlock;
 
 
@@ -94,7 +95,14 @@ namespace TechArtPlayground
                     boidsCompute.Dispatch(kernelPopulate, Mathf.CeilToInt(swarm.paddedCount / 64f), 1, 1);
 
                     // Sort (Using GraphicsBuffer natively)
-                    GPUSort.Sort(bitonicSortCompute, swarm.sortBuffer, swarm.paddedCount);
+                    GPUSort.RadixSort(
+                        radixSortCompute, 
+                        swarm.sortBuffer, 
+                        swarm.tempSortBuffer, 
+                        swarm.globalHistBuffer, 
+                        swarm.localOffsetsBuffer, 
+                        swarm.paddedCount
+                    );
 
                     // Build Offsets & Reorder
                     boidsCompute.SetBuffer(kernelBuildOffsets, "SortBuffer", swarm.sortBuffer);

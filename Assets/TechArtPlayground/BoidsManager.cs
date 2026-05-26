@@ -378,7 +378,7 @@ namespace TechArtPlayground
                 boidsCompute.SetBuffer(populateHashesKernel, ReadBoidsBuffer, currentBuffer);
                 boidsCompute.Dispatch(populateHashesKernel, paddedThreadGroups, 1, 1);
 
-                GPUSort.Sort(bitonicSortCompute, sortBuffer, paddedCount);
+                // GPUSort.Sort(bitonicSortCompute, sortBuffer, paddedCount);
 
                 boidsCompute.SetBuffer(reorderBoidsKernel, ReadBoidsBuffer, currentBuffer);
                 boidsCompute.SetBuffer(reorderBoidsKernel, WriteBoidsBuffer, nextBuffer);
