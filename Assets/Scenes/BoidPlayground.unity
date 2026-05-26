@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 105975325}
   - component: {fileID: 105975324}
   - component: {fileID: 105975323}
+  - component: {fileID: 105975327}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -145,12 +146,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 105975322}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e729475f62f742c3b88131d85c0fff60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidPredator
-  panicRadius: 12.7
+  panicRadius: 18.8
 --- !u!23 &105975324
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -217,12 +218,25 @@ Transform:
   m_GameObject: {fileID: 105975322}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -184, y: 0, z: -25.1}
+  m_LocalPosition: {x: -6.93, y: 0, z: 87.89}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &105975327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 105975322}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidAttractor
+  weight: 2
 --- !u!1 &107872770
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,7 +324,7 @@ Transform:
   m_GameObject: {fileID: 107872770}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -418,7 +432,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 177766437}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
   m_Name: 
@@ -470,17 +484,17 @@ MonoBehaviour:
   - m_EditModeType: 1
     m_Knots:
     - Position:
-        x: -113.70001
-        y: -0.027709961
-        z: -38.30469
+        x: -48.699997
+        y: 68.96886
+        z: -24.172276
       TangentIn:
-        x: -20.542915
-        y: 0.0000010529106
-        z: -70.015144
+        x: 96.40781
+        y: 0.0013504028
+        z: -138.45586
       TangentOut:
-        x: 3.3638525
-        y: 0.00000081284753
-        z: 18.409924
+        x: -56.79815
+        y: 0.07469177
+        z: 67.140175
       Rotation:
         value:
           x: -0.0000000042718393
@@ -488,67 +502,47 @@ MonoBehaviour:
           z: 7.1368544e-10
           w: 0.39483228
     - Position:
-        x: 38.14147
-        y: -22
-        z: -0.6104851
+        x: -102.100006
+        y: -55.077488
+        z: 197.53917
       TangentIn:
         x: 0
         y: 0
-        z: -9.809974
+        z: -95.35182
       TangentOut:
         x: 0
         y: 0
-        z: 68.56183
+        z: 95.35182
       Rotation:
         value:
-          x: 0.00004583597
-          y: 0.4008673
-          z: -0.000049427144
-          w: 0.9161361
+          x: -0.0002814831
+          y: 0.7895859
+          z: 0.00025764116
+          w: 0.6136399
     - Position:
-        x: 74.2
-        y: -52.585556
-        z: 74.94272
+        x: -208.5
+        y: 128.65909
+        z: 108.11431
       TangentIn:
         x: 0
         y: 0
-        z: -16.144657
+        z: -95.351814
       TangentOut:
         x: 0
         y: 0
-        z: 32.749706
+        z: 95.351814
       Rotation:
         value:
-          x: 1.9311832e-11
-          y: -0.037189797
-          z: -5.1891896e-10
-          w: 0.9993083
-    - Position:
-        x: -32.35853
-        y: 25.77
-        z: 92.07951
-      TangentIn:
-        x: 0
-        y: 0
-        z: -118.871826
-      TangentOut:
-        x: 0
-        y: 0
-        z: 52.54752
-      Rotation:
-        value:
-          x: 0.00021960586
-          y: 0.9676291
-          z: -0.00052431243
-          w: -0.25237605
+          x: -0.0002308637
+          y: 0.789586
+          z: 0.00029700992
+          w: 0.61363983
     m_MetaData:
     - Mode: 4
       Tension: 0.5
-    - Mode: 3
+    - Mode: 2
       Tension: 0.5
-    - Mode: 3
-      Tension: 0.5
-    - Mode: 3
+    - Mode: 2
       Tension: 0.5
     m_Closed: 1
     m_IntData:
@@ -938,7 +932,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1041024052}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
   m_Name: 
@@ -953,7 +947,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1444137451}
-  - component: {fileID: 1444137452}
   m_Layer: 0
   m_Name: Static
   m_TagString: Untagged
@@ -976,19 +969,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1444137452
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1444137450}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidAttractor
-  weight: 0.8
 --- !u!1 &1684813941
 GameObject:
   m_ObjectHideFlags: 0
@@ -1018,7 +998,7 @@ Light:
   serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1
+  m_Intensity: 1.5
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -1174,7 +1154,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1744343855}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0b03c7342b654078b282cf1dae240872, type: 3}
   m_Name: 
@@ -1213,7 +1193,7 @@ MonoBehaviour:
   maxPredators: 16
   boidsCompute: {fileID: 7200000, guid: cceb64b1de6972d41b4d389cac87bddb, type: 3}
   bitonicSortCompute: {fileID: 7200000, guid: eca7a9d318d745f8afaccdfc8a1b0780, type: 3}
-  fishMesh: {fileID: -1618843694119852381, guid: 54df58f7fb678824587213c36c0c46ab, type: 3}
+  fishMesh: {fileID: -8808676599306047484, guid: f3fbda1c604cadc4a92828731ae58f88, type: 3}
   fishMaterial: {fileID: 2100000, guid: fb4a11342c604c14ba3bb1b737785176, type: 2}
   numBoids: 10000
   spawnRadius: 80
@@ -1225,8 +1205,8 @@ MonoBehaviour:
   gridSize: 64
   separationPulseSpeed: 0.22
   separationPulseAmount: 0.21
-  colorA: {r: 0.020608068, g: 0, b: 1, a: 1}
-  colorB: {r: 0.06666666, g: 0.60581076, b: 1, a: 1}
+  colorA: {r: 0.3971624, g: 0.3754716, b: 1, a: 0.69803923}
+  colorB: {r: 0.54905653, g: 0.8843735, b: 1, a: 0.69803923}
   minSize: 0.5
   maxSize: 1.5
   predatorRadius: 5
@@ -1238,10 +1218,12 @@ MonoBehaviour:
   maxObstacles: 50
   scanRadius: 50
   useSplineFlow: 0
+  tubeRadius: 10
+  predatorFleeWeight: 10
   globalAttractorWeight: 1000
-  swirlStrength: 0.9
+  swirlStrength: 1
   arrivalRadius: 20
-  arrivalMinSpeed: 0.85
+  arrivalMinSpeed: 1
   singularitySoften: 3
   splineContainer: {fileID: 358960053}
 --- !u!4 &1890962467

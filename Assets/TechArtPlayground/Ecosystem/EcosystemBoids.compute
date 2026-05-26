@@ -1,0 +1,348 @@
+﻿#pragma kernel ClearGrid
+#pragma kernel PopulateHashes
+#pragma kernel ReorderBoids
+#pragma kernel BuildGridOffsets
+#pragma kernel CSMain
+
+// --- DATA STRUCTURES ---
+struct EcosystemBoid
+{
+    float3 position;
+    float3 direction;
+    float currentSpeed;
+    float roll;
+    float flapPhase;
+    float flapAmplitude;
+    float size;
+    uint schoolID;
+};
+
+struct SchoolProfile
+{
+
+    uint speciesID; // Link back to the species rules (0=YellowFish, 1=Koi, etc.)
+};
+
+struct SpeciesProfile
+{
+    float speed;
+    float sightRadius;
+    float separationWeight;
+    float alignmentWeight;
+    float cohesionWeight;
+
+    int predatorSpecies;
+    int preySpecies;
+    float sizeMultiplier;
+};
+
+struct BoidHashPair
+{
+    uint boidIndex;
+    uint cellHash;
+};
+
+
+
+// --- BUFFERS ---
+StructuredBuffer<SpeciesProfile> speciesBuffer;
+StructuredBuffer<SchoolProfile> schoolBuffer;
+StructuredBuffer<EcosystemBoid> ReadBoidsBuffer;
+RWStructuredBuffer<EcosystemBoid> WriteBoidsBuffer;
+
+RWStructuredBuffer<int> gridOffsets;
+RWStructuredBuffer<BoidHashPair> SortBuffer;
+
+// --- GLOBALS ---
+float cellSize;
+int gridSize;
+int numBoids;
+int paddedCount;
+float deltaTime;
+float3 ecosystemCenter;
+float ecosystemRadius;
+
+// --- UTILITY FUNCTIONS ---
+float3 SafeNormalize(float3 v, float3 fallback)
+{
+    float len = length(v);
+    return len > 0.00001f ? (v / len) : fallback;
+}
+
+int FastWrap(int val, int maxVal)
+{
+    int res = val % maxVal;
+    return res < 0 ? res + maxVal : res;
+}
+
+int3 GetCellCoordinates(float3 pos)
+{
+    int3 cell = int3(floor(pos / cellSize));
+    cell.x = FastWrap(cell.x, gridSize);
+    cell.y = FastWrap(cell.y, gridSize);
+    cell.z = FastWrap(cell.z, gridSize);
+    return cell;
+}
+
+int GetCellHash(int3 cell)
+{
+    return cell.x + (cell.y * gridSize) + (cell.z * gridSize * gridSize);
+}
+
+// --- GRID KERNELS ---
+
+[numthreads(64, 1, 1)]
+void ClearGrid(uint3 id : SV_DispatchThreadID)
+{
+    int totalCells = gridSize * gridSize * gridSize;
+    if (id.x >= (uint)totalCells) return;
+    gridOffsets[id.x] = -1;
+}
+
+[numthreads(64, 1, 1)]
+void PopulateHashes(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)paddedCount) return;
+
+    if (id.x < (uint)numBoids)
+    {
+        int3 cellCoords = GetCellCoordinates(ReadBoidsBuffer[id.x].position);
+        SortBuffer[id.x].boidIndex = id.x;
+        SortBuffer[id.x].cellHash = (uint)GetCellHash(cellCoords);
+    }
+    else
+    {
+        // Pad out of bounds with max hash to push them to the end during sorting
+        SortBuffer[id.x].boidIndex = id.x;
+        SortBuffer[id.x].cellHash = 0xFFFFFFFF;
+    }
+}
+
+[numthreads(64, 1, 1)]
+void BuildGridOffsets(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)numBoids) return;
+
+    uint currentHash = SortBuffer[id.x].cellHash;
+    if (id.x == 0 || currentHash != SortBuffer[id.x - 1].cellHash)
+    {
+        gridOffsets[currentHash] = id.x;
+    }
+}
+
+[numthreads(64, 1, 1)]
+void ReorderBoids(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)numBoids) return;
+
+    uint originalIndex = SortBuffer[id.x].boidIndex;
+    WriteBoidsBuffer[id.x] = ReadBoidsBuffer[originalIndex];
+}
+
+
+// --- MAIN PHYSICS SIMULATION ---
+
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)numBoids) return;
+
+    EcosystemBoid boid = ReadBoidsBuffer[id.x];
+    SchoolProfile mySchool = schoolBuffer[boid.schoolID];
+    SpeciesProfile mySpecies = speciesBuffer[mySchool.speciesID];
+
+    float3 separation = float3(0, 0, 0);
+    float3 alignment = float3(0, 0, 0);
+    float3 cohesion = float3(0, 0, 0);
+    float3 fleeDirection = float3(0, 0, 0);
+    float3 chaseDirection = float3(0, 0, 0);
+
+    int boidsInMySchool = 0;
+    float targetSpeed = mySpecies.speed;
+
+    int3 myCell = GetCellCoordinates(boid.position);
+    float sightRadiusSq = mySpecies.sightRadius * mySpecies.sightRadius;
+
+    // --- THE FIX: Dynamic Grid Search Radius ---
+    // Calculate how many grid cells we need to check to satisfy our sight radius
+    int searchRadius = (int)ceil(mySpecies.sightRadius / cellSize);
+
+    for (int x = -searchRadius; x <= searchRadius; x++)
+    {
+        for (int y = -searchRadius; y <= searchRadius; y++)
+        {
+            for (int z = -searchRadius; z <= searchRadius; z++)
+            {
+                int3 neighborCell = myCell + int3(x, y, z);
+
+                // (The rest of the wrapping and neighbor checking remains exactly the same)
+                neighborCell.x = FastWrap(neighborCell.x, gridSize);
+                neighborCell.y = FastWrap(neighborCell.y, gridSize);
+                neighborCell.z = FastWrap(neighborCell.z, gridSize);
+
+                int neighborHash = GetCellHash(neighborCell);
+                int startIndex = gridOffsets[neighborHash];
+
+                if (startIndex != -1)
+                {
+                    for (uint i = (uint)startIndex; i < (uint)numBoids; i++)
+                    {
+                        if (SortBuffer[i].cellHash != (uint)neighborHash) break;
+
+                        uint otherIndex = SortBuffer[i].boidIndex;
+
+                        if (otherIndex != id.x)
+                        {
+                            EcosystemBoid other = ReadBoidsBuffer[otherIndex];
+                            float3 diff = boid.position - other.position;
+                            float distSq = dot(diff, diff);
+
+                            // FIX 1: Lower the blind spot so perfectly overlapping boids still see each other
+                            if (distSq < sightRadiusSq && distSq > 0.00001f)
+                            {
+                                SchoolProfile otherSchool = schoolBuffer[other.schoolID];
+
+                                if (other.schoolID == boid.schoolID)
+                                {
+                                    alignment += other.direction;
+
+                                    float personalSpaceSq = 1.5f * mySpecies.sizeMultiplier;
+                                    if (distSq < personalSpaceSq)
+                                    {
+                                        // Strong inverse-square kick to violently push them out of a singularity
+                                        separation += diff * (1.0f / distSq);
+                                    }
+
+                                    cohesion += other.position;
+                                    boidsInMySchool++;
+                                }
+                                else if (otherSchool.speciesID == mySchool.speciesID)
+                                {
+                                    // THE FIX: Soften the division by the species size.
+                                    // This prevents the separation vector from spiking to infinity when massive models overlap slightly.
+                                    float softness = mySpecies.sizeMultiplier * 0.5f;
+                                    separation += diff * (1.0f / max(distSq, softness));
+                                }
+                                else if ((int)otherSchool.speciesID == mySpecies.predatorSpecies)
+                                {
+                                    fleeDirection += diff * (20.0f / distSq);
+                                    targetSpeed = max(targetSpeed, mySpecies.speed * 2.5f);
+                                }
+                                // 4. PREDICTIVE PURSUIT (Intelligent Hunting)
+                                else if ((int)otherSchool.speciesID == mySpecies.preySpecies)
+                                {
+                                    float distToPrey = sqrt(max(distSq, 0.001f));
+
+                                    // 1. Predict future position
+                                    float predictionTime = clamp(distToPrey / max(mySpecies.speed, 0.1f), 0.0f, 1.0f);
+                                    float3 futurePreyPos = other.position + (other.direction * other.currentSpeed *
+                                        predictionTime);
+
+                                    // 2. Calculate ideal intercept direction
+                                    float3 interceptDiff = futurePreyPos - boid.position;
+                                    float3 desiredDirection = SafeNormalize(interceptDiff, boid.direction);
+
+                                    // 3. THE FIX: Dot Product Check (Is the fish in front of us or behind us?)
+                                    // dot() returns 1 if perfectly in front, -1 if perfectly behind, 0 if 90-degrees to the side.
+                                    float forwardDot = dot(boid.direction, desiredDirection);
+
+                                    // If the fish is in front of the Orca, steer aggressively (weight of 6.0).
+                                    // If the fish dodges and ends up behind the Orca, drop the steering weight to 1.0 so the Orca glides naturally.
+                                    float turnSoftener = (forwardDot > 0.0f) ? 6.0f : 1.0f;
+                                    chaseDirection += desiredDirection * turnSoftener;
+
+                                    // 4. Smart Speed Control
+                                    if (forwardDot > 0.5f)
+                                    {
+                                        // The prey is in our sights! Hit the gas to strike.
+                                        targetSpeed = max(targetSpeed, mySpecies.speed * 2.0f);
+                                    }
+                                    else
+                                    {
+                                        // The prey dodged us! Let off the gas so we can make a tighter turn.
+                                        targetSpeed = mySpecies.speed * 0.8f;
+                                    }
+                                }
+                                else if (mySpecies.sizeMultiplier < speciesBuffer[otherSchool.speciesID].sizeMultiplier)
+                                {
+                                    separation += diff * (1.0f / max(distSq * 1.5f, 0.01f));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (boidsInMySchool > 0)
+    {
+        alignment = SafeNormalize(alignment / boidsInMySchool, boid.direction);
+        cohesion = SafeNormalize((cohesion / boidsInMySchool) - boid.position, float3(0, 0, 0));
+    }
+
+    // --- 1. THE INVISIBLE FORCEFIELD (Global Steering) ---
+    float3 toCenter = ecosystemCenter - boid.position;
+    float distToCenter = length(toCenter);
+    float normalizedDist = distToCenter / max(ecosystemRadius, 0.1f);
+    float3 wanderForce = float3(0, 0, 0);
+
+    // Deep inside the sphere: Gentle pull to keep them circulating
+    if (normalizedDist < 0.7f) 
+    {
+        wanderForce = SafeNormalize(toCenter, boid.direction) * (normalizedDist * 1.5f);
+    } 
+    // Outer 30%: Exponential pushback to overpower predators/fleeing
+    else 
+    {
+        float penalty = pow(max(0.0f, normalizedDist - 0.6f) * 2.5f, 4.0f); 
+        wanderForce = SafeNormalize(toCenter, boid.direction) * (15.0f * penalty);
+        targetSpeed *= lerp(1.0f, 0.4f, saturate((normalizedDist - 0.7f) * 3.33f));
+    }
+
+    // --- INTEGRATION ---
+    float3 targetDir = (alignment * mySpecies.alignmentWeight) + 
+                       (cohesion * mySpecies.cohesionWeight) + 
+                       (separation * mySpecies.separationWeight) + 
+                       fleeDirection + chaseDirection + wanderForce;
+
+    float3 normalizedTargetDir = SafeNormalize(targetDir, boid.direction);
+
+    // --- INERTIA & AGILITY ---
+    // Calculate how agile the creature is based on its size (Inverse Square Root).
+    // Yellow Fish (Size 1) = 1.0 Agility. Rays (Size 10) = 0.31 Agility.
+    float baseAgility = clamp(1.0f / sqrt(mySpecies.sizeMultiplier), 0.15f, 1.0f);
+
+    // Adrenaline: If actively hunting or fleeing, allow massive creatures to temporarily break inertia and turn faster.
+    float adrenaline = (length(fleeDirection) + length(chaseDirection) > 0.1f) ? 2.0f : 1.0f;
+    float currentAgility = min(baseAgility * adrenaline, 1.5f);
+
+    // Smooth Banking (Roll) - Dampened by agility
+    float turnStrength = cross(boid.direction, normalizedTargetDir).y;
+    boid.roll = lerp(boid.roll, turnStrength * 4.0f, deltaTime * (5.0f * currentAgility));
+
+    // Smooth Rotation - Dampened by agility
+    float3 nextDirection = lerp(boid.direction, normalizedTargetDir, deltaTime * (3.0f * currentAgility));
+    boid.direction = SafeNormalize(nextDirection, boid.direction);
+
+    // --- BURST & GLIDE LOGIC ---
+    float effort = (targetSpeed > boid.currentSpeed) ? 1.0f : 0.2f;
+    boid.flapAmplitude = lerp(boid.flapAmplitude, effort, deltaTime * 3.0f);
+
+    boid.currentSpeed = lerp(boid.currentSpeed, targetSpeed, deltaTime * 4.0f);
+    boid.position += boid.direction * boid.currentSpeed * deltaTime;
+
+    // --- 2. THE HARD SAFETY NET ---
+    // Mathematically enforce the sphere bounds in case of massive physics spikes
+    if (distToCenter > ecosystemRadius)
+    {
+        float3 forcedInwardDir = SafeNormalize(toCenter, -boid.direction);
+        boid.position = ecosystemCenter - (forcedInwardDir * ecosystemRadius);
+        boid.direction = SafeNormalize(lerp(boid.direction, forcedInwardDir, 0.2f), boid.direction);
+    }
+
+    float animSpeedMultiplier = clamp(boid.currentSpeed / mySpecies.speed, 0.5f, 2.0f);
+    boid.flapPhase += animSpeedMultiplier * deltaTime * 15.0f;
+
+    WriteBoidsBuffer[id.x] = boid;
+}

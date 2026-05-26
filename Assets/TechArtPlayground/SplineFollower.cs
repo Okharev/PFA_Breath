@@ -2,24 +2,26 @@ using UnityEngine;
 using UnityEngine.Splines;
 
 /// <summary>
-/// Moves an object along a 3D Spline with Perlin noise speed variation
-/// and random starting position logic.
+///     Moves an object along a 3D Spline with Perlin noise speed variation
+///     and random starting position logic.
 /// </summary>
 public class SplineFollower : MonoBehaviour
 {
-    [Header("Spline Settings")]
-    [SerializeField] private SplineContainer splineContainer;
-    
-    [Header("Movement Settings")]
-    [SerializeField] private float baseSpeed = 5f;
+    [Header("Spline Settings")] [SerializeField]
+    private SplineContainer splineContainer;
+
+    [Header("Movement Settings")] [SerializeField]
+    private float baseSpeed = 5f;
+
     [SerializeField] private float minSpeed = 2f;
     [SerializeField] private float maxSpeed = 10f;
-    
-    [Header("Noise Settings")]
-    [SerializeField] private float noiseFrequency = 1f;
-    [SerializeField] private float noiseSeed = 0f;
 
-    private float _distanceTraveled = 0f;
+    [Header("Noise Settings")] [SerializeField]
+    private float noiseFrequency = 1f;
+
+    [SerializeField] private float noiseSeed;
+
+    private float _distanceTraveled;
     private float _splineLength;
 
     private void Start()
@@ -32,19 +34,9 @@ public class SplineFollower : MonoBehaviour
         }
 
         _splineLength = splineContainer.CalculateLength();
-        
+
         // Initialize position to a random point
         InitializeRandomPosition();
-    }
-
-    private void InitializeRandomPosition()
-    {
-        // Randomly pick a distance along the spline
-        _distanceTraveled = Random.Range(0f, _splineLength);
-        
-        // Update transform immediately so the object doesn't flicker at (0,0,0) 
-        // for one frame before the first Update call.
-        UpdateTransform(_distanceTraveled / _splineLength);
     }
 
     private void Update()
@@ -54,9 +46,19 @@ public class SplineFollower : MonoBehaviour
         float currentSpeed = Mathf.Lerp(minSpeed, maxSpeed, noiseValue);
 
         // 2. Increment distance
-        _distanceTraveled = (_distanceTraveled + (currentSpeed * Time.deltaTime)) % _splineLength;
+        _distanceTraveled = (_distanceTraveled + currentSpeed * Time.deltaTime) % _splineLength;
 
         // 3. Update Position/Rotation
+        UpdateTransform(_distanceTraveled / _splineLength);
+    }
+
+    private void InitializeRandomPosition()
+    {
+        // Randomly pick a distance along the spline
+        _distanceTraveled = Random.Range(0f, _splineLength);
+
+        // Update transform immediately so the object doesn't flicker at (0,0,0) 
+        // for one frame before the first Update call.
         UpdateTransform(_distanceTraveled / _splineLength);
     }
 
@@ -64,12 +66,9 @@ public class SplineFollower : MonoBehaviour
     {
         Vector3 position = splineContainer.EvaluatePosition(t);
         Vector3 tangent = splineContainer.EvaluateTangent(t);
-        
+
         transform.position = position;
-        
-        if (tangent != Vector3.zero)
-        {
-            transform.rotation = Quaternion.LookRotation(tangent);
-        }
+
+        if (tangent != Vector3.zero) transform.rotation = Quaternion.LookRotation(tangent);
     }
 }
