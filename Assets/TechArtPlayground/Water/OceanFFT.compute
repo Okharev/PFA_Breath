@@ -1,0 +1,307 @@
+﻿// =========================================================================
+// Tessendorf Ocean FFT Simulation Compute Shader
+// Unity 6.4 URP Compatible
+// =========================================================================
+
+#pragma kernel CalculateSpectrum
+#pragma kernel FFTHorizontal
+#pragma kernel FFTVertical
+#pragma kernel PackFFTData
+
+#define PI 3.14159265359
+#define G 9.81
+
+// -------------------------------------------------------------------------
+// Parameters
+// -------------------------------------------------------------------------
+float _Time;
+uint _Resolution; // Must be a power of 2 (e.g., 128, 256, 512)
+int _Step;        // Current FFT step (0 to log2(Resolution)-1)
+float _Size;      // Physical size of the ocean grid in meters (e.g., 250.0)
+
+// Wave Parameters
+float _WindSpeed;
+float2 _WindDir;
+float _PhillipsA; // Amplitude multiplier
+float _Choppiness;
+int _NumStages;
+
+// -------------------------------------------------------------------------
+// Buffers & Textures
+// -------------------------------------------------------------------------
+// Input/Output for FFT passes
+RWTexture2D<float4> InputBuffer;   // RG: Dy (Height), BA: Dx (X Displacement)
+RWTexture2D<float4> OutputBuffer;  
+RWTexture2D<float2> InputBufferZ;  // RG: Dz (Z Displacement)
+RWTexture2D<float2> OutputBufferZ; 
+
+// Final Outputs for the URP Shader
+RWTexture2D<float4> _DispTex;      // RGB = Dx, Dy, Dz
+RWTexture2D<float4> _DerivTex;     // RGB = SlopeX, SlopeZ, Jacobian
+
+// -------------------------------------------------------------------------
+// Math & Random Utilities
+// -------------------------------------------------------------------------
+float2 ComplexMult(float2 a, float2 b) 
+{
+    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+float2 ComplexExp(float arg) 
+{
+    return float2(cos(arg), sin(arg));
+}
+
+// Wang Hash for pseudo-random number generation
+uint WangHash(uint seed) 
+{
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
+
+float Rand(inout uint state) 
+{
+    state = WangHash(state);
+    return state * (1.0 / 4294967296.0); // Map to 0..1
+}
+
+// Box-Muller transform for normally distributed random numbers (Gaussian)
+float2 GaussianRandom(inout uint state) 
+{
+    float u1 = max(1e-6, Rand(state));
+    float u2 = max(1e-6, Rand(state));
+    float r = sqrt(-2.0 * log(u1));
+    float theta = 2.0 * PI * u2;
+    return float2(r * cos(theta), r * sin(theta));
+}
+
+// Bit reversal for Stockham/Cooley-Tukey FFT initial sorting
+uint ReverseBits(uint i, uint bits) 
+{
+    uint res = 0;
+    for (uint j = 0; j < bits; j++) 
+    {
+        res = (res << 1) | (i & 1);
+        i >>= 1;
+    }
+    return res;
+}
+
+// -------------------------------------------------------------------------
+// Kernel 1: Calculate Spectrum (Phillips) & Time Evolution
+// -------------------------------------------------------------------------
+// Generates the initial frequency data and advances it by _Time.
+// We output directly into bit-reversed indices to prepare for the FFT.
+[numthreads(8, 8, 1)]
+void CalculateSpectrum(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _Resolution || id.y >= _Resolution) return;
+
+    // Center coordinates around 0
+    float2 n = float2(id.xy) - float2(_Resolution / 2.0, _Resolution / 2.0);
+    float2 k = n * (2.0 * PI / _Size);
+    float kLength = length(k);
+
+    if (kLength < 0.0001) kLength = 0.0001;
+
+    // Phillips Spectrum
+    float kLength2 = kLength * kLength;
+    float kLength4 = kLength2 * kLength2;
+    float dotKW = dot(k / kLength, normalize(_WindDir));
+    float L = (_WindSpeed * _WindSpeed) / G;
+    float L2 = L * L;
+    
+    // Damping to remove very small capillary waves (reduces high-frequency noise)
+    float damping = 0.001;
+    float l2 = L2 * damping * damping;
+
+    float phillips = _PhillipsA * (exp(-1.0 / (kLength2 * L2)) / kLength4) * pow(abs(dotKW), 2.0) * exp(-kLength2 * l2);
+    if (dotKW < 0.0) phillips *= 0.07; // Waves moving against wind are much smaller
+
+    // Generate Initial H0
+    uint seed = id.x + id.y * _Resolution;
+    float2 gauss = GaussianRandom(seed);
+    float2 h0 = gauss * sqrt(phillips * 0.5);
+
+    // Dispersion relation (Angular frequency)
+    float omega = sqrt(G * kLength);
+    float phase = omega * _Time;
+
+    // Time Evolution: h(k, t) = h0(k) * e^(i * w * t) + h0(-k)* * e^(-i * w * t)
+    // Note: For real-time, we often simplify to a single phase shift if the spectrum is symmetric.
+    float2 expPhase = ComplexExp(phase);
+    float2 hComplex = ComplexMult(h0, expPhase);
+
+    // Height (Dy)
+    float2 Dy = hComplex;
+    
+    // Horizontal Displacements (Dx, Dz)
+    // Dx(k, t) = h(k, t) * (-i * kx / k)
+    // Dz(k, t) = h(k, t) * (-i * kz / k)
+    float2 Dx = ComplexMult(hComplex, float2(0.0, -k.x / kLength));
+    float2 Dz = ComplexMult(hComplex, float2(0.0, -k.y / kLength));
+
+    // Bit-reverse indices for the iterative Cooley-Tukey FFT
+    uint rx = ReverseBits(id.x, _NumStages);
+    uint ry = ReverseBits(id.y, _NumStages);
+    uint2 revId = uint2(rx, ry);
+
+    OutputBuffer[revId] = float4(Dy.x, Dy.y, Dx.x, Dx.y);
+    OutputBufferZ[revId] = float2(Dz.x, Dz.y);
+}
+
+// -------------------------------------------------------------------------
+// Kernel 2 & 3: Fast Fourier Transform (Cooley-Tukey)
+// -------------------------------------------------------------------------
+[numthreads(8, 8, 1)]
+void FFTHorizontal(uint3 id : SV_DispatchThreadID)
+{
+    uint span = 1 << _Step;
+    uint block = span * 2;
+    uint b = id.x / span; // Which block we are in
+    uint i = id.x % span; // Which element in the block
+
+    uint top = b * block + i;
+    uint bot = top + span;
+
+    // Calculate Twiddle Factor
+    float theta = -2.0 * PI * ((float)i / (float)block);
+    float2 twiddle = ComplexExp(theta);
+
+    // Read Data (Height and X)
+    float4 topData = InputBuffer[uint2(top, id.y)];
+    float4 botData = InputBuffer[uint2(bot, id.y)];
+    float2 topDy = topData.rg;
+    float2 botDy = botData.rg;
+    float2 topDx = topData.ba;
+    float2 botDx = botData.ba;
+
+    // Read Data (Z)
+    float2 topDz = InputBufferZ[uint2(top, id.y)];
+    float2 botDz = InputBufferZ[uint2(bot, id.y)];
+
+    // Butterfly Operations
+    float2 twiddledBotDy = ComplexMult(twiddle, botDy);
+    float2 twiddledBotDx = ComplexMult(twiddle, botDx);
+    float2 twiddledBotDz = ComplexMult(twiddle, botDz);
+
+    OutputBuffer[uint2(top, id.y)] = float4(topDy + twiddledBotDy, topDx + twiddledBotDx);
+    OutputBuffer[uint2(bot, id.y)] = float4(topDy - twiddledBotDy, topDx - twiddledBotDx);
+    
+    OutputBufferZ[uint2(top, id.y)] = topDz + twiddledBotDz;
+    OutputBufferZ[uint2(bot, id.y)] = topDz - twiddledBotDz;
+}
+
+[numthreads(8, 8, 1)]
+void FFTVertical(uint3 id : SV_DispatchThreadID)
+{
+    // Identical to Horizontal, but iterating over the Y axis
+    uint span = 1 << _Step;
+    uint block = span * 2;
+    uint b = id.y / span;
+    uint i = id.y % span;
+
+    uint top = b * block + i;
+    uint bot = top + span;
+
+    float theta = -2.0 * PI * ((float)i / (float)block);
+    float2 twiddle = ComplexExp(theta);
+
+    float4 topData = InputBuffer[uint2(id.x, top)];
+    float4 botData = InputBuffer[uint2(id.x, bot)];
+    float2 topDy = topData.rg;
+    float2 botDy = botData.rg;
+    float2 topDx = topData.ba;
+    float2 botDx = botData.ba;
+
+    float2 topDz = InputBufferZ[uint2(id.x, top)];
+    float2 botDz = InputBufferZ[uint2(id.x, bot)];
+
+    float2 twiddledBotDy = ComplexMult(twiddle, botDy);
+    float2 twiddledBotDx = ComplexMult(twiddle, botDx);
+    float2 twiddledBotDz = ComplexMult(twiddle, botDz);
+
+    OutputBuffer[uint2(id.x, top)] = float4(topDy + twiddledBotDy, topDx + twiddledBotDx);
+    OutputBuffer[uint2(id.x, bot)] = float4(topDy - twiddledBotDy, topDx - twiddledBotDx);
+    
+    OutputBufferZ[uint2(id.x, top)] = topDz + twiddledBotDz;
+    OutputBufferZ[uint2(id.x, bot)] = topDz - twiddledBotDz;
+}
+
+// -------------------------------------------------------------------------
+// Kernel 4: Pack Final Data and Calculate Spatial Derivatives / Jacobian
+// -------------------------------------------------------------------------
+// Doing the Jacobian spatially (finite differences) saves us from running 
+// 3 additional FFTs, massively boosting performance.
+[numthreads(8, 8, 1)]
+void PackFFTData(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _Resolution || id.y >= _Resolution) return;
+
+    float sign = ((id.x + id.y) % 2 == 1) ? -1.0 : 1.0;
+    
+    // IFFT Normalization Factor (1 / N^2)
+    float normalizer = 1.0 / (float)(_Resolution * _Resolution);
+
+    float2 dyComplex = InputBuffer[id.xy].rg;
+    float2 dxComplex = InputBuffer[id.xy].ba;
+    float2 dzComplex = InputBufferZ[id.xy].rg;
+
+    // Apply Normalizer to the final spatial displacements
+    float height = dyComplex.x * sign * normalizer;
+    float dispX = dxComplex.x * sign * normalizer;
+    float dispZ = dzComplex.x * sign * normalizer;
+
+    _DispTex[id.xy] = float4(dispX, height, dispZ, 1.0);
+
+    // --- Finite Differences for Derivatives and Jacobian ---
+    uint left   = (id.x > 0) ? id.x - 1 : _Resolution - 1;
+    uint right  = (id.x < _Resolution - 1) ? id.x + 1 : 0;
+    uint down   = (id.y > 0) ? id.y - 1 : _Resolution - 1;
+    uint up     = (id.y < _Resolution - 1) ? id.y + 1 : 0;
+
+    float sRight = ((right + id.y) % 2 == 1) ? -1.0 : 1.0;
+    float sLeft  = ((left + id.y) % 2 == 1) ? -1.0 : 1.0;
+    float sUp    = ((id.x + up) % 2 == 1) ? -1.0 : 1.0;
+    float sDown  = ((id.x + down) % 2 == 1) ? -1.0 : 1.0;
+
+    float hRight = InputBuffer[uint2(right, id.y)].r * sRight;
+    float hLeft  = InputBuffer[uint2(left, id.y)].r * sLeft;
+    float hUp    = InputBuffer[uint2(id.x, up)].r * sUp;
+    float hDown  = InputBuffer[uint2(id.x, down)].r * sDown;
+
+    float dxRight = InputBuffer[uint2(right, id.y)].b * sRight;
+    float dxLeft  = InputBuffer[uint2(left, id.y)].b * sLeft;
+    float dzUp    = InputBufferZ[uint2(id.x, up)].r * sUp;
+    float dzDown  = InputBufferZ[uint2(id.x, down)].r * sDown;
+    float dxUp    = InputBuffer[uint2(id.x, up)].b * sUp;
+    float dxDown  = InputBuffer[uint2(id.x, down)].b * sDown;
+
+    // --- THE MISSING LINES ---
+    float dzRight = InputBufferZ[uint2(right, id.y)].r * sRight;
+    float dzLeft  = InputBufferZ[uint2(left, id.y)].r * sLeft;
+    // -------------------------
+
+    float gridSpace = _Size / (float)_Resolution;
+
+    // Apply Normalizer to the spatial derivatives
+    float dYdX = ((hRight - hLeft) / (2.0 * gridSpace)) * normalizer;
+    float dYdZ = ((hUp - hDown) / (2.0 * gridSpace)) * normalizer;
+
+    // Keep Normalizer on the Jacobian terms (Already correct in your original code)
+    float dXdX = ((dxRight - dxLeft) / (2.0 * gridSpace)) * normalizer;
+    float dZdZ = ((dzUp - dzDown) / (2.0 * gridSpace)) * normalizer;
+    float dXdZ = ((dxUp - dxDown) / (2.0 * gridSpace)) * normalizer;
+    float dZdX = ((dzRight - dzLeft) / (2.0 * gridSpace)) * normalizer;
+
+    float jX = 1.0 + _Choppiness * dXdX;
+    float jZ = 1.0 + _Choppiness * dZdZ;
+    float jCross = (_Choppiness * dXdZ) * (_Choppiness * dZdX);
+    float jacobian = (jX * jZ) - jCross;
+
+    _DerivTex[id.xy] = float4(dYdX, dYdZ, jacobian, 1.0);
+}

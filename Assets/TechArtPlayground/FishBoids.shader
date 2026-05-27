@@ -73,8 +73,17 @@
             CBUFFER_END
 
                         // --- BOID DATA (Matched to our optimized 32-byte struct) ---
-            struct Boid { float3 position; float3 velocity; uint packedData; float splineT; };
-
+struct Boid
+{
+    float3 position;
+    float randomSeed;
+    float3 velocity;
+    float colorSeed;
+    uint packedData; 
+    float splineT;
+    float pad1;
+    float pad2;
+};
             #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
             StructuredBuffer<Boid> boidsBuffer;
             #endif
@@ -127,20 +136,17 @@
                     uint bufferIndex = input.instanceID;
                     Boid b = boidsBuffer[bufferIndex];
 
-                        uint persistentID = b.packedData >> 16;
-                        float roll = ((float)(b.packedData & 0xFFFF) / 65535.0) * 6.28318 - 3.14159;
+                    uint persistentID = b.packedData >> 16;
+                    float roll = ((float)(b.packedData & 0xFFFF) / 65535.0) * 6.28318 - 3.14159;
 
-                        float randomSeed = CustHash(persistentID);
-                    float size = lerp(0.5, 1.5, randomSeed);
-                    boidColor = lerp(_ColorA.rgb, _ColorB.rgb, CustHash(persistentID + 1));
+                    // ZERO-COST LOOKUP: We no longer hash the persistent ID!
+                    float size = lerp(0.5, 1.5, b.randomSeed);
+                    boidColor = lerp(_ColorA.rgb, _ColorB.rgb, b.colorSeed);
                     
                     animSpeed = length(b.velocity);
                     float3 boidDir = animSpeed > 0.001 ? (b.velocity / animSpeed) : float3(0,0,1);
-                    
-                    // Use a constant (_BaseSpeed) for time accumulation so the phase NEVER jumps backwards.
-                    float flapPhase = _Time.y * _BaseSpeed * 2.0 + (randomSeed * 100.0);
-                    
-                    // Calculate how hard the boid is working
+
+                    float flapPhase = _Time.y * _BaseSpeed * 2.0 + (b.randomSeed * 100.0);
                     float effortRatio = clamp(animSpeed / max(_BaseSpeed, 0.01), 0.2, 2.0);
                     float dynamicAmplitude = _FlapAmplitude * effortRatio;
 
@@ -223,7 +229,7 @@
         // ==========================================
         // PASS 2: SHADOW CASTER
         // ==========================================
-        Pass
+Pass
         {
             Name "ShadowCaster"
             Tags { "LightMode"="ShadowCaster" }
@@ -236,18 +242,24 @@
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct Boid { float3 position; float3 velocity; float roll; float splineT; };
-            
+struct Boid
+{
+    float3 position;
+    float randomSeed;
+    float3 velocity;
+    float colorSeed;
+    uint packedData; 
+    float splineT;
+    float pad1;
+    float pad2;
+};
             #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
             StructuredBuffer<Boid> boidsBuffer;
             #endif
 
-            float _BaseSpeed;
-            float _FlapSpeed;
-            float _FlapAmplitude;
-
             inline float CustHash(uint s) {
-                s ^= 2747636419u; s *= 2654435769u; s ^= s >> 16;
+                s ^= 2747636419u;
+                s *= 2654435769u; s ^= s >> 16;
                 s *= 2654435769u; s ^= s >> 16; s *= 2654435769u;
                 return float(s) / 4294967295.0;
             }
@@ -266,32 +278,21 @@
                     uint bufferIndex = input.instanceID;
                     Boid b = boidsBuffer[bufferIndex];
                     
-                    // Fixed persistent ID logic applied to shadows
-                    uint persistentID = (uint)floor(b.splineT);
-                    float randomSeed = CustHash(persistentID);
-                    
-                    float size = lerp(0.5, 1.5, randomSeed);
+                    // ZERO-COST LOOKUP
+                    float size = lerp(0.5, 1.5, b.randomSeed);
                     float animSpeed = length(b.velocity);
                     float3 boidDir = animSpeed > 0.001 ? (b.velocity / animSpeed) : float3(0,0,1);
-                    
-                    // Fixed time calculation applied to shadows
-                    float flapPhase = _Time.y * _BaseSpeed * 2.0 + (randomSeed * 100.0);
-                    float effortRatio = clamp(animSpeed / max(_BaseSpeed, 0.01), 0.2, 2.0);
-                    float dynamicAmplitude = _FlapAmplitude * effortRatio;
 
                     float3 scaledPos = input.positionOS.xyz * size;
-                    float wag = sin(flapPhase * _FlapSpeed + scaledPos.z * 5.0) * (scaledPos.z < 0 ? -scaledPos.z * dynamicAmplitude : 0.0);
-                    scaledPos.x += wag;
 
+                    // Simplified Look-At Rotation (No Banking)
                     float3 globalUp = float3(0, 1, 0);
                     if (abs(dot(boidDir, globalUp)) > 0.999) globalUp = float3(0, 0, 1);
                     float3 right = normalize(cross(globalUp, boidDir));
                     float3 up = cross(boidDir, right);
-                    float s, c; sincos(b.roll, s, c);
-                    float3 rolledRight = right * c + up * s;
-                    float3 rolledUp = normalize(cross(boidDir, rolledRight));
-                    float3 rotatedPos = rolledRight * scaledPos.x + rolledUp * scaledPos.y + boidDir * scaledPos.z;
                     
+                    // Apply Rotation & Position
+                    float3 rotatedPos = right * scaledPos.x + up * scaledPos.y + boidDir * scaledPos.z;
                     worldPos = rotatedPos + b.position;
                 #else
                     worldPos = TransformObjectToWorld(input.positionOS.xyz);

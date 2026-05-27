@@ -177,14 +177,14 @@ namespace TechArtPlayground
             {
                 boidsArray[i].position = transform.position + Random.insideUnitSphere * spawnRadius;
                 boidsArray[i].velocity = Random.onUnitSphere * speed;
-                boidsArray[i].roll = 0f;
+                // boidsArray[i].roll = 0f;
 
                 // THE FIX: Pack the persistent ID (i) into the integer portion of the float.
                 // The fractional part (Random.value) remains the path progress!
                 boidsArray[i].splineT = i + Random.value;
             }
 
-// OPTIMIZATION: Stride is now exactly 32 bytes (4 floats * 8)
+            // OPTIMIZATION: Stride is now exactly 32 bytes (4 floats * 8)
             int boidStride = 32;
             boidsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
             boidsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, numBoids, boidStride);
@@ -519,12 +519,16 @@ namespace TechArtPlayground
             public float width; // Optional: allows the current to widen or narrow
         }
 
-        private struct Boid
-        {
-            public Vector3 position;
-            public Vector3 velocity; // Length = speed, Normalize = direction
-            public float roll;
-            public float splineT;
-        }
+        struct Boid 
+        { 
+            public Vector3 position; 
+            public float randomSeed; 
+            public Vector3 velocity; 
+            public float colorSeed; 
+            public uint packedData; 
+            public float splineT; 
+            public float pad1; 
+            public float pad2; 
+        };
     }
 }

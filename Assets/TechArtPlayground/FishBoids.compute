@@ -5,12 +5,16 @@
 #pragma kernel CSMain
 #pragma kernel CSMain_SplineFlow
 
-struct Boid
-{
-    float3 position;
-    float3 velocity;
-    uint packedData; // Replaces float roll
-    float splineT;
+struct Boid 
+{ 
+    float3 position; 
+    float randomSeed; 
+    float3 velocity; 
+    float colorSeed; 
+    uint packedData; 
+    float splineT; 
+    float pad1; 
+    float pad2; 
 };
 
 struct Attractor
@@ -72,8 +76,8 @@ float deltaTime;
 float speed;
 float sightRadius;
 float separationWeight;
-float alignmentWeight; // <-- ADD THIS
-float cohesionWeight;  // <-- ADD THIS
+float alignmentWeight;
+float cohesionWeight;
 float3 targetPosition;
 float targetWeight;
 float3 predatorPosition;

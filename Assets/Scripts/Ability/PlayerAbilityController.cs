@@ -45,13 +45,16 @@ namespace Ability
             playerStats = GetComponent<PlayerStats>();
             mainCam = Camera.main;
 
-            // Dependency Injection: Pass playerStats into the abilities
-            movementAbility = new MovementAbility(physicsController, 5f); // Move speed could also be tied to stats!
-            primaryAbility = new ShotgunAbility(defaultProjectile, firePoint, playerStats);
-            secondaryAbility = new SniperAbility(sniperProjectile, firePoint); // Update Sniper similarly
+            movementAbility = new MovementAbility(physicsController, 5f); 
+    
+            // Set the new Basic Blaster as the default primary
+            primaryAbility = new BasicBlasterAbility(defaultProjectile, firePoint, playerStats);
+            secondaryAbility = new ShotgunAbility(defaultProjectile, firePoint, playerStats); // Moved Shotgun to secondary
 
             specialAbility = new TeleportAbility(physicsController, 15f);
-            dashAbility = new DashAbility(physicsController, 8f);
+    
+            // Replace the base dash with the new Ram Dash
+            dashAbility = new RamDashAbility(physicsController, playerStats, 8f);
 
             ActiveWeaponAbility = primaryAbility;
         }
@@ -111,7 +114,7 @@ namespace Ability
             Debug.Log($"[AbilitySystem] Successfully equipped {abilityId} (Level {level}) to {slot} slot.");
         }
 
-        // NEW: Safe fallback mechanic to restore base abilities when unequipping a skill tree node
+        // Safe fallback mechanic to restore base abilities when unequipping a skill tree node
         public void EquipDefaultAbility(AbilitySlot slot)
         {
             IAbility oldAbility = GetAbilityInSlot(slot);
@@ -170,6 +173,8 @@ namespace Ability
                 "Basic_Move" => new MovementAbility(physicsController, 5f),
                 "Blink_Strike" => new TeleportAbility(physicsController, 15f),
                 "Evasive_Dash" => new DashAbility(physicsController, 8f),
+                "Ram_Dash" => new RamDashAbility(physicsController, playerStats, 8f), // NEW
+                "Basic_Blaster" => new BasicBlasterAbility(defaultProjectile, firePoint, playerStats), // NEW
                 "Shotgun_Blast" => new ShotgunAbility(defaultProjectile, firePoint, playerStats),
                 "Railgun_Sniper_Channeled" => new SniperAbility(sniperProjectile, firePoint),
                 _ => null
