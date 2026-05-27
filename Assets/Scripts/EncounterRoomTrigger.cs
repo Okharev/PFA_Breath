@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using TechArtPlayground.Water;
 using UnityEngine;
 
 [System.Serializable]
@@ -25,8 +24,6 @@ public class EncounterRoomTrigger : MonoBehaviour
     
     [Header("Encounter Configuration")]
     [SerializeField] private List<EnemySpawnData> enemySpawns = new List<EnemySpawnData>();
-
-    [SerializeField] private OceanWeatherController weatherController;
     
     // Track active enemies to know when the room is cleared
     private readonly List<GameObject> activeEnemies = new List<GameObject>();
@@ -58,8 +55,6 @@ public class EncounterRoomTrigger : MonoBehaviour
         {
             if (door != null) door.CloseDoor();
         }
-        
-        weatherController.TriggerTempest();
 
         // 2. Switch mode and spawn enemies
         GameModeManager.Instance.SwitchToCombat();
@@ -113,8 +108,6 @@ public class EncounterRoomTrigger : MonoBehaviour
         {
             if (door is not null) door.OpenDoor();
         }
-        
-        weatherController.TriggerCalm();
 
         // 2. Resume normal gameplay
         GameModeManager.Instance.SwitchToExploration();

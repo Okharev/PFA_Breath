@@ -37,31 +37,26 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _CausticsDistortion: 0.861
-    - _CausticsScale: 0.2
+    - _CausticsScale: 0.18
     - _CausticsSpeed: 0.06
-    - _CausticsStrength: 0.515
-    - _DepthMultiplier: 0.25
-    - _EdgeFadeDistance: 0.05
+    - _CausticsStrength: 0.224
+    - _DepthMultiplier: 1.48
     - _FoamCutoff: 0.913
-    - _FoamDistance: 0
-    - _FoamDistortion: 0
-    - _FoamLines: 0
+    - _FoamDistance: 16.25
     - _FoamScale: 1.33
-    - _FoamSpeed: 0
+    - _FoamSpeed: -0.34
     - _Metallic: 0
-    - _NormalScale: 0.1
-    - _NormalStrength: 0.573
+    - _NormalScale: 0.09
+    - _NormalStrength: 0.143
     - _ReflectionStrength: 1
     - _RefractionStrength: 0.0161
-    - _Ripple2Scale: 0.75
     - _Smoothness: 0.98
     - _SpecularStrength: 0.004
     m_Colors:
     - _DeepColor: {r: 0.12205317, g: 0.050980397, b: 0.2509804, a: 1}
     - _FoamColor: {r: 0.9, g: 0.95, b: 1, a: 1}
     - _ShallowColor: {r: 0.564466, g: 0.28475437, b: 0.764151, a: 1}
-    - _WindDirection1: {r: 0.01, g: 0.01, b: 0, a: 0}
-    - _WindDirection2: {r: 0.01, g: 0.01, b: 0, a: 0}
+    - _WindDirection1: {r: 0.05, g: 0.05, b: 0, a: 0}
+    - _WindDirection2: {r: -0.02, g: 0.08, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

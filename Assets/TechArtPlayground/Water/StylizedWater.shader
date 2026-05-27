@@ -78,15 +78,11 @@ Shader "Custom/RealisticWater_Master"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-
-            // Add this line to enable GPU Instancing
-            #pragma multi_compile_instancing 
-
+            
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS _FORWARD_PLUS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
-            
             
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -98,7 +94,6 @@ Shader "Custom/RealisticWater_Master"
                 float4 positionOS   : POSITION;
                 float3 normalOS     : NORMAL;
                 float4 tangentOS    : TANGENT;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -112,7 +107,6 @@ Shader "Custom/RealisticWater_Master"
                 float  waveHeight   : TEXCOORD6; 
                 float  fogFactor    : TEXCOORD7; 
                 float  crestFactor  : TEXCOORD8; 
-                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             TEXTURE2D(_NormalMap);
@@ -192,7 +186,6 @@ Shader "Custom/RealisticWater_Master"
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                UNITY_SETUP_INSTANCE_ID(input);
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 
                 float3 gridPoint = positionWS;

@@ -242,62 +242,66 @@ void PackFFTData(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _Resolution || id.y >= _Resolution) return;
 
+    // Apply Permutation (Checkerboard sign flip) to center the FFT output
     float sign = ((id.x + id.y) % 2 == 1) ? -1.0 : 1.0;
-    
-    // IFFT Normalization Factor (1 / N^2)
-    float normalizer = 1.0 / (float)(_Resolution * _Resolution);
 
     float2 dyComplex = InputBuffer[id.xy].rg;
     float2 dxComplex = InputBuffer[id.xy].ba;
     float2 dzComplex = InputBufferZ[id.xy].rg;
 
-    // Apply Normalizer to the final spatial displacements
-    float height = dyComplex.x * sign * normalizer;
-    float dispX = dxComplex.x * sign * normalizer;
-    float dispZ = dzComplex.x * sign * normalizer;
+    // Final spatial displacement components (The 'Real' part holds our data)
+    float height = dyComplex.x * sign;
+    float dispX = dxComplex.x * sign;
+    float dispZ = dzComplex.x * sign;
 
+    // Output raw displacement (choppiness multiplier is applied here or in URP)
     _DispTex[id.xy] = float4(dispX, height, dispZ, 1.0);
 
     // --- Finite Differences for Derivatives and Jacobian ---
+    // We sample neighbors to calculate slopes.
     uint left   = (id.x > 0) ? id.x - 1 : _Resolution - 1;
     uint right  = (id.x < _Resolution - 1) ? id.x + 1 : 0;
     uint down   = (id.y > 0) ? id.y - 1 : _Resolution - 1;
     uint up     = (id.y < _Resolution - 1) ? id.y + 1 : 0;
 
+    // Sample neighbors (ignoring permutation sign for a moment, we apply it individually)
     float sRight = ((right + id.y) % 2 == 1) ? -1.0 : 1.0;
     float sLeft  = ((left + id.y) % 2 == 1) ? -1.0 : 1.0;
     float sUp    = ((id.x + up) % 2 == 1) ? -1.0 : 1.0;
     float sDown  = ((id.x + down) % 2 == 1) ? -1.0 : 1.0;
 
+    // Heights
     float hRight = InputBuffer[uint2(right, id.y)].r * sRight;
     float hLeft  = InputBuffer[uint2(left, id.y)].r * sLeft;
     float hUp    = InputBuffer[uint2(id.x, up)].r * sUp;
     float hDown  = InputBuffer[uint2(id.x, down)].r * sDown;
 
+    // Displacements (for Jacobian)
     float dxRight = InputBuffer[uint2(right, id.y)].b * sRight;
     float dxLeft  = InputBuffer[uint2(left, id.y)].b * sLeft;
     float dzUp    = InputBufferZ[uint2(id.x, up)].r * sUp;
     float dzDown  = InputBufferZ[uint2(id.x, down)].r * sDown;
+    
+    // Cross displacements
     float dxUp    = InputBuffer[uint2(id.x, up)].b * sUp;
     float dxDown  = InputBuffer[uint2(id.x, down)].b * sDown;
-
-    // --- THE MISSING LINES ---
     float dzRight = InputBufferZ[uint2(right, id.y)].r * sRight;
     float dzLeft  = InputBufferZ[uint2(left, id.y)].r * sLeft;
-    // -------------------------
 
+    // Grid spacing mapping
     float gridSpace = _Size / (float)_Resolution;
 
-    // Apply Normalizer to the spatial derivatives
-    float dYdX = ((hRight - hLeft) / (2.0 * gridSpace)) * normalizer;
-    float dYdZ = ((hUp - hDown) / (2.0 * gridSpace)) * normalizer;
+    // Slopes (dY/dX, dY/dZ)
+    float dYdX = (hRight - hLeft) / (2.0 * gridSpace);
+    float dYdZ = (hUp - hDown) / (2.0 * gridSpace);
 
-    // Keep Normalizer on the Jacobian terms (Already correct in your original code)
-    float dXdX = ((dxRight - dxLeft) / (2.0 * gridSpace)) * normalizer;
-    float dZdZ = ((dzUp - dzDown) / (2.0 * gridSpace)) * normalizer;
-    float dXdZ = ((dxUp - dxDown) / (2.0 * gridSpace)) * normalizer;
-    float dZdX = ((dzRight - dzLeft) / (2.0 * gridSpace)) * normalizer;
+    // Jacobian terms
+    float dXdX = (dxRight - dxLeft) / (2.0 * gridSpace);
+    float dZdZ = (dzUp - dzDown) / (2.0 * gridSpace);
+    float dXdZ = (dxUp - dxDown) / (2.0 * gridSpace);
+    float dZdX = (dzRight - dzLeft) / (2.0 * gridSpace);
 
+    // Jacobian formula: J = (1 + λ * ∂Dx/∂x) * (1 + λ * ∂Dz/∂z) - (λ * ∂Dx/∂z * λ * ∂Dz/∂x)
     float jX = 1.0 + _Choppiness * dXdX;
     float jZ = 1.0 + _Choppiness * dZdZ;
     float jCross = (_Choppiness * dXdZ) * (_Choppiness * dZdX);
