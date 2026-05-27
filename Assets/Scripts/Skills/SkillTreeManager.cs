@@ -36,6 +36,8 @@ namespace Skills
 
             // Default sandbox points
             AddEmotionPoints(EmotionType.Red, 5);
+            AddEmotionPoints(EmotionType.Blue, 15);
+            AddEmotionPoints(EmotionType.White, 5);
             AddGenericPoints(8);
         }
 
@@ -138,27 +140,49 @@ namespace Skills
             return nodeLevels.TryGetValue(guid, out int level) ? level : 0;
         }
 
+        // Helper method to centralize and scale costs
+        public int GetNodeCost(BaseNodeData node)
+        {
+            int currentLevel = GetNodeLevel(node.GUID);
+            
+            return node switch
+            {
+                GenericNodeData genericNode => genericNode.GenericCost,
+                
+                // Linear scaling: Level 1 = BaseCost, Level 2 = BaseCost * 2, etc.
+                EmotionNodeData emotionNode => emotionNode.BaseEmotionCost + (currentLevel * emotionNode.BaseEmotionCost),
+                
+                _ => int.MaxValue // Failsafe: Prevent purchasing unknown node types
+            };
+        }
+
         public bool CanUnlock(BaseNodeData node)
         {
             int currentLevel = GetNodeLevel(node.GUID);
 
             // 1. Max Level bounds validation
-            if (node is GenericNodeData && currentLevel >= 1) return false; // Generic nodes are single purchase
-            // FIX: Renamed 'emotionNode' to 'eNode' here to clear the method scope collision
-            if (node is EmotionNodeData eNode && currentLevel >= eNode.MaxLevel) return false;
+            if (node is GenericNodeData && currentLevel >= 1) return false;
+    
+            // Explicitly check levels for Emotion nodes
+            if (node is EmotionNodeData emotionNode && currentLevel >= emotionNode.MaxLevel) return false;
 
             // 2. Check Prerequisites (Prerequisites require at least level 1)
             foreach (string reqGuid in node.PrerequisiteGUIDs)
-                if (GetNodeLevel(reqGuid) == 0)
-                    return false;
+            {
+                if (GetNodeLevel(reqGuid) == 0) return false;
+            }
 
-            // 3. Check Costs
+            // 3. Dynamic Cost Validation
+            int requiredCost = GetNodeCost(node);
+    
+            // Safety: ensure cost is actually required
+            if (requiredCost <= 0) return false;
+
             return node switch
             {
-                GenericNodeData genericNode => genericPoints >= genericNode.GenericCost,
-                EmotionNodeData emotionNode => emotionPoints[emotionNode.RequiredEmotion] >=
-                                               emotionNode.BaseEmotionCost,
-                _ => true
+                GenericNodeData => genericPoints >= requiredCost,
+                EmotionNodeData emNode => emotionPoints[emNode.RequiredEmotion] >= requiredCost,
+                _ => false
             };
         }
 
@@ -166,33 +190,35 @@ namespace Skills
         {
             if (!CanUnlock(node)) return false;
 
+            int costToDeduct = GetNodeCost(node);
             List<StatModifierData> statsToApply = new();
 
             if (node is GenericNodeData genericNode)
             {
-                genericPoints -= genericNode.GenericCost;
+                genericPoints -= costToDeduct;
                 statsToApply = genericNode.GrantedStats;
             }
             else if (node is EmotionNodeData emotionNode)
             {
-                emotionPoints[emotionNode.RequiredEmotion] -= emotionNode.BaseEmotionCost;
+                emotionPoints[emotionNode.RequiredEmotion] -= costToDeduct;
                 statsToApply = emotionNode.GrantedStats;
             }
 
             PlayerStats playerStats = FindAnyObjectByType<PlayerStats>();
             if (playerStats is not null && statsToApply != null)
+            {
                 foreach (StatModifierData mod in statsToApply)
                 {
                     StatModifierData initializedMod = mod;
                     initializedMod.Source = node;
                     playerStats.GetStat(mod.Stat).AddModifier(initializedMod);
                 }
+            }
 
-            // Increment level state safely inside our dictionary map
             if (!nodeLevels.ContainsKey(node.GUID)) nodeLevels[node.GUID] = 0;
             nodeLevels[node.GUID]++;
 
-            Debug.Log($"[SkillTreeManager] Upgraded Node: {node.NodeName} to Level {nodeLevels[node.GUID]}");
+            Debug.Log($"[SkillTreeManager] Upgraded Node: {node.NodeName} to Level {nodeLevels[node.GUID]} (Cost: {costToDeduct})");
             OnSkillTreeUpdated?.Invoke();
 
             return true;

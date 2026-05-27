@@ -191,16 +191,28 @@ half4 frag(Varyings input) : SV_Target
     // 1. MACRO & MICRO NORMALS
     // =========================================================================
     // Sample FFT spatial derivatives to get our macro wave shape and Jacobian (choppiness/thinness)
-    float4 derivatives = SAMPLE_TEXTURE2D_LOD(_DerivTex, sampler_DerivTex, input.fftUV, _FoamBlurLod);
-    float jacobian = derivatives.b;
-    float3 macroNormalWS = normalize(float3(-derivatives.r, 1.0, -derivatives.g));
+// =========================================================================
+    // 1. MACRO & MICRO NORMALS
+    // =========================================================================
+    // FIX: Sample at crisp full resolution (LOD 0) for perfect lighting and SSS matching
+    float4 crispDerivs = SAMPLE_TEXTURE2D_LOD(_DerivTex, sampler_DerivTex, input.fftUV, 0);
+    float jacobian = crispDerivs.b;
+    float3 macroNormalWS = normalize(float3(-crispDerivs.r, 1.0, -crispDerivs.g));
 
-    // Extract high-frequency micro normals (ripples) to break up the FFT grid
+    // Extract high-frequency micro normals (ripples)
     float2 panningUV = (input.positionWS.xz * _DetailScale) + (_Time.y * _DetailSpeed);
-    float3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, panningUV), _NormalStrength);
+    // In the frag function, calculate distance
+    float viewDist = length(GetCameraPositionWS() - input.positionWS);
+    float detailFade = smoothstep(150.0, 50.0, viewDist); // Fade out between 50m and 150m
+
+    // Apply the fade to the detail strength
+    float3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, panningUV), _NormalStrength * detailFade);
     
-    // Blend macro and micro normals (Mapping Tangent X/Y to World X/Z)
+    // Blend macro and micro normals
     float3 normalWS = normalize(float3(macroNormalWS.x + tangentNormal.x, macroNormalWS.y, macroNormalWS.z + tangentNormal.y));
+
+    // FIX: Sample a blurred version strictly for the foam mask to prevent pixel flickering
+    float blurredJacobian = SAMPLE_TEXTURE2D_LOD(_DerivTex, sampler_DerivTex, input.fftUV, _FoamBlurLod).b;
 
     // =========================================================================
     // 2. REFRACTION & WATER DEPTH
@@ -258,23 +270,21 @@ half4 frag(Varyings input) : SV_Target
     // =========================================================================
     // 4. FOAM SYSTEM (STRICT CLAMPING)
     // =========================================================================
+
     float2 foamUVs = (input.positionWS.xz * _FoamNoiseScale) + (_Time.y * _FoamNoiseSpeed);
     float rawNoise = SAMPLE_TEXTURE2D(_FoamNoise, sampler_FoamNoise, foamUVs).r;
     
     // 1. FFT Crest Foam
-    // Invert the jacobian so peaks > 0, and flat water = 0.
-    float crest = saturate(1.0 - jacobian);
+    // FIX: Use the blurredJacobian here so the foam is soft, but lighting remains sharp
+    float crest = saturate(1.0 - blurredJacobian);
+    
     // Subtract bias. (If bias is 0.1, foam only appears when crests are very sharp).
-    float crestFoam = saturate(crest - _FoamBias); 
-    // Multiply by noise to break it up, then apply power to sharpen the clumps
+    float crestFoam = smoothstep(_FoamBias, _FoamBias + 0.3, crest);
     crestFoam = pow(crestFoam * rawNoise, _FoamPower);
 
     // 2. Shoreline Foam
-    // This mask is exactly 1.0 at the beach, and exactly 0.0 in deep water.
     float foamDepthMask = saturate((_FoamDistance - waterDepth) / max(0.01, _FoamDistance));
-    // Multiply the depth mask by the noise texture
     float shoreFoam = foamDepthMask * rawNoise;
-    // Use a hard cutoff. If shoreFoam is below the cutoff, it gets forced to 0.0.
     shoreFoam = smoothstep(_FoamCutoff, _FoamCutoff + 0.15, shoreFoam);
 
     // Combine both masks safely
