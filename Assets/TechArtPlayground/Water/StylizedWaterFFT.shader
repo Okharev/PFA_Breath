@@ -18,6 +18,7 @@ Shader "Custom/Ocean_FFT_Volumetric"
         [HDR] _SSSColor ("SSS Crest Color", Color) = (0.3, 0.8, 0.6, 1.0)
         _SSSStrength ("SSS Intensity", Range(0.0, 5.0)) = 1.5
         _SSSPower ("SSS Sun Focus (Power)", Range(1.0, 20.0)) = 5.0
+        _SSSEmission ("SSS HDR Emission (Triggers Bloom)", Range(1.0, 10.0)) = 3.0
 
         [Header(Foam Controls)]
         _FoamColor ("Foam Color", Color) = (1.0, 1.0, 1.0, 1.0)
@@ -53,6 +54,8 @@ Shader "Custom/Ocean_FFT_Volumetric"
 
         [Header(Shadows)]
         _ShadowStrength ("Water Shadow Strength", Range(0.0, 1.0)) = 0.5
+        
+        _MaxWaveHeight ("Max Wave Height (Driven by C#)", Float) = 2.0
     }
 
     SubShader
@@ -103,6 +106,7 @@ Shader "Custom/Ocean_FFT_Volumetric"
                 float4 positionHCS : SV_POSITION;
                 float2 fftUV : TEXCOORD0;
                 float4 screenPos : TEXCOORD1;
+                float  waveHeight  : TEXCOORD2;
                 float3 positionWS : TEXCOORD10;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -124,6 +128,7 @@ Shader "Custom/Ocean_FFT_Volumetric"
                 half3 _SSSColor;
                 float _SSSStrength;
                 float _SSSPower;
+                float _SSSEmission;
 
                 half4 _FoamColor;
                 float _FoamBias;
@@ -132,7 +137,8 @@ Shader "Custom/Ocean_FFT_Volumetric"
                 float _FoamNoiseScale;
                 float2 _FoamNoiseSpeed;
 
-
+                float _MaxWaveHeight;
+            
                 float _CausticsScale;
                 float _CausticsSpeed;
                 float _CausticsStrength;
@@ -172,6 +178,10 @@ Shader "Custom/Ocean_FFT_Volumetric"
 
                 // Displace Vertices
                 float4 disp = SAMPLE_TEXTURE2D_LOD(_DispTex, sampler_DispTex, stableUV, 0);
+
+                // NEW: Store the localized vertical displacement
+                output.waveHeight = disp.g; 
+
                 positionWS.x += disp.r * _Choppiness;
                 positionWS.y += disp.g;
                 positionWS.z += disp.b * _Choppiness;
@@ -184,49 +194,48 @@ Shader "Custom/Ocean_FFT_Volumetric"
 
                 return output;
             }
-
+            
 half4 frag(Varyings input) : SV_Target
 {
     // =========================================================================
-    // 1. MACRO & MICRO NORMALS
+    // 1. MACRO & MICRO NORMALS (Dual-Frequency Detail)
     // =========================================================================
-    // Sample FFT spatial derivatives to get our macro wave shape and Jacobian (choppiness/thinness)
-// =========================================================================
-    // 1. MACRO & MICRO NORMALS
-    // =========================================================================
-    // FIX: Sample at crisp full resolution (LOD 0) for perfect lighting and SSS matching
+    // Sample FFT spatial derivatives at LOD 0 for sharp, accurate wave geometry
     float4 crispDerivs = SAMPLE_TEXTURE2D_LOD(_DerivTex, sampler_DerivTex, input.fftUV, 0);
     float jacobian = crispDerivs.b;
     float3 macroNormalWS = normalize(float3(-crispDerivs.r, 1.0, -crispDerivs.g));
 
-    // Extract high-frequency micro normals (ripples)
-    float2 panningUV = (input.positionWS.xz * _DetailScale) + (_Time.y * _DetailSpeed);
-    // In the frag function, calculate distance
+    // Calculate distance for detail fading
     float viewDist = length(GetCameraPositionWS() - input.positionWS);
-    float detailFade = smoothstep(150.0, 50.0, viewDist); // Fade out between 50m and 150m
+    float detailFade = smoothstep(150.0, 50.0, viewDist); 
 
-    // Apply the fade to the detail strength
-    float3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, panningUV), _NormalStrength * detailFade);
+    // STYLIZED FIX: Multi-Frequency Micro-Normals
+    // We sample the detail normal twice at different scales/speeds to break up 
+    // visible tiling and create chaotic, organic surface interference.
+    float2 panningUV1 = (input.positionWS.xz * _DetailScale) + (_Time.y * _DetailSpeed);
+    float2 panningUV2 = (input.positionWS.xz * _DetailScale * 0.5) + (_Time.y * float2(-_DetailSpeed.y, _DetailSpeed.x) * 0.7);
+
+    float3 n1 = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, panningUV1), _NormalStrength * detailFade);
+    float3 n2 = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, panningUV2), _NormalStrength * detailFade * 0.8);
     
-    // Blend macro and micro normals
+    // Blend the two normal maps (Whiteout blend) and combine with macro normal
+    float3 tangentNormal = normalize(float3(n1.xy + n2.xy, n1.z * n2.z));
     float3 normalWS = normalize(float3(macroNormalWS.x + tangentNormal.x, macroNormalWS.y, macroNormalWS.z + tangentNormal.y));
 
-    // FIX: Sample a blurred version strictly for the foam mask to prevent pixel flickering
+    // Blurred Jacobian strictly for soft foam masking
     float blurredJacobian = SAMPLE_TEXTURE2D_LOD(_DerivTex, sampler_DerivTex, input.fftUV, _FoamBlurLod).b;
 
     // =========================================================================
-    // 2. REFRACTION & WATER DEPTH
+    // 2. REFRACTION & STYLIZED DEPTH BANDING
     // =========================================================================
-    // Setup screen UVs and distort them based on the wave normal
     float2 screenUV = input.screenPos.xy / input.screenPos.w;
     float2 refractUV = screenUV + (normalWS.xz * _RefractionStrength);
 
-    // Sample depth buffer to calculate how thick the water volume is
     float surfaceZ = input.screenPos.w;
     float rawDepth = SampleSceneDepth(refractUV);
     float sceneZ = LinearEyeDepth(rawDepth, _ZBufferParams);
 
-    // Prevent refraction artifacts if distortion pulls in an object IN FRONT of the water
+    // Prevent refraction artifacts if object is in front of the water
     if (sceneZ < surfaceZ)
     {
         refractUV = screenUV;
@@ -234,16 +243,19 @@ half4 frag(Varyings input) : SV_Target
         sceneZ = LinearEyeDepth(rawDepth, _ZBufferParams);
     }
 
-    // Optical transmittance based on Beer's Law
     float waterDepth = max(0.0, sceneZ - surfaceZ);
     float transmittance = exp(-waterDepth * _DepthAbsorption); 
-    
+
+    // STYLIZED FIX: Non-Linear Depth Banding
+    // We compress the transmittance curve so shallow water remains vibrantly colored 
+    // near the shore, then abruptly drops off into dark, deep ocean water.
+    float stylizedTransmittance = smoothstep(0.05, 0.8, transmittance);
+
     // =========================================================================
-    // 3. UNDERWATER CAUSTICS & BASE ALBEDO
+    // 3. UNDERWATER CAUSTICS (Chromatic Aberration)
     // =========================================================================
     half3 refractColor = SampleSceneColor(refractUV);
 
-    // Reconstruct world position of the underwater floor to project caustics correctly
     #if UNITY_REVERSED_Z
         real depthForWS = rawDepth;
     #else
@@ -251,132 +263,162 @@ half4 frag(Varyings input) : SV_Target
     #endif
     float3 backgroundWS = ComputeWorldSpacePosition(refractUV, depthForWS, UNITY_MATRIX_I_VP);
 
-    // Project scrolling caustics, slightly distorted by the water surface
     float2 causticsUV = backgroundWS.xz * _CausticsScale + normalWS.xz * 0.2;
     float2 pan1 = causticsUV + _Time.y * _CausticsSpeed * float2(1.0, 0.5);
     float2 pan2 = (causticsUV * 0.8) - _Time.y * _CausticsSpeed * float2(0.5, 1.0);
     
-    half c1 = SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan1).r;
-    half c2 = SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan2).r;
+    // STYLIZED FIX: Chromatic Aberration
+    // We offset the UVs slightly for Red and Blue channels to create a glassy, prismatic effect
+    float2 causticsOffset = float2(0.015, 0.0) * _CausticsScale;
+
+    half r = min(SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan1 + causticsOffset).r, SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan2 + causticsOffset).r);
+    half g = min(SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan1).r, SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan2).r);
+    half b = min(SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan1 - causticsOffset).r, SAMPLE_TEXTURE2D(_CausticsTexture, sampler_CausticsTexture, pan2 - causticsOffset).r);
     
-    // Fade caustics in deep water
-    half caustics = min(c1, c2) * _CausticsStrength * transmittance;
+    half3 caustics = half3(r, g, b) * _CausticsStrength * transmittance;
     refractColor += (caustics * _ShallowColor.rgb);
 
-    // Calculate final albedo before lighting (Gerstner-style replacement blend)
-    half3 waterVolumeColor = lerp(_DeepColor.rgb, _ShallowColor.rgb, transmittance);
+    // Calculate final albedo using the stylized transmittance
+    half3 waterVolumeColor = lerp(_DeepColor.rgb, _ShallowColor.rgb, stylizedTransmittance);
     half3 albedo = lerp(waterVolumeColor, refractColor, transmittance);
 
     // =========================================================================
-    // 4. FOAM SYSTEM (STRICT CLAMPING)
+    // 4. FOAM SYSTEM (Dual-Layer Cellular Breakup)
     // =========================================================================
+    // STYLIZED FIX: Subtracting a second noise creates dynamic, morphing gaps
+    // so the foam looks like bursting bubbles rather than a sliding texture.
+// =========================================================================
+    // 4. FOAM SYSTEM (Stylized & Solidified)
+    // =========================================================================
+    float2 foamUV1 = (input.positionWS.xz * _FoamNoiseScale) + (_Time.y * _FoamNoiseSpeed);
+    float2 foamUV2 = (input.positionWS.xz * _FoamNoiseScale * 0.75) + (_Time.y * _FoamNoiseSpeed * 0.5);
 
-    float2 foamUVs = (input.positionWS.xz * _FoamNoiseScale) + (_Time.y * _FoamNoiseSpeed);
-    float rawNoise = SAMPLE_TEXTURE2D(_FoamNoise, sampler_FoamNoise, foamUVs).r;
+    float noise1 = SAMPLE_TEXTURE2D(_FoamNoise, sampler_FoamNoise, foamUV1).r;
+    float noise2 = SAMPLE_TEXTURE2D(_FoamNoise, sampler_FoamNoise, foamUV2).r;
     
-    // 1. FFT Crest Foam
-    // FIX: Use the blurredJacobian here so the foam is soft, but lighting remains sharp
+    // FIX 1: High-Contrast Noise
+    // Instead of subtracting, we multiply them and boost the intensity. 
+    // This creates sharp, cellular bubble shapes with peak whites intact.
+    float rawNoise = saturate((noise1 * noise2) * 2.5);
+    
+    // 1. Crest Foam
     float crest = saturate(1.0 - blurredJacobian);
     
-    // Subtract bias. (If bias is 0.1, foam only appears when crests are very sharp).
-    float crestFoam = smoothstep(_FoamBias, _FoamBias + 0.3, crest);
-    crestFoam = pow(crestFoam * rawNoise, _FoamPower);
+    // Create a much broader base mask for the foam to live in
+    float crestBase = smoothstep(_FoamBias, _FoamBias + 0.6, crest);
+    
+    // FIX 2: The "Stylized Cut"
+    // We subtract the inverted noise from the crest base, then use a tight smoothstep 
+    // to create a hard, solid, cartoony edge instead of a soft transparent fade.
+    float foamShape = saturate(crestBase - (1.0 - rawNoise));
+    float crestFoam = smoothstep(0.1, 0.2, foamShape); 
 
     // 2. Shoreline Foam
     float foamDepthMask = saturate((_FoamDistance - waterDepth) / max(0.01, _FoamDistance));
-    float shoreFoam = foamDepthMask * rawNoise;
-    shoreFoam = smoothstep(_FoamCutoff, _FoamCutoff + 0.15, shoreFoam);
+    
+    // Apply the same hard-cut stylized logic to the shoreline
+    float shoreShape = saturate(foamDepthMask - (1.0 - rawNoise));
+    float shoreFoam = smoothstep(_FoamCutoff, _FoamCutoff + 0.1, shoreShape);
 
-    // Combine both masks safely
+    // Combine masks safely
     float foamMask = saturate(crestFoam + shoreFoam);
-
-    // WIPE OUT micro-normals where foam is present so it looks like a soft volume
+    
+    // Wipe out micro-normals where foam is present so it looks like a flat, thick fluid
     normalWS = normalize(lerp(normalWS, macroNormalWS, foamMask));
 
-// =========================================================================
+    // =========================================================================
     // 5. PBR LIGHTING (DIFFUSE & SPECULAR)
     // =========================================================================
     float3 viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
     BRDFData brdfData;
-    half alpha = 1.0; 
     
-    // Initialize standard URP PBR data. (Water is dielectric: Metallic = 0.0)
+    float alpha = 1.0f;
     InitializeBRDFData(albedo, 0.0, half3(0.02, 0.02, 0.02), _Smoothness, alpha, brdfData);
 
-    // Setup shadows and main directional light
     float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
     Light mainLight = GetMainLight(shadowCoord);
-
-    // --- FIX: APPLY GLOBAL SHADOW STRENGTH ---
-    // Lerp between 1.0 (fully lit) and the actual shadow based on your Inspector slider
-    float shadowAtten = lerp(1.0, mainLight.shadowAttenuation, _ShadowStrength);
-
-    // NdotL calculation: wave faces pointing away from the sun physically darken
-    float NdotL = saturate(dot(normalWS, mainLight.direction));
-    half3 radiance = mainLight.color * (mainLight.distanceAttenuation * shadowAtten * NdotL);
     
+    float shadowAtten = lerp(1.0, mainLight.shadowAttenuation, _ShadowStrength);
+    float NdotL = saturate(dot(normalWS, mainLight.direction));
+    
+    half3 radiance = mainLight.color * (mainLight.distanceAttenuation * shadowAtten * NdotL);
     half3 diffuse = brdfData.diffuse * radiance;
     half3 specular = DirectBRDFSpecular(brdfData, normalWS, mainLight.direction, viewDirWS) * radiance;
     
     half3 finalColor = diffuse + (specular * _SpecularStrength);
 
     // =========================================================================
-    // 6. VOLUMETRIC SUBSURFACE SCATTERING & ENVIRONMENT REFLECTIONS
+    // 6. STYLIZED "SEA OF THIEVES" VOLUMETRIC SSS
     // =========================================================================
     float viewLightAlignment = saturate(dot(viewDirWS, -mainLight.direction));
-    
-    // Dual-Thickness Masks
-    float crestThickness = saturate(1.0 - jacobian); 
-    float volumeThickness = saturate(crestThickness + 0.25); 
-
-    float inferredSSSPower = lerp(2.0, 12.0, _Smoothness);
-    
-    float wrap = 0.4;
-    float waveBacklight = saturate((dot(macroNormalWS, -mainLight.direction) + wrap) / (1.0 + wrap));
-    waveBacklight *= waveBacklight; 
-    
-    // Calculate Scattering using the broader Volume mask
-    float sssScattering = (waveBacklight * volumeThickness) + (pow(viewLightAlignment, inferredSSSPower) * volumeThickness);
-    
-    // --- FIX: SOFTENED SSS SHADOWS ---
-    // SSS is ambient, so it never gets fully dark. We lerp your softened shadowAtten!
     float sssShadow = lerp(0.15, 1.0, shadowAtten);
-    float sssMask = sssScattering * _SSSStrength * sssShadow;
-    
-    // Chromatic Shift
-    half3 inferredSSSColor = saturate(_ShallowColor.rgb * 1.5); 
-    half3 sssDynamicColor = lerp(_ShallowColor.rgb, inferredSSSColor, crestThickness);
-    
-    // Filter the sun's light color through our dynamic water volume color
-    half3 dynamicSSS = sssDynamicColor * mainLight.color * sssMask;
-    
-    // Add SSS glow (blocked by foam)
-    finalColor += dynamicSSS * (1.0 - foamMask);
 
-    // Environment Reflections (Fresnel)
-    float NdotV = saturate(dot(normalWS, viewDirWS));
-    float fresnelTerm = brdfData.specular.x + (1.0 - brdfData.specular.x) * pow(1.0 - NdotV, 5.0);
+    // Thickness Masks (Relies on input.waveHeight mapped dynamically to _MaxWaveHeight)
+    float crestThickness = saturate(1.0 - jacobian); 
+    float localHeightMask = saturate(input.waveHeight / max(0.1, _MaxWaveHeight)); 
+    float volumeThickness = saturate(crestThickness + localHeightMask * 0.5 + 0.1);
+
+    // Lobe 1: Direct Sun Scattering (Sharp & Luminous Highlight)
+    float directPhase = pow(viewLightAlignment, lerp(4.0, 16.0, _Smoothness));
+    float directSSS = directPhase * volumeThickness * sssShadow;
+    half3 directSSSColor = mainLight.color * directSSS;
+
+    // Lobe 2: Ambient Multi-Scattering (Soft & Omni-directional)
+    // We wrap the normal away from the light to simulate light wrapping around the wave
+    float wrap = 0.6; // Higher wrap = more gummy/soft
+    float waveBacklight = saturate((dot(macroNormalWS, -mainLight.direction) + wrap) / (1.0 + wrap));
+    waveBacklight = smoothstep(0.0, 1.0, waveBacklight); // Smooth the curve
+    float ambientSSS = waveBacklight * volumeThickness;
+
+    // Sample Sky Ambient (SH) to ensure water glows even in shadows/overcast
+    half3 ambientSkyLight = SampleSH(macroNormalWS);
+    half3 ambientSSSColor = ambientSkyLight * ambientSSS;
+
+    // Combine & Apply Color (Chromatic shift at peaks)
+// Combine & Apply Color (Chromatic shift at peaks)
+    half3 sssDynamicColor = lerp(_ShallowColor.rgb, saturate(_ShallowColor.rgb * 1.5), crestThickness);
+    half3 totalSSS = (directSSSColor + ambientSSSColor) * sssDynamicColor * _SSSStrength;
+
+    // --- NEW: PUSH INTO HDR SPACE ---
+    // This forces the brightness of the wave crests well above 1.0, 
+    // guaranteeing that the URP Post-Processing Bloom will grab it and make it glow.
+    totalSSS *= _SSSEmission;
+
+    // Add SSS (blocked by foam)
+    finalColor += totalSSS * (1.0 - foamMask);;
+
+    // =========================================================================
+    // 7. STYLIZED ENVIRONMENT REFLECTIONS (Aggressive Fresnel)
+    // =========================================================================
+    // STYLIZED FIX: We override PBR Fresnel with an exaggerated curve that forces 
+    // the water to reflect the sky heavily at grazing angles, creating high contrast.
+    float NdotV = saturate(dot(macroNormalWS, viewDirWS));
     
-    float3 reflectVec = reflect(-viewDirWS, normalWS);
+    // Custom Schlick Fresnel with adjustable exponent for stylization
+    float customFresnel = saturate(pow(1.0 - NdotV, _FresnelPower * 0.8));
+    customFresnel = lerp(0.02, 1.0, customFresnel); // Base reflectivity so it isn't matte
+
+    // Sample Environment (Unity's Specular Cube)
+    float3 reflectVec = reflect(-viewDirWS, normalWS); 
     half4 encodedIrradiance = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectVec, (1.0 - _Smoothness) * 6.0);
     half3 reflection = DecodeHDREnvironment(encodedIrradiance, unity_SpecCube0_HDR);
 
-    finalColor += (reflection * fresnelTerm) * (1.0 - foamMask);
+    finalColor += (reflection * customFresnel) * (1.0 - foamMask);
 
     // =========================================================================
-    // 7. FOAM OVERLAY COMPOSITE
+    // 8. FOAM OVERLAY COMPOSITE
     // =========================================================================
-    half3 litFoam = _FoamColor.rgb + (mainLight.color * 0.2); 
+    half3 litFoam = _FoamColor.rgb + (mainLight.color * 0.2);
     
-    // --- FIX: FOAM SHADOWS ---
-    // Foam scatters millions of light bounces, so it resists shadows heavily. 
+    // Foam scatters millions of light bounces, so it resists shadows heavily
     litFoam *= lerp(0.7, 1.0, shadowAtten);
     
-    // Physically layer the foam over the finished water surface
+    // Layer the foam over the finished water surface
     finalColor = lerp(finalColor, litFoam, foamMask);
 
     return half4(finalColor, 1.0);
 }
+            
             ENDHLSL
         }
     }

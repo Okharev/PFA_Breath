@@ -98,27 +98,32 @@ namespace TechArtPlayground.Water
             packKernel = fftCompute.FindKernel("PackFFTData");
         }
 
+        private static readonly int MaxWaveHeight = Shader.PropertyToID("_MaxWaveHeight");
+
         void Update()
         {
-
             DispatchFFT();
 
-            // 1. Bind the simulation textures
             oceanMaterial.SetTexture(DispTex, displacementMap);
             oceanMaterial.SetTexture(DerivTex, derivativeMap);
 
-            // =========================================================
-            // AUTOMATED MATERIAL SETTINGS
-            // =========================================================
-        
-            // 2. Auto-calculate the UV Scale (1.0 / Domain Size)
             oceanMaterial.SetFloat(FFTScale, 1.0f / oceanSize);
-        
-            // 3. Sync Choppiness so the shader and compute always match
             oceanMaterial.SetFloat(Choppiness, choppiness);
-        
-            // 4. (Optional) Sync the material's micro-normal wind to match the FFT wind
             oceanMaterial.SetVector(WindDirection1, windDirection.normalized * (windSpeed * 0.05f));
+
+            // =========================================================
+            // NEW: DYNAMIC SSS NORMALIZATION
+            // =========================================================
+            // Calculate an approximate max wave height based on your simulation parameters.
+            // In Phillips spectrum, height is proportional to windSpeed^2 / Gravity.
+            // We multiply by your custom phillipsAmplitude to scale it to your specific visual settings.
+            float gravity = 9.81f;
+            float estimatedMaxHeight = ((windSpeed * windSpeed) / gravity) * phillipsAmplitude * 250.0f; // Scale factor based on your visual tuning
+    
+            // Ensure it never hits 0 to avoid division by zero in the shader
+            estimatedMaxHeight = Mathf.Max(0.5f, estimatedMaxHeight);
+    
+            oceanMaterial.SetFloat(MaxWaveHeight, estimatedMaxHeight);
         }
 
         private void DispatchFFT()
