@@ -1,0 +1,71 @@
+#pragma kernel CSUpdateChimes
+
+struct ChimeData {
+    float3 pivotPosition;
+    float mass;
+    float2 angle;
+    float2 velocity;
+    float length;
+    float3 padding; // Explicit padding matches C#
+    float4x4 transformMatrix;
+};
+
+RWStructuredBuffer<ChimeData> Chimes;
+uint _ChimeCount;
+float _DeltaTime;
+float3 _WindVelocity;
+float _WindTurbulence;
+float _Time;
+float _Gravity;
+float _Damping;
+
+// Helper function to build a rotation matrix from Euler angles
+float4x4 EulerToMatrix(float2 angles) {
+    float cx = cos(angles.x); float sx = sin(angles.x);
+    float cz = cos(angles.y); float sz = sin(angles.y);
+    
+    // Simplified rotation for hanging objects (X and Z roll)
+    return float4x4(
+        cz,  sx*sz, cx*sz, 0,
+        0,   cx,    -sx,   0,
+        -sz, sx*cz, cx*cz, 0,
+        0,   0,     0,     1
+    );
+}
+
+[numthreads(64, 1, 1)]
+void CSUpdateChimes (uint3 id : SV_DispatchThreadID) {
+    if (id.x >= _ChimeCount) return;
+    
+    ChimeData chime = Chimes[id.x];
+
+    // 1. Calculate Wind Force with spatial turbulence
+    float noise = sin(_Time * 3.0f + chime.pivotPosition.x * 2.0f + chime.pivotPosition.z);
+    float3 localWind = _WindVelocity * (1.0f + noise * _WindTurbulence);
+
+    // 2. Pendulum Math (Angular Acceleration)
+    // Wind pushes the chime (divided by mass). Gravity pulls it back to center (0).
+    float2 angularAccel = float2(
+        (localWind.z / chime.mass) - (_Gravity / chime.length) * sin(chime.angle.x),
+        (-localWind.x / chime.mass) - (_Gravity / chime.length) * sin(chime.angle.y)
+    );
+
+    // 3. Integrate Velocity & Angle
+    chime.velocity += angularAccel * _DeltaTime;
+    chime.velocity *= saturate(1.0f - _Damping * _DeltaTime); // Apply damping
+    chime.angle += chime.velocity * _DeltaTime;
+
+    // 4. Construct Final Transform Matrix
+    float4x4 rotation = EulerToMatrix(chime.angle);
+    
+    // Translation matrix to place at pivot point
+    float4x4 translation = float4x4(
+        1, 0, 0, chime.pivotPosition.x,
+        0, 1, 0, chime.pivotPosition.y,
+        0, 0, 1, chime.pivotPosition.z,
+        0, 0, 0, 1
+    );
+
+    chime.transformMatrix = mul(translation, rotation);
+    Chimes[id.x] = chime;
+}
