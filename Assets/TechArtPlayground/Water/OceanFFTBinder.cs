@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TechArtPlayground.Wind;
+using UnityEngine;
 
 namespace TechArtPlayground.Water
 {
@@ -102,6 +103,26 @@ namespace TechArtPlayground.Water
 
         void Update()
         {
+// =========================================================
+            // NEW: PULL DIRECTION FROM WEATHER MANAGER
+            // =========================================================
+            if (WeatherManager.Instance != null)
+            {
+                // Grab the raw direction
+                Vector3 globalDir = WeatherManager.Instance.windDirection;
+                
+                // Project the 3D direction onto the 2D ocean plane (X, Z)
+                Vector2 globalWind2D = new Vector2(globalDir.x, globalDir.z);
+
+                // Prevent normalization errors
+                if (globalWind2D.sqrMagnitude > 0.001f)
+                {
+                    // Overwrite local wind direction. 
+                    // Intensity/choppiness/amplitude remain controlled by the OceanWeatherController.
+                    windDirection = globalWind2D.normalized; 
+                }
+            }
+
             DispatchFFT();
 
             oceanMaterial.SetTexture(DispTex, displacementMap);
