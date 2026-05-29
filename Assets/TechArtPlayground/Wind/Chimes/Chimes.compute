@@ -1,0 +1,113 @@
+#pragma kernel CSUpdateChimes
+
+struct ChimeData
+{
+    float3 pivotPosition;
+    float mass;
+    float2 angle;
+    float2 velocity;
+    float length;
+    float3 padding;
+    float4x4 transformMatrix;
+};
+
+RWStructuredBuffer<ChimeData> Chimes;
+uint _ChimeCount;
+float _DeltaTime;
+float3 _WindVelocity;
+float _WindTurbulence;
+float _Time;
+float _Gravity;
+float _Damping;
+float _MaxAngle;
+
+float4x4 EulerToMatrix(float2 angles)
+{
+    float cx = cos(angles.x);
+    float sx = sin(angles.x);
+    float cz = cos(angles.y);
+    float sz = sin(angles.y);
+
+    return float4x4(
+        cz, -sz * cx, sz * sx, 0,
+        sz, cz * cx, -cz * sx, 0,
+        0, sx, cx, 0,
+        0, 0, 0, 1
+    );
+}
+
+[numthreads(64, 1, 1)]
+void CSUpdateChimes(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _ChimeCount) return;
+    ChimeData chime = Chimes[id.x];
+
+    // --- NOUVEAU CALCUL DU VENT SPATIALISÉ ---
+    float windSpeed = length(_WindVelocity);
+    float3 windDir = windSpeed > 0.01f ? (_WindVelocity / windSpeed) : float3(1, 0, 0);
+
+    // 1. Décalage spatial : On calcule la position du carillon sur l'axe du vent
+    float spatialOffset = dot(chime.pivotPosition, windDir);
+
+    // 2. La grosse rafale (Gust Wave) : Elle voyage à travers le monde
+    // On soustrait le spatialOffset pour que la vague avance dans le sens du vent
+    float gustWave = sin((_Time * 3.0f) - (spatialOffset * 0.8f));
+
+    // 3. Micro-turbulences : Ajoute un peu de chaos pour que deux carillons très proches 
+    // ne bougent pas de façon 100% identique (effet robotique)
+    float microTurbulence = cos((_Time * 6.0f) + chime.pivotPosition.x * 2.0f + chime.pivotPosition.z);
+
+    // 4. Vent local final
+    float finalNoise = (gustWave + microTurbulence * 0.3f) * _WindTurbulence;
+    float3 localWind = _WindVelocity * (1.0f + finalNoise);
+    // -----------------------------------------
+
+    float2 angularAccel = float2(
+        (-localWind.z / chime.mass) - (_Gravity / chime.length) * sin(chime.angle.x),
+        (localWind.x / chime.mass) - (_Gravity / chime.length) * sin(chime.angle.y)
+    );
+
+    chime.velocity += angularAccel * _DeltaTime;
+    chime.velocity *= saturate(1.0f - _Damping * _DeltaTime);
+    chime.angle += chime.velocity * _DeltaTime;
+
+    // Contraintes
+    if (chime.angle.x > _MaxAngle)
+    {
+        chime.angle.x = _MaxAngle;
+        chime.velocity.x = 0;
+    }
+    else if (chime.angle.x < -_MaxAngle)
+    {
+        chime.angle.x = -_MaxAngle;
+        chime.velocity.x = 0;
+    }
+
+    if (chime.angle.y > _MaxAngle)
+    {
+        chime.angle.y = _MaxAngle;
+        chime.velocity.y = 0;
+    }
+    else if (chime.angle.y < -_MaxAngle)
+    {
+        chime.angle.y = -_MaxAngle;
+        chime.velocity.y = 0;
+    }
+
+    // --- OPTIMIZED TRIGONOMETRY ---
+    // sincos is faster at a hardware level than calling sin() and cos() separately
+    float sx, cx;
+    sincos(chime.angle.x, sx, cx);
+
+    float sz, cz;
+    sincos(chime.angle.y, sz, cz);
+
+    // --- CORRECTED TRS MATRIX (Rz * Rx + Translation) ---
+    chime.transformMatrix = float4x4(
+        cz, -sz * cx, sz * sx, chime.pivotPosition.x,
+        sz, cz * cx, -cz * sx, chime.pivotPosition.y,
+        0, sx, cx, chime.pivotPosition.z,
+        0, 0, 0, 1
+    );
+    Chimes[id.x] = chime;
+}

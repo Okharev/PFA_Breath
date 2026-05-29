@@ -1,0 +1,188 @@
+﻿#pragma kernel CSUpdatePhysics
+#pragma kernel CSResetNormals
+#pragma kernel CSAccumulateNormals
+#pragma kernel CSApplyNormals
+
+struct VertexData
+{
+    float3 position;
+    float3 normal;
+    float2 uv;
+}; //
+
+struct PhysicsState
+{
+    float3 velocity;
+    float inverseMass;
+}; //
+
+struct SpringLink
+{
+    uint startIndex;
+    uint count;
+}; //
+
+struct Spring
+{
+    uint targetIndex;
+    float restLength;
+    float stiffnessMult;
+    float padding;
+}; //
+
+// Unified Buffers (1:1 Physics to Render mapping)
+RWStructuredBuffer<VertexData> Vertices;
+RWStructuredBuffer<PhysicsState> PhysicsData;
+StructuredBuffer<SpringLink> SpringLinks;
+StructuredBuffer<Spring> Springs;
+StructuredBuffer<int3> Triangles;
+RWStructuredBuffer<int> NormalAccumBuffer;
+
+uint _VertexCount;
+uint _TriangleCount;
+
+float _DeltaTime;
+float _Time;
+float _Stiffness;
+float _Damping;
+float _Drag;
+
+float3 _Gravity;
+float3 _WindVelocity;
+float _WindTurbulence;
+
+// --- STEP 1: PHYSICS INTEGRATION ---
+// --- STEP 1: PHYSICS INTEGRATION ---
+[numthreads(64, 1, 1)]
+void CSUpdatePhysics(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    uint idx = id.x;
+    float3 pos = Vertices[idx].position;
+    PhysicsState p = PhysicsData[idx];
+
+    // Ignore pinned vertices
+    if (p.inverseMass <= 0.0f) return;
+
+    float3 force = _Gravity;
+
+    // --- UPDATED AERODYNAMIC WIND LOGIC ---
+    // 1. Safely calculate the wind direction
+    // --- BULLETPROOF AERODYNAMIC WIND LOGIC ---
+    float windMagnitude = length(_WindVelocity);
+    float3 windDir = windMagnitude > 0.001f ? (_WindVelocity / windMagnitude) : float3(1, 0, 0);
+
+    // Subtract the spatial projection so the ripple travels WITH the wind
+    float spatialProj = dot(pos, windDir);
+    float noise = sin((_Time * 5.0f) - (spatialProj * 2.0f) + (pos.y * 2.0f)) * _WindTurbulence;
+
+    float3 actualWind = _WindVelocity * (1.0f + noise);
+
+    // Calculate how directly the fabric is facing the wind (absolute value so it doesn't matter if normals are flipped)
+    float3 normal = Vertices[idx].normal;
+    float windExposure = abs(dot(normal, windDir));
+
+    // Force it to move EXACTLY in the actualWind direction. 
+    // It moves stronger if facing the wind (windExposure), and still gets a baseline push (0.2f) if parallel.
+    force += actualWind * (0.2f + windExposure * 0.8f) * 0.5f;
+    // --------------------------------------
+    // --------------------------------------
+
+    // Spring Accumulation
+    SpringLink link = SpringLinks[idx];
+    for (uint i = 0; i < link.count; i++)
+    {
+        Spring spring = Springs[link.startIndex + i];
+        float3 neighborPos = Vertices[spring.targetIndex].position; // Read directly from shared vertex buffer
+        float3 neighborVel = PhysicsData[spring.targetIndex].velocity;
+
+        float3 deltaP = pos - neighborPos;
+        float dist = length(deltaP);
+
+        if (dist > 0.001f)
+        {
+            float3 dir = deltaP / dist;
+            float springForce = -(_Stiffness * spring.stiffnessMult) * (dist - spring.restLength);
+            float dampForce = -_Damping * dot(p.velocity - neighborVel, dir);
+
+            force += dir * (springForce + dampForce);
+        }
+    }
+
+    // Safeties & Integration
+    float forceLen = length(force);
+    if (!(forceLen >= 0.0f)) force = float3(0, 0, 0);
+
+    p.velocity += force * p.inverseMass * _DeltaTime;
+
+    float currentSpeed = length(p.velocity);
+    if (!(currentSpeed >= 0.0f)) p.velocity = float3(0, 0, 0);
+    else if (currentSpeed > 40.0f) p.velocity = (p.velocity / currentSpeed) * 40.0f;
+
+    pos += p.velocity * _DeltaTime;
+    p.velocity *= saturate(1.0f - _Drag * _DeltaTime);
+
+    Vertices[idx].position = pos;
+    PhysicsData[idx] = p;
+}
+
+// --- STEP 2: NORMALS (RESET) ---
+[numthreads(64, 1, 1)]
+void CSResetNormals(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+    NormalAccumBuffer[id.x * 3 + 0] = 0;
+    NormalAccumBuffer[id.x * 3 + 1] = 0;
+    NormalAccumBuffer[id.x * 3 + 2] = 0; //
+}
+
+// --- STEP 3: NORMALS (ACCUMULATE) ---
+[numthreads(64, 1, 1)]
+void CSAccumulateNormals(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _TriangleCount) return;
+
+    int3 tri = Triangles[id.x];
+    float3 v0 = Vertices[tri.x].position;
+    float3 v1 = Vertices[tri.y].position;
+    float3 v2 = Vertices[tri.z].position;
+
+    float3 crossProd = cross(v1 - v0, v2 - v0); //
+    int3 fixedNormal = int3(crossProd * 100000.0f); //
+
+    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 0], fixedNormal.x); //
+    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 1], fixedNormal.y); //
+    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 2], fixedNormal.z); //
+
+    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 0], fixedNormal.x); //
+    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 1], fixedNormal.y); //
+    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 2], fixedNormal.z); //
+
+    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 0], fixedNormal.x); //
+    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 1], fixedNormal.y); //
+    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 2], fixedNormal.z); //
+}
+
+// --- STEP 4: NORMALS (APPLY) ---
+[numthreads(64, 1, 1)]
+void CSApplyNormals(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    float3 accumulatedNormal = float3(
+        NormalAccumBuffer[id.x * 3 + 0],
+        NormalAccumBuffer[id.x * 3 + 1],
+        NormalAccumBuffer[id.x * 3 + 2]
+    ) / 100000.0f; //
+
+    float len = length(accumulatedNormal); //
+    if (len > 0.00001f)
+    {
+        Vertices[id.x].normal = accumulatedNormal / len; //
+    }
+    else
+    {
+        Vertices[id.x].normal = float3(0, 0, -1); //
+    }
+}

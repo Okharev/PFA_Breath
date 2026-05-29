@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using TechArtPlayground.Wind;
 using UnityEngine;
 
 namespace TechArtPlayground.Water
@@ -85,10 +86,28 @@ namespace TechArtPlayground.Water
         /// </summary>
         private void ApplyWeatherBlend()
         {
-            // 1. Lerp FFT Compute Parameters
-            fftBinder.windSpeed = Mathf.Lerp(calmPreset.windSpeed, tempestPreset.windSpeed, weatherBlend);
+            float currentWindSpeed = Mathf.Lerp(calmPreset.windSpeed, tempestPreset.windSpeed, weatherBlend);
+
+            // =========================================================
+            // NEW: CASCADE WEATHER TO THE ENTIRE WORLD
+            // =========================================================
+            if (GlobalWindManager.Instance != null)
+            {
+                // Grab the current direction, fallback to Vector3.right if it's zero
+                Vector3 currentDir = GlobalWindManager.Instance.windVelocity.normalized;
+                if (currentDir == Vector3.zero) currentDir = Vector3.right;
+                
+                // Update the global manager so banners and chimes react to the Tempest!
+                GlobalWindManager.Instance.windVelocity = currentDir * currentWindSpeed;
+            }
+
+            // 2. Lerp FFT Compute Parameters (Syncing speed locally as well)
+            fftBinder.windSpeed = currentWindSpeed;
             fftBinder.phillipsAmplitude = Mathf.Lerp(calmPreset.phillipsAmplitude, tempestPreset.phillipsAmplitude, weatherBlend);
             fftBinder.choppiness = Mathf.Lerp(calmPreset.choppiness, tempestPreset.choppiness, weatherBlend);
+
+            // 3. Lerp URP Material Parameters
+            oceanMaterial.SetColor(ShallowColor, Color.Lerp(calmPreset.shallowColor, tempestPreset.shallowColor, weatherBlend));
 
             // 2. Lerp URP Material Parameters
             oceanMaterial.SetColor(ShallowColor, Color.Lerp(calmPreset.shallowColor, tempestPreset.shallowColor, weatherBlend));
