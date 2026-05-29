@@ -58,8 +58,11 @@ public class EncounterRoomTrigger : MonoBehaviour
         {
             if (door != null) door.CloseDoor();
         }
-        
-        weatherController.TriggerTempest();
+
+        if (weatherController != null)
+        {
+            weatherController.TriggerTempest();
+        }
 
         // 2. Switch mode and spawn enemies
         GameModeManager.Instance.SwitchToCombat();
@@ -113,8 +116,11 @@ public class EncounterRoomTrigger : MonoBehaviour
         {
             if (door is not null) door.OpenDoor();
         }
-        
-        weatherController.TriggerCalm();
+
+        if (weatherController != null)
+        {
+            weatherController.TriggerCalm();
+        }
 
         // 2. Resume normal gameplay
         GameModeManager.Instance.SwitchToExploration();

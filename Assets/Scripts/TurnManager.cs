@@ -119,13 +119,14 @@ public class TurnManager : MonoBehaviour
     
     private void HandleGameModeChanged(GameMode mode)
     {
-        if (mode == GameMode.Exploration)
+        switch (mode)
         {
-            SetTimeScale(1f); // Free movement, real-time
-        }
-        else if (mode == GameMode.Combat)
-        {
-            SetTimeScale(0f); // Pause time, await turn commands
+            case GameMode.Exploration:
+                SetTimeScale(1f); // Free movement, real-time
+                break;
+            case GameMode.Combat:
+                SetTimeScale(0f); // Pause time, await turn commands
+                break;
         }
     }
 

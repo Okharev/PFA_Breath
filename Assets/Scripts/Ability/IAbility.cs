@@ -12,6 +12,32 @@ namespace Ability
         public Vector3 CasterPosition;
         public Vector3? MouseWorldPosition;
         public ActionVisualizer Visualizer;
+        
+        /// <summary>
+        /// Returns a target point clamped to a specific Y-height.
+        /// Useful for keeping LineRenderers and Previews perfectly level.
+        /// </summary>
+        public Vector3 GetPlanarTarget(float yHeight)
+        {
+            if (!MouseWorldPosition.HasValue) return CasterPosition;
+            
+            Vector3 target = MouseWorldPosition.Value;
+            target.y = yHeight; // Clamp to the provided height (e.g., firePoint.y)
+            return target;
+        }
+
+        /// <summary>
+        /// Calculates a normalized direction vector strictly on the XZ plane.
+        /// </summary>
+        public Vector3 GetPlanarAimDirection(Vector3 originPos)
+        {
+            if (!MouseWorldPosition.HasValue) return Vector3.forward;
+
+            Vector3 targetPos = MouseWorldPosition.Value;
+            targetPos.y = originPos.y; // Flatten the target to the origin's height
+            
+            return (targetPos - originPos).normalized;
+        }
     }
 
     public interface IAbility
