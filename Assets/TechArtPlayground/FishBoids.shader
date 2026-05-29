@@ -245,25 +245,44 @@
                 // ==========================================
                 // 4. TRANSLUCENCY & SUN HOTSPOT
                 // ==========================================
+// ==========================================
+                // 4. TRANSLUCENCY & RIM HOTSPOT
+                // ==========================================
                 Light mainLight = GetMainLight(inputData.shadowCoord);
                 
-                half3 backLightVector = normalize(mainLight.direction + inputData.normalWS * _TranslucencyDistortion);
-                half VdotL = saturate(dot(inputData.viewDirectionWS, -backLightVector));
+                // Setup clean vectors for the math
+                half3 L = mainLight.direction;
+                half3 V = inputData.viewDirectionWS;
+                half3 N = inputData.normalWS;
                 
-                // Layer A: The broad, soft glow of the fish body
+                // --- Layer A: Broad Fleshy Glow ---
+                // Distort the light vector slightly with normal for volume
+                half3 backLightVector = normalize(L + N * _TranslucencyDistortion);
+                half VdotL = saturate(dot(V, -backLightVector));
                 half broadGlow = pow(VdotL, _TranslucencyPower) * _TranslucencyScale;
                 
-                // Layer B: The "Ball" of light. A much higher power makes it a tiny dot, 
-                // and a high intensity pushes it into HDR for the URP Bloom to catch.
-                half coreHotspot = pow(VdotL, _HotspotPower) * _HotspotIntensity;
+                // --- Layer B: The Rim Hotspot (The "Ball" on the edge) ---
+                // 1. Isolate the edges of the fish (Standard Rim/Fresnel)
+                half rim = 1.0 - saturate(dot(V, N));
                 
-                // Combine them and mask out areas in the shadow of rocks/environment
+                // 2. Track the sun's alignment along the rim
+                // By adding dot(N,-L) and dot(V,-L), the hotspot perfectly shifts 
+                // to the right fin if the sun is on the right, and forms a full "eclipse" 
+                // ring if the sun is dead-center behind the fish.
+                half sunRimAlign = saturate(dot(N, -L) + dot(V, -L));
+                
+                // 3. Combine them and tighten into a "ball"
+                half rimHotspotMask = rim * sunRimAlign;
+                half coreHotspot = pow(rimHotspotMask, _HotspotPower) * _HotspotIntensity;
+                
+                // Combine layers and mask out areas in the shadow of rocks/environment
                 half totalTranslucency = (broadGlow + coreHotspot) * mainLight.shadowAttenuation;
                 
-                // Apply the fish's procedural color to the glowing light!
+                // Apply the fish's procedural color to the glowing light
                 half3 translucencyGlow = input.boidColor * totalTranslucency;
                 
                 finalEmission += translucencyGlow;
+                // ==========================================
                 // ==========================================
 
                 // 5. Apply Surface Data
