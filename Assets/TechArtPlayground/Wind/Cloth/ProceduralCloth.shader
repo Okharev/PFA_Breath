@@ -6,32 +6,36 @@
         _MainTex("Albedo Map", 2D) = "white" {}
         _Smoothness("Smoothness", Range(0, 1)) = 0.5
     }
-    
+
     SubShader
     {
-        Tags 
-        { 
-            "RenderType" = "Opaque" 
-            "RenderPipeline" = "UniversalPipeline" 
+        Tags
+        {
+            "RenderType" = "Opaque"
+            "RenderPipeline" = "UniversalPipeline"
             "Queue" = "Geometry"
         }
-        
-         Cull Off 
+
+        Cull Off
 
         Pass
         {
             Name "ForwardLit"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags
+            {
+                "LightMode" = "UniversalForward"
+            }
 
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            
+
             // Unity 6.4 URP Includes
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-            struct VertexData {
+            struct VertexData
+            {
                 float3 position;
                 float3 normal;
                 float2 uv;
@@ -53,14 +57,14 @@
             {
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
-                float3 normalWS   : TEXCOORD1;
-                float2 uv         : TEXCOORD3;
+                float3 normalWS : TEXCOORD1;
+                float2 uv : TEXCOORD3;
             };
 
             Varyings Vert(uint vertexID : SV_VertexID)
             {
                 Varyings output;
-                
+
                 // Fetch vertex data mapped 1:1 from compute shader
                 VertexData vData = _VertexDataBuffer[vertexID];
 
@@ -72,7 +76,7 @@
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.normalWS = TransformObjectToWorldDir(normalWS);
                 output.uv = TRANSFORM_TEX(vData.uv, _MainTex);
-                
+
                 return output;
             }
 
@@ -80,10 +84,10 @@
             {
                 // Sample your texture
                 half4 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) * _BaseColor;
-                
+
                 // --- 1. MANUALLY POPULATE SURFACE DATA ---
                 // Casting from 0 zeroes out the struct, preventing undefined behavior
-                SurfaceData surfaceData = (SurfaceData)0; 
+                SurfaceData surfaceData = (SurfaceData)0;
                 surfaceData.albedo = albedo.rgb;
                 surfaceData.alpha = albedo.a;
                 surfaceData.metallic = 0.0h;
@@ -98,14 +102,15 @@
                 // --- 2. MANUALLY POPULATE INPUT DATA ---
                 InputData inputData = (InputData)0;
                 inputData.positionWS = input.positionWS;
-                inputData.normalWS = normalize(input.normalWS); // Ensure normals are perfectly normalized after interpolation
+                inputData.normalWS = normalize(input.normalWS);
+                // Ensure normals are perfectly normalized after interpolation
                 inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
-                
+
                 // Essential for URP to cast/receive shadows and ambient light (GI) properly
                 inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 inputData.fogCoord = ComputeFogFactor(input.positionCS.z);
                 inputData.vertexLighting = half3(0.0h, 0.0h, 0.0h);
-                inputData.bakedGI = SampleSH(inputData.normalWS); 
+                inputData.bakedGI = SampleSH(inputData.normalWS);
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 inputData.shadowMask = half4(1.0h, 1.0h, 1.0h, 1.0h);
 

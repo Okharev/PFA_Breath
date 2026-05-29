@@ -1,45 +1,57 @@
 Shader "Custom/InstancedChime"
 {
-    Properties {
+    Properties
+    {
         _BaseColor("Color", Color) = (0.8, 0.6, 0.2, 1)
         _Metallic("Metallic", Range(0,1)) = 1.0
         _Smoothness("Smoothness", Range(0,1)) = 0.8
     }
-    
-    SubShader {
-        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" }
 
-        Pass {
+    SubShader
+    {
+        Tags
+        {
+            "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline"
+        }
+
+        Pass
+        {
             Name "ForwardLit"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags
+            {
+                "LightMode" = "UniversalForward"
+            }
 
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_instancing // CRITICAL for DrawMeshInstancedIndirect
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-            struct ChimeData {
+            struct ChimeData
+            {
                 float3 pivotPosition;
                 float mass;
                 float2 angle;
                 float2 velocity;
                 float length;
-                float3 padding; // Explicit padding
+                float3 padding;
                 float4x4 transformMatrix;
             };
 
             StructuredBuffer<ChimeData> _ChimeDataBuffer;
 
-            struct Attributes {
+            struct Attributes
+            {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
-                uint instanceID : SV_InstanceID; // Which chime am I?
+                uint instanceID : SV_InstanceID;
             };
 
-            struct Varyings {
+            struct Varyings
+            {
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
@@ -51,16 +63,12 @@ Shader "Custom/InstancedChime"
                 float _Smoothness;
             CBUFFER_END
 
-            Varyings Vert(Attributes input) {
+            Varyings Vert(Attributes input)
+            {
                 Varyings output;
-                
-                // Fetch the transform matrix from our compute shader
                 float4x4 instanceMatrix = _ChimeDataBuffer[input.instanceID].transformMatrix;
 
-                // Multiply Object Space position by the instance matrix to get World Space
                 float3 positionWS = mul(instanceMatrix, float4(input.positionOS.xyz, 1.0)).xyz;
-                
-                // Rotate the normals so lighting accurately reflects off the swinging cylinder
                 float3 normalWS = mul((float3x3)instanceMatrix, input.normalOS);
 
                 output.positionWS = positionWS;
@@ -70,7 +78,8 @@ Shader "Custom/InstancedChime"
                 return output;
             }
 
-            half4 Frag(Varyings input) : SV_Target {
+            half4 Frag(Varyings input) : SV_Target
+            {
                 SurfaceData surfaceData = (SurfaceData)0;
                 surfaceData.albedo = _BaseColor.rgb;
                 surfaceData.metallic = _Metallic;
@@ -87,5 +96,7 @@ Shader "Custom/InstancedChime"
             }
             ENDHLSL
         }
+
+
     }
 }
