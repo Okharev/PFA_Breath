@@ -3,15 +3,15 @@ using UnityEngine;
 
 namespace Ability.NewAbilitySystem
 {
-    [RequireComponent(typeof(HealthComponent))]
     public class AbilityController : MonoBehaviour, ITurnEntity
     {
-        // Dictionary provides O(1) time complexity for cooldown lookups
-        private readonly Dictionary<AbilityData, int> activeCooldowns = new Dictionary<AbilityData, int>();
-    
+        private readonly Dictionary<AbilityData, int> abilityAvailableAtTurn = new();
+        private int currentChannelTurns;
+
         private AbilityData queuedAbility;
         private AbilityContext queuedContext;
-        private int currentChannelTurns;
+
+        public bool HasQueuedAbility => queuedAbility != null;
 
         private void Start()
         {
@@ -24,21 +24,20 @@ namespace Ability.NewAbilitySystem
                 TurnManager.Instance.UnregisterEntity(this);
         }
 
-        public void QueueAbility(AbilityData ability, AbilityContext context)
-        {
-            if (activeCooldowns.ContainsKey(ability)) return; // On Cooldown
-
-            queuedAbility = ability;
-            queuedContext = context;
-            currentChannelTurns = ability.channelTurns;
-        
-            // Tell the TurnManager to advance time based on this ability's cost
-            TurnManager.Instance.ExecuteTurns(ability.turnCost);
-        }
+        public int Initiative => 1;
 
         public void PlanAction()
         {
             // AI logic goes here to populate 'queuedAbility'
+        }
+
+        public void DrawIntents()
+        {
+            // If we have an ability queued, ask its effects to draw themselves!
+            if (queuedAbility != null)
+                foreach (IAbilityEffect effect in queuedAbility.effects)
+                    if (effect is IPreviewableEffect preview)
+                        preview.DrawPreview(queuedContext, IntentDrawer.Instance);
         }
 
         public void ExecuteAction()
@@ -47,35 +46,42 @@ namespace Ability.NewAbilitySystem
 
             if (currentChannelTurns > 0)
             {
-                // Still channeling
                 currentChannelTurns--;
-                return;
+                return; // Still channeling, action will resolve on a later turn
             }
 
-            // Execution phase
+            // Execute logic
             if (queuedAbility.TryCast(queuedContext))
-            {
                 if (queuedAbility.cooldownTurns > 0)
                 {
-                    activeCooldowns[queuedAbility] = queuedAbility.cooldownTurns;
+                    // Store the absolute turn number when it's ready again
+                    int readyTurn = TurnManager.Instance.CurrentTurn + queuedAbility.cooldownTurns;
+                    abilityAvailableAtTurn[queuedAbility] = readyTurn;
                 }
-            }
-        
-            queuedAbility = null; 
+
+            queuedAbility = null;
         }
 
         public void EndTurn()
         {
-            // Decrement cooldowns at the end of the turn cycle
-            List<AbilityData> keys = new List<AbilityData>(activeCooldowns.Keys);
-            foreach (var key in keys)
-            {
-                activeCooldowns[key]--;
-                if (activeCooldowns[key] <= 0)
-                {
-                    activeCooldowns.Remove(key);
-                }
-            }
+        }
+
+
+// 1. Change void to bool
+        public bool QueueAbility(AbilityData ability, AbilityContext context)
+        {
+            if (abilityAvailableAtTurn.TryGetValue(ability, out int availableTurn))
+                if (TurnManager.Instance.CurrentTurn < availableTurn)
+                    return false; // On Cooldown, failed to queue
+
+            queuedAbility = ability;
+            queuedContext = context;
+            currentChannelTurns = ability.channelTurns;
+
+            // REMOVED: TurnManager.Instance.RequestTurns(1); 
+            // The controller should just hold the data. It shouldn't dictate time!
+
+            return true; // Successfully queued
         }
     }
 }

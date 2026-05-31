@@ -423,7 +423,8 @@ Transform:
   m_LocalPosition: {x: -1.25, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1391311917}
   m_Father: {fileID: 360730813}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &71119276
@@ -438,7 +439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -1235,6 +1236,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &179812461
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 179812462}
+  - component: {fileID: 179812463}
+  m_Layer: 0
+  m_Name: Coll
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &179812462
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 179812461}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 6, y: -0.5, z: -0.25}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1051268173}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &179812463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 179812461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c3cd4bd46f2931499e27cb15685f1f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.ClothStaticCollider
+  colliderType: 2
+  radius: 1
+  height: 1
+  boxExtents: {x: 3.6, y: 0.74, z: 0.9}
 --- !u!1 &201936152
 GameObject:
   m_ObjectHideFlags: 0
@@ -6669,6 +6718,7 @@ Transform:
   - {fileID: 1406409618}
   - {fileID: 1482668131}
   - {fileID: 1966461095}
+  - {fileID: 1240021027}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &360730814
@@ -6686,10 +6736,12 @@ MonoBehaviour:
   clothCompute: {fileID: 7200000, guid: 31a0bdb62f63441bbec3bf71690c7576, type: 3}
   clothMaterial: {fileID: 2100000, guid: 59bb70fc393570b4594730796b68f979, type: 2}
   gravity: {x: 0, y: -9.81, z: 0}
-  stiffness: 3081
-  damping: 25
-  drag: 2.3
-  solverIterations: 8
+  stiffness: 5000
+  damping: 70
+  drag: 1
+  solverIterations: 20
+  clothThickness: 0.05
+  gridCellSize: 0.1
 --- !u!1 &361743200
 GameObject:
   m_ObjectHideFlags: 0
@@ -7298,7 +7350,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -12545,11 +12597,48 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
   ropeTension: 0.5
+--- !u!84 &586386295
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &592929104
 GameObject:
   m_ObjectHideFlags: 0
@@ -12752,7 +12841,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -13503,6 +13592,43 @@ RenderTexture:
   m_Dimension: 2
   m_VolumeDepth: 1
   m_ShadowSamplingMode: 2
+--- !u!84 &766815505
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &888644282
 GameObject:
   m_ObjectHideFlags: 0
@@ -13806,13 +13932,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 907376565}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.24154234, y: -0, z: -0, w: 0.9703903}
-  m_LocalPosition: {x: 260, y: 33, z: 240}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 258.75, y: 46.5, z: 245.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 27.955, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &907376569
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14110,7 +14236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -14159,7 +14285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -14208,48 +14334,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
   ropeTension: 0.5
---- !u!84 &990252568
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1003302803
 GameObject:
   m_ObjectHideFlags: 0
@@ -14329,7 +14418,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -14583,7 +14672,8 @@ Transform:
   m_LocalPosition: {x: -1.25, y: 0, z: 1.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 179812462}
   m_Father: {fileID: 360730813}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1051268174
@@ -14598,7 +14688,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -19725,7 +19815,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -19807,43 +19897,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!84 &1191927099
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1201555986
 GameObject:
   m_ObjectHideFlags: 0
@@ -19934,7 +19987,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -19983,11 +20036,42 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
   ropeTension: 0.5
+--- !u!1 &1240021026
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1240021027}
+  m_Layer: 0
+  m_Name: Collider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1240021027
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1240021026}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -3.25, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 360730813}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1245531716
 GameObject:
   m_ObjectHideFlags: 0
@@ -20647,9 +20731,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c4ff0bdda444fb28a1c9781eb3345d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.WeatherManager
-  windDirection: {x: 1, y: 0, z: 1}
-  windIntensity: 5
-  windGusts: 1.5
+  windDirection: {x: 1, y: 0.5, z: 1}
+  windIntensity: 19.31
+  windGusts: 1.86
 --- !u!4 &1316939798
 Transform:
   m_ObjectHideFlags: 0
@@ -20890,6 +20974,54 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1391311916
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1391311917}
+  - component: {fileID: 1391311918}
+  m_Layer: 0
+  m_Name: Coll
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1391311917
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1391311916}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 6, y: -0.5, z: 1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 71119275}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1391311918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1391311916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c3cd4bd46f2931499e27cb15685f1f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.ClothStaticCollider
+  colliderType: 2
+  radius: 1
+  height: 1
+  boxExtents: {x: 1.29, y: 1.17, z: 0.9}
 --- !u!1 &1406409617
 GameObject:
   m_ObjectHideFlags: 0
@@ -20934,7 +21066,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -25865,7 +25997,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -26199,7 +26331,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -31098,6 +31230,54 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
+--- !u!1 &1505097111
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1505097112}
+  - component: {fileID: 1505097113}
+  m_Layer: 0
+  m_Name: Coll
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1505097112
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1505097111}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5, y: -0.5, z: 3.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2100315635}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1505097113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1505097111}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c3cd4bd46f2931499e27cb15685f1f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.ClothStaticCollider
+  colliderType: 2
+  radius: 1
+  height: 1
+  boxExtents: {x: 1.29, y: 1.17, z: 0.9}
 --- !u!1 &1516697382
 GameObject:
   m_ObjectHideFlags: 0
@@ -46232,6 +46412,70 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
+--- !u!1 &1565143009
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1565143011}
+  - component: {fileID: 1565143010}
+  m_Layer: 0
+  m_Name: Kelp
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1565143010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1565143009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ff362a78f40e694ba07ea4561db8121, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Kelp.KelpSystem
+  kelpCompute: {fileID: 7200000, guid: 8a6b92c355b96584e90f3080afe7ac55, type: 3}
+  instancedKelpMaterial: {fileID: 2100000, guid: e2ef03bc0a51cf44a965fe2abd7885e6, type: 2}
+  windDirection: {x: 1, y: 0, z: 0}
+  windSpeed: 2
+  gravityDir: {x: 0, y: 1, z: 0}
+  stalkSegmentLength: 0.5
+  leafSegmentLength: 0.3
+  instancedStalkMaterial: {fileID: 2100000, guid: d55b7bbf9e106f54abfbefa6ed019244, type: 2}
+  kelpTypes:
+  - name: base
+    colorBase: {r: 0, g: 0.2981131, b: 0.019640954, a: 1}
+    colorTip: {r: 0.26540416, g: 0.7132075, b: 0.20857945, a: 1}
+    windStrength: 1.5
+    windScale: 1
+    gravity: 1
+    leafScale: 1
+    stalkThickness: 1
+  totalStalks: 100
+  nodesPerStalk: 10
+  leavesPerStalk: 15
+--- !u!4 &1565143011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1565143009}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 22.25, y: 0, z: 28.75}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1587018821
 GameObject:
   m_ObjectHideFlags: 0
@@ -516045,7 +516289,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -516698,7 +516942,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522087,7 +522331,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522254,7 +522498,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522481,7 +522725,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522648,7 +522892,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522894,7 +523138,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -523279,12 +523523,12 @@ MonoBehaviour:
   resolution: 512
   timeScale: 1
   oceanSize: 128
-  windSpeed: 5
+  windSpeed: 10
   windDirection: {x: 0.70710677, y: 0.70710677}
-  phillipsAmplitude: 0.0001
-  choppiness: 0.569
-  displacementMap: {fileID: 990252568}
-  derivativeMap: {fileID: 1191927099}
+  phillipsAmplitude: 0.0004
+  choppiness: 0.544
+  displacementMap: {fileID: 766815505}
+  derivativeMap: {fileID: 586386295}
 --- !u!114 &2051998547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -523315,7 +523559,7 @@ MonoBehaviour:
     deepColor: {r: 0.01, g: 0.05, b: 0.1, a: 1}
     foamBias: 0.119
     foamPower: 1.24
-  weatherBlend: 0
+  weatherBlend: 1
 --- !u!1 &2060042615
 GameObject:
   m_ObjectHideFlags: 0
@@ -523542,7 +523786,8 @@ Transform:
   m_LocalPosition: {x: -0.25, y: 0, z: -2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1505097112}
   m_Father: {fileID: 360730813}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2100315636
@@ -523557,7 +523802,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -523606,7 +523851,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 14}
+  resolution: {x: 3, y: 64}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -523788,3 +524033,4 @@ SceneRoots:
   - {fileID: 360730813}
   - {fileID: 1316939798}
   - {fileID: 1280880441}
+  - {fileID: 1565143011}

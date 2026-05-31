@@ -605,6 +605,8 @@ namespace Ability
             if (CurrentCooldown > 0) CurrentCooldown--;
         }
     }
+    
+    
 
     public class ShotgunAbility : IWeaponAbility
     {

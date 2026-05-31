@@ -245,9 +245,6 @@
                 // ==========================================
                 // 4. TRANSLUCENCY & SUN HOTSPOT
                 // ==========================================
-// ==========================================
-                // 4. TRANSLUCENCY & RIM HOTSPOT
-                // ==========================================
                 Light mainLight = GetMainLight(inputData.shadowCoord);
                 
                 // Setup clean vectors for the math
@@ -282,7 +279,6 @@
                 half3 translucencyGlow = input.boidColor * totalTranslucency;
                 
                 finalEmission += translucencyGlow;
-                // ==========================================
                 // ==========================================
 
                 // 5. Apply Surface Data
