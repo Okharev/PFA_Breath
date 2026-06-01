@@ -49,7 +49,7 @@ public class ActionVisualizer : MonoBehaviour
     ///     Configures a LineRenderer to draw flat against the XZ plane.
     ///     Time Complexity: O(1) initialization overhead.
     /// </summary>
-    private void SetupFlatLineRenderer(LineRenderer lr, float startWidth, float endWidth)
+    private static void SetupFlatLineRenderer(LineRenderer lr, float startWidth, float endWidth)
     {
         lr.positionCount = 2;
         lr.enabled = false;

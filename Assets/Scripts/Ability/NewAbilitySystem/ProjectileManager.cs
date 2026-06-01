@@ -24,7 +24,8 @@ namespace Ability.NewAbilitySystem
 
         public void UnregisterProjectile(GameObject source, Projectile projectile)
         {
-            if (activeProjectiles.TryGetValue(source, out HashSet<Projectile> activeProjectile)) activeProjectile.Remove(projectile);
+            if (activeProjectiles.TryGetValue(source, out HashSet<Projectile> activeProjectile))
+                activeProjectile.Remove(projectile);
         }
 
         public HashSet<Projectile> GetProjectilesBySource(GameObject source)

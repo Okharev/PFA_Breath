@@ -439,7 +439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -6736,7 +6736,7 @@ MonoBehaviour:
   clothCompute: {fileID: 7200000, guid: 31a0bdb62f63441bbec3bf71690c7576, type: 3}
   clothMaterial: {fileID: 2100000, guid: 59bb70fc393570b4594730796b68f979, type: 2}
   gravity: {x: 0, y: -9.81, z: 0}
-  stiffness: 5000
+  stiffness: 6176
   damping: 70
   drag: 1
   solverIterations: 20
@@ -7350,7 +7350,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -12597,48 +12597,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
   ropeTension: 0.5
---- !u!84 &586386295
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &592929104
 GameObject:
   m_ObjectHideFlags: 0
@@ -12841,7 +12804,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -13592,43 +13555,6 @@ RenderTexture:
   m_Dimension: 2
   m_VolumeDepth: 1
   m_ShadowSamplingMode: 2
---- !u!84 &766815505
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &888644282
 GameObject:
   m_ObjectHideFlags: 0
@@ -14236,7 +14162,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -14285,7 +14211,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -14334,7 +14260,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -14418,7 +14344,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -14688,7 +14614,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -19815,7 +19741,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -19987,7 +19913,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -20036,7 +19962,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -21066,7 +20992,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -25997,7 +25923,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -26331,7 +26257,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -516289,7 +516215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -516942,7 +516868,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522331,7 +522257,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522498,7 +522424,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522725,7 +522651,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -522892,11 +522818,48 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
   ropeTension: 0.5
+--- !u!84 &1983082732
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1985791963
 GameObject:
   m_ObjectHideFlags: 0
@@ -523138,7 +523101,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -523453,6 +523416,43 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!84 &2042797568
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &2051998542
 GameObject:
   m_ObjectHideFlags: 0
@@ -523527,8 +523527,8 @@ MonoBehaviour:
   windDirection: {x: 0.70710677, y: 0.70710677}
   phillipsAmplitude: 0.0004
   choppiness: 0.544
-  displacementMap: {fileID: 766815505}
-  derivativeMap: {fileID: 586386295}
+  displacementMap: {fileID: 1983082732}
+  derivativeMap: {fileID: 2042797568}
 --- !u!114 &2051998547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -523802,7 +523802,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5
@@ -523851,7 +523851,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b192aaaa0bd644d880fab91478b9e481, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.BannerNode
-  resolution: {x: 3, y: 64}
+  resolution: {x: 4, y: 32}
   dimensions: {x: 1.1, y: 4}
   isPrayerFlagMode: 0
   flagWidth: 5

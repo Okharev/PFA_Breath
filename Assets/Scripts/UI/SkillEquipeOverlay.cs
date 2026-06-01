@@ -63,7 +63,10 @@ namespace UI
         private void Show(EmotionNodeData node, Vector2 screenPos)
         {
             targetNode = node;
-            equipButton.text = $"Equip to [{node.IntendedSlot}]";
+            
+            // REFACTORED: Show the actual AbilityData name in the button!
+            string abilityName = node.GrantedAbility != null ? node.GrantedAbility.abilityName : "Unknown Ability";
+            equipButton.text = $"Equip {abilityName} [{node.IntendedSlot}]";
             
             style.left = screenPos.x + 10;
             style.top = screenPos.y - 10;
@@ -80,13 +83,9 @@ namespace UI
         {
             if (targetNode == null) return;
 
-            // Find the player's ability controller
-            var playerController = UnityEngine.Object.FindAnyObjectByType<Ability.PlayerAbilityController>();
-            if (playerController != null)
-            {
-                int nodeLevel = SkillTreeManager.Instance.GetNodeLevel(targetNode.GUID);
-                playerController.EquipAbility(targetNode.GrantedAbilityId, targetNode.IntendedSlot, nodeLevel);
-            }
+            // REFACTORED: We just tell the Manager to equip it.
+            // The manager will handle overwriting slots and broadcasting the OnAbilityEquipped event!
+            SkillTreeManager.Instance.EquipNode(targetNode);
 
             Hide(); // Close menu after equipping
         }
