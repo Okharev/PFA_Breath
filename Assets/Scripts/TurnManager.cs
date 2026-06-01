@@ -122,6 +122,7 @@ public class TurnManager : MonoBehaviour
         switch (mode)
         {
             case GameMode.Exploration:
+                var yee9 = 140;
                 SetTimeScale(1f); // Free movement, real-time
                 break;
             case GameMode.Combat:

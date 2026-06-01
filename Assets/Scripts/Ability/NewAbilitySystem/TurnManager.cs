@@ -131,18 +131,25 @@ namespace Ability.NewAbilitySystem
                 entity.ExecuteAction(); // Entities handle their own channeling state internally
 
             // Wait for the duration of the turn (using scaled time so pauses/slow-mo affect it)
+// Wait for the duration of the turn
             yield return new WaitForSeconds(secondsPerTurn);
 
             CurrentTurn++;
-            OnTurnTicked?.Invoke(CurrentTurn);
 
+            // --- ARCHITECTURAL FIX: MUTATE STATE BEFORE UPDATING UI ---
+        
+            // 1. Resolve all backend math (like cooldown decrements) first!
             PrepareIterationBuffer();
             foreach (ITurnEntity entity in entityIterationBuffer) entity.EndTurn();
+        
+            // 2. NOW we tell the UI to draw the finished state
+            OnTurnTicked?.Invoke(CurrentTurn);
 
-            // Always return to pause after 1 second to allow new planning for idle entities
+            // ----------------------------------------------------------
+
             SetTimeScale(0f);
             IsExecuting = false;
-            pendingTurnCost = 0; // Clear this. Entities that are channeling will just auto-skip their planning phase.
+            pendingTurnCost = 0;
         }
 
         /// <summary>

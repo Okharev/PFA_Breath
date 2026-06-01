@@ -107,7 +107,7 @@ GameObject:
   - component: {fileID: 6692603355748319742}
   - component: {fileID: 6015349057466556885}
   m_Layer: 10
-  m_Name: EnemyBase 1
+  m_Name: EnemySniper
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -249,7 +249,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 192
   FirePoint: {fileID: 616632160060475760}
-  <StartingState>k__BackingField: 0
+  <StartingState>k__BackingField: 1
 --- !u!1 &6359587058521299137
 GameObject:
   m_ObjectHideFlags: 0

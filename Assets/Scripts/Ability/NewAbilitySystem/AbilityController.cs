@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Ability.NewAbilitySystem
@@ -20,20 +21,18 @@ namespace Ability.NewAbilitySystem
 
         private void OnDestroy()
         {
-            if (TurnManager.Instance != null)
-                TurnManager.Instance.UnregisterEntity(this);
+            if (TurnManager.Instance != null) TurnManager.Instance.UnregisterEntity(this);
         }
 
         public int Initiative => 1;
 
         public void PlanAction()
         {
-            // AI logic goes here to populate 'queuedAbility'
         }
+
 
         public void DrawIntents()
         {
-            // If we have an ability queued, ask its effects to draw themselves!
             if (queuedAbility != null)
                 foreach (IAbilityEffect effect in queuedAbility.effects)
                     if (effect is IPreviewableEffect preview)
@@ -47,41 +46,86 @@ namespace Ability.NewAbilitySystem
             if (currentChannelTurns > 0)
             {
                 currentChannelTurns--;
-                return; // Still channeling, action will resolve on a later turn
+                return;
             }
 
-            // Execute logic
             if (queuedAbility.TryCast(queuedContext))
-                if (queuedAbility.cooldownTurns > 0)
-                {
-                    // Store the absolute turn number when it's ready again
-                    int readyTurn = TurnManager.Instance.CurrentTurn + queuedAbility.cooldownTurns;
-                    abilityAvailableAtTurn[queuedAbility] = readyTurn;
-                }
+            {
+                ApplyCooldown(queuedAbility);
+                OnAbilityExecuted?.Invoke();
+            }
 
             queuedAbility = null;
         }
 
-        public void EndTurn()
+        public event Action OnAbilityExecuted;
+
+        // --- NEW: CENTRALIZED COOLDOWN CHECKERS ---
+// --- RELATIVE COOLDOWN TRACKER ---
+        private readonly Dictionary<AbilityData, int> activeCooldowns = new();
+
+        public bool IsOnCooldown(AbilityData ability)
         {
+            return activeCooldowns.TryGetValue(ability, out int cd) && cd > 0;
         }
 
+        private void ApplyCooldown(AbilityData ability)
+        {
+            if (ability.cooldownTurns > 0)
+            {
+                // +1 because EndTurn() will immediately decrement it by 1 at the end of this execution frame
+                activeCooldowns[ability] = ability.cooldownTurns + 1;
+            }
+        }
 
-// 1. Change void to bool
+        public int GetRemainingCooldown(AbilityData ability)
+        {
+            // Just return the raw integer. No more math against CurrentTurn!
+            return activeCooldowns.TryGetValue(ability, out int cd) ? cd : 0;
+        }
+
+        // --- THE MAGIC DECREMENTER ---
+        public void EndTurn()
+        {
+            // Safely iterate and tick down the cooldowns by 1 every round
+            List<AbilityData> keys = new(activeCooldowns.Keys);
+            foreach (AbilityData ability in keys)
+            {
+                if (activeCooldowns[ability] > 0)
+                {
+                    activeCooldowns[ability]--;
+                }
+            }
+        }
+
+        // --- REFACTORED: COMBAT QUEUE ROUTINE ---
         public bool QueueAbility(AbilityData ability, AbilityContext context)
         {
-            if (abilityAvailableAtTurn.TryGetValue(ability, out int availableTurn))
-                if (TurnManager.Instance.CurrentTurn < availableTurn)
-                    return false; // On Cooldown, failed to queue
+            // Enforce unified cooldown safety rule
+            if (IsOnCooldown(ability))
+                return false;
 
             queuedAbility = ability;
             queuedContext = context;
             currentChannelTurns = ability.channelTurns;
 
-            // REMOVED: TurnManager.Instance.RequestTurns(1); 
-            // The controller should just hold the data. It shouldn't dictate time!
+            return true;
+        }
 
-            return true; // Successfully queued
+        // --- NEW: EXPLORATION IMMEDIATE ROUTINE ---
+        public bool TryExecuteImmediate(AbilityData ability, AbilityContext context)
+        {
+            if (IsOnCooldown(ability))
+                return false;
+
+            if (ability.TryCast(context))
+            {
+                ApplyCooldown(ability);
+                OnAbilityExecuted?.Invoke();
+                return true;
+            }
+
+            return false;
         }
     }
 }

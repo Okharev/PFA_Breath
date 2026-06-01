@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Ability;
+using Ability.NewAbilitySystem;
 using Skills.Skills;
 using UnityEngine;
 
@@ -8,40 +8,36 @@ namespace Skills
 {
     public class SkillTreeManager : MonoBehaviour
     {
-        [Header("Player Currencies")] public int genericPoints;
-
+        [Header("Player Currencies")] 
+        public int genericPoints;
         public readonly Dictionary<EmotionType, int> emotionPoints = new();
-
-
         private readonly Dictionary<AbilitySlot, string> equippedNodes = new();
-
-        // ARCHITECTURAL UPGRADE: O(1) level map replacing the old binary HashSet
         private readonly Dictionary<string, int> nodeLevels = new();
 
         public static SkillTreeManager Instance { get; private set; }
 
+        // --- NEW: EVENT-DRIVEN DECOUPLING ---
+        public static event Action OnSkillTreeUpdated;
+        
+        // Broadcasts the newly equipped AbilityData, its slot, and its current level
+        public static event Action<AbilityData, AbilitySlot, int> OnAbilityEquipped;
+        
+        // Broadcasts which slot was just emptied
+        public static event Action<AbilitySlot> OnAbilityUnequipped;
+
         private void Awake()
         {
-            if (!Instance)
-            {
-                Instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-                return;
-            }
+            if (!Instance) Instance = this;
+            else { Destroy(gameObject); return; }
 
             foreach (EmotionType emotion in Enum.GetValues(typeof(EmotionType))) emotionPoints[emotion] = 0;
 
-            // Default sandbox points
             AddEmotionPoints(EmotionType.Red, 5);
             AddEmotionPoints(EmotionType.Blue, 15);
             AddEmotionPoints(EmotionType.White, 5);
             AddGenericPoints(8);
         }
 
-        public static event Action OnSkillTreeUpdated;
 
         public bool MeetsPrerequisites(BaseNodeData node)
         {
@@ -65,48 +61,41 @@ namespace Skills
 
         public void EquipNode(EmotionNodeData node)
         {
-            // Ensure the node is actually unlocked and provides an ability
-            if (GetNodeLevel(node.GUID) <= 0 || !node.UnlocksAbility) return;
+            if (GetNodeLevel(node.GUID) <= 0 || !node.UnlocksAbility || node.GrantedAbility == null) return;
 
-            // 1. Update the UI Data State (this inherently un-equips whatever was in this slot before)
+            // 1. Update the local UI state
             equippedNodes[node.IntendedSlot] = node.GUID;
 
-            // 2. Push the change to the gameplay layer
-            PlayerAbilityController playerController = FindAnyObjectByType<PlayerAbilityController>();
-            if (playerController != null)
-                playerController.EquipAbility(node.GrantedAbilityId, node.IntendedSlot, GetNodeLevel(node.GUID));
+            // 2. Broadcast the change to the rest of the game (No more FindObjectOfType!)
+            OnAbilityEquipped?.Invoke(node.GrantedAbility, node.IntendedSlot, GetNodeLevel(node.GUID));
 
-            Debug.Log($"[SkillTreeManager] Equipped {node.NodeName} to {node.IntendedSlot} slot.");
-
-            // 3. Notify the Canvas to repaint borders
+            Debug.Log($"[SkillTreeManager] Equipped {node.GrantedAbility.abilityName} to {node.IntendedSlot} slot.");
             OnSkillTreeUpdated?.Invoke();
         }
 
-        // UPGRADED: Now handles Unequipping if the node is already active
         public void ToggleEquipNode(EmotionNodeData node)
         {
-            if (GetNodeLevel(node.GUID) <= 0 || !node.UnlocksAbility) return;
+            if (GetNodeLevel(node.GUID) <= 0 || !node.UnlocksAbility || node.GrantedAbility == null) return;
 
             bool isCurrentlyEquipped = IsNodeEquipped(node);
-            PlayerAbilityController playerController = FindAnyObjectByType<PlayerAbilityController>();
 
             if (isCurrentlyEquipped)
             {
-                // UNEQUIP LOGIC
                 equippedNodes.Remove(node.IntendedSlot);
-                if (playerController != null) playerController.EquipDefaultAbility(node.IntendedSlot);
-                Debug.Log($"[SkillTreeManager] Unequipped {node.NodeName}. Reverted to default.");
+                
+                // Broadcast Unequip
+                OnAbilityUnequipped?.Invoke(node.IntendedSlot);
+                Debug.Log($"[SkillTreeManager] Unequipped {node.GrantedAbility.abilityName}.");
             }
             else
             {
-                // EQUIP LOGIC (Overwrites whatever was currently in this slot)
                 equippedNodes[node.IntendedSlot] = node.GUID;
-                if (playerController != null)
-                    playerController.EquipAbility(node.GrantedAbilityId, node.IntendedSlot, GetNodeLevel(node.GUID));
-                Debug.Log($"[SkillTreeManager] Equipped {node.NodeName} to {node.IntendedSlot} slot.");
+                
+                // Broadcast Equip
+                OnAbilityEquipped?.Invoke(node.GrantedAbility, node.IntendedSlot, GetNodeLevel(node.GUID));
+                Debug.Log($"[SkillTreeManager] Equipped {node.GrantedAbility.abilityName} to {node.IntendedSlot} slot.");
             }
 
-            // Repaint the UI borders instantly
             OnSkillTreeUpdated?.Invoke();
         }
 

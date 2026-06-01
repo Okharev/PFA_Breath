@@ -50,8 +50,8 @@ public class EncounterRoomTrigger : MonoBehaviour
     {
         Debug.Log($"[EncounterRoom] Player entered {gameObject.name}. Initiating Combat!");
         
-        var playerCtrl = FindAnyObjectByType<PlayerController>(); 
-        if (playerCtrl is not null) playerCtrl.StopMovement();
+        // var playerCtrl = FindAnyObjectByType<PlayerController>(); 
+        // if (playerCtrl is not null) playerCtrl.StopMovement();
 
         // 1. Lock the player inside
         foreach (DoorController door in roomDoors)

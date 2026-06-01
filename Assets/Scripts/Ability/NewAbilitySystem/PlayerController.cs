@@ -1,15 +1,18 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+using Skills;
+using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
+
+// NEW: Required for AbilitySlot enum and SkillTreeManager events
 
 namespace Ability.NewAbilitySystem
 {
     public interface IPlayerState
     {
         void Enter(PlayerController player);
-
         void HandleAiming(PlayerController player, Vector3 aimPosition);
-
         void HandleMoveInput(PlayerController player, Vector3 destination);
         void HandleAbilityInput(PlayerController player, AbilityData ability, Vector3 targetPosition);
         void ExecuteTurn(PlayerController player);
@@ -20,31 +23,29 @@ namespace Ability.NewAbilitySystem
     [RequireComponent(typeof(NavMeshAgent), typeof(AbilityController))]
     public class PlayerController : MonoBehaviour, ITurnEntity
     {
-        [Header("Abilities")] public AbilityData BasicMoveAbility; // Contains your MoveEffect
+        [Header("Default Innate Abilities")] [Tooltip("The foundational movement ability triggered on Left-Click.")]
+        public AbilityData BasicMoveAbility;
 
-        public AbilityData PrimaryAbility;
-        public AbilityData SecondaryAbility;
-        public AbilityData DashAbility;
-        public AbilityData UltimateAbility;
+        // --- NEW: DEFAULT LOADOUT FIELDS ---
+        public AbilityData DefaultPrimary;
+        public AbilityData DefaultSecondary;
+        public AbilityData DefaultDash;
+        public AbilityData DefaultSpecial;
 
-        [Header("Input Settings")] [Tooltip("The layer used to detect mouse clicks for movement/aiming.")]
-        public LayerMask GroundLayer;
+        [Header("Input Settings")] public LayerMask GroundLayer;
 
-        [Header("Combat References")] [Tooltip("The transform where projectiles should spawn (e.g., the gun barrel)")]
-        public Transform FirePoint;
+        [Header("Combat References")] public Transform FirePoint;
 
-        // NEW: Cache the mouse position so we can draw intents at the cursor location
+        private readonly Dictionary<AbilitySlot, AbilityData> activeLoadout = new();
+        private AbilitySlot currentActiveSlot = AbilitySlot.Primary;
+
         private Vector3 currentAimPosition;
-
         private IPlayerState currentState;
-
         private Camera mainCamera;
-        private bool usePrimaryAbility = true;
 
         public NavMeshAgent Agent { get; private set; }
         public AbilityController Abilities { get; private set; }
 
-        // Cached States (Zero Allocation)
         public PlayerExplorationState StateExploration { get; } = new();
         public PlayerCombatState StateCombat { get; } = new();
 
@@ -54,7 +55,6 @@ namespace Ability.NewAbilitySystem
             Abilities = GetComponent<AbilityController>();
             mainCamera = Camera.main;
 
-            // --- Snappy Movement Configuration ---
             Agent.acceleration = 9999f;
             Agent.angularSpeed = 9999f;
             Agent.autoBraking = true;
@@ -64,14 +64,30 @@ namespace Ability.NewAbilitySystem
         {
             TurnManager.Instance.RegisterEntity(this);
             GameModeManager.OnGameModeChanged += HandleGameModeChanged;
-
-            // Sync initial state
             HandleGameModeChanged(GameModeManager.Instance.CurrentMode);
+
+            // --- NEW: INITIALIZE DEFAULTS ---
+            EquipLocalSlot(AbilitySlot.Primary, DefaultPrimary);
+            EquipLocalSlot(AbilitySlot.Secondary, DefaultSecondary);
+            EquipLocalSlot(AbilitySlot.Dash, DefaultDash);
+            EquipLocalSlot(AbilitySlot.Special, DefaultSpecial);
         }
 
         private void Update()
         {
             HandleInput();
+        }
+
+        private void OnEnable()
+        {
+            SkillTreeManager.OnAbilityEquipped += HandleSkillTreeEquip;
+            SkillTreeManager.OnAbilityUnequipped += HandleSkillTreeUnequip;
+        }
+
+        private void OnDisable()
+        {
+            SkillTreeManager.OnAbilityEquipped -= HandleSkillTreeEquip;
+            SkillTreeManager.OnAbilityUnequipped -= HandleSkillTreeUnequip;
         }
 
         private void OnDestroy()
@@ -85,22 +101,15 @@ namespace Ability.NewAbilitySystem
 
         public void PlanAction()
         {
-            /* Handled entirely by user input in Update */
         }
 
         public void DrawIntents()
         {
-            // We only want to draw aiming intents during the combat pause
             if (currentState != StateCombat) return;
 
-            AbilityData activeAbility = usePrimaryAbility ? PrimaryAbility : SecondaryAbility;
-
-            if (activeAbility != null)
+            if (activeLoadout.TryGetValue(currentActiveSlot, out AbilityData activeAbility))
             {
-                // Construct a dynamic context based on where the mouse is right now
                 AbilityContext aimContext = new(gameObject, FirePoint, null, currentAimPosition);
-
-                // Ask the ability to draw itself exactly as the enemies do
                 foreach (IAbilityEffect effect in activeAbility.effects)
                     if (effect is IPreviewableEffect preview)
                         preview.DrawPreview(aimContext, IntentDrawer.Instance);
@@ -117,43 +126,75 @@ namespace Ability.NewAbilitySystem
             currentState?.EndTurn(this);
         }
 
+        // --- NEW: LOCAL EVENT BUS ---
+        // UI will listen to this so it knows exactly what the player is holding!
+        public event Action<AbilitySlot, AbilityData> OnLoadoutChanged;
+
+        // --- LOADOUT ROUTING LOGIC ---
+        private void HandleSkillTreeEquip(AbilityData ability, AbilitySlot slot, int level)
+        {
+            EquipLocalSlot(slot, ability);
+        }
+
+        private void HandleSkillTreeUnequip(AbilitySlot slot)
+        {
+            // When unequipped from the tree, revert to the baseline default
+            EquipLocalSlot(slot, GetDefaultAbilityForSlot(slot));
+        }
+
+        private void EquipLocalSlot(AbilitySlot slot, AbilityData ability)
+        {
+            if (ability == null)
+            {
+                activeLoadout.Remove(slot);
+                OnLoadoutChanged?.Invoke(slot, null);
+            }
+            else
+            {
+                activeLoadout[slot] = ability;
+                OnLoadoutChanged?.Invoke(slot, ability);
+            }
+        }
+
+        private AbilityData GetDefaultAbilityForSlot(AbilitySlot slot)
+        {
+            return slot switch
+            {
+                AbilitySlot.Primary => DefaultPrimary,
+                AbilitySlot.Secondary => DefaultSecondary,
+                AbilitySlot.Dash => DefaultDash,
+                AbilitySlot.Special => DefaultSpecial,
+                _ => null
+            };
+        }
+
         private void HandleInput()
         {
-            // Safeguard against missing devices
             if (Keyboard.current == null || Mouse.current == null) return;
-
             if (!TryGetMousePosition(out Vector3 targetPos)) return;
 
-            // NEW: Cache the target position for the DrawIntents cycle
             currentAimPosition = targetPos;
-
-            // Continuously update aiming based on the cursor position
             currentState?.HandleAiming(this, targetPos);
 
-            // 1. Swap Primary/Secondary (Tab)
             if (Keyboard.current.tabKey.wasPressedThisFrame)
-            {
-                usePrimaryAbility = !usePrimaryAbility;
-                Debug.Log($"[Player] Switched to {(usePrimaryAbility ? "Primary" : "Secondary")} Ability.");
-            }
+                currentActiveSlot = currentActiveSlot == AbilitySlot.Primary
+                    ? AbilitySlot.Secondary
+                    : AbilitySlot.Primary;
 
-            // 3. Movement (Left Click)
-            if (Mouse.current.leftButton.wasPressedThisFrame) currentState?.HandleMoveInput(this, targetPos);
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+                currentState?.HandleMoveInput(this, targetPos);
 
-            // 4. Primary/Secondary Cast (Right Click)
             if (Mouse.current.rightButton.wasPressedThisFrame)
-            {
-                AbilityData activeAbility = usePrimaryAbility ? PrimaryAbility : SecondaryAbility;
-                currentState?.HandleAbilityInput(this, activeAbility, targetPos);
-            }
+                if (activeLoadout.TryGetValue(currentActiveSlot, out AbilityData activeAbility))
+                    currentState?.HandleAbilityInput(this, activeAbility, targetPos);
 
-            // 5. Dash/Mobility (Shift)
             if (Keyboard.current.leftShiftKey.wasPressedThisFrame)
-                currentState?.HandleAbilityInput(this, DashAbility, targetPos);
+                if (activeLoadout.TryGetValue(AbilitySlot.Dash, out AbilityData dashAbility))
+                    currentState?.HandleAbilityInput(this, dashAbility, targetPos);
 
-            // 6. Ultimate (R)
             if (Keyboard.current.rKey.wasPressedThisFrame)
-                currentState?.HandleAbilityInput(this, UltimateAbility, targetPos);
+                if (activeLoadout.TryGetValue(AbilitySlot.Special, out AbilityData specialAbility))
+                    currentState?.HandleAbilityInput(this, specialAbility, targetPos);
         }
 
         private bool TryGetMousePosition(out Vector3 position)
@@ -161,7 +202,6 @@ namespace Ability.NewAbilitySystem
             position = Vector3.zero;
             if (Mouse.current == null) return false;
 
-            // Read the screen position from the new Input System
             Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
             Ray ray = mainCamera.ScreenPointToRay(mouseScreenPos);
 
@@ -188,13 +228,13 @@ namespace Ability.NewAbilitySystem
         }
     }
 
-    // --- STATES REMAIN EXACTLY THE SAME ---
+    // --- STATES (UNTOUCHED) ---
 
     public class PlayerExplorationState : IPlayerState
     {
         public void Enter(PlayerController player)
         {
-            player.Agent.isStopped = false; // Allow free movement
+            player.Agent.isStopped = false;
         }
 
         public void HandleAiming(PlayerController player, Vector3 aimPosition)
@@ -206,19 +246,21 @@ namespace Ability.NewAbilitySystem
             player.Agent.SetDestination(destination);
         }
 
-        public void HandleAbilityInput(PlayerController player, AbilityData ability, Vector3 targetPosition)
-        {
-            if (ability == null) return;
-            AbilityContext context = new(player.gameObject, targetPosition: targetPosition);
-            ability.TryCast(context);
-        }
-
         public void ExecuteTurn(PlayerController player)
         {
         }
 
         public void EndTurn(PlayerController player)
         {
+        }
+
+        public void HandleAbilityInput(PlayerController player, AbilityData ability, Vector3 targetPosition)
+        {
+            if (ability == null) return;
+            AbilityContext context = new(player.gameObject, targetPosition: targetPosition);
+
+            // ARCHITECTURAL FIX: Route directly through the controller to guarantee cooldown enforcement
+            player.Abilities.TryExecuteImmediate(ability, context);
         }
 
         public void Exit(PlayerController player)
@@ -235,6 +277,16 @@ namespace Ability.NewAbilitySystem
             player.Agent.isStopped = true;
         }
 
+        public void ExecuteTurn(PlayerController player)
+        {
+            player.Agent.isStopped = false;
+            player.Abilities.ExecuteAction();
+        }
+
+        public void Exit(PlayerController player)
+        {
+        }
+
         public void HandleAiming(PlayerController player, Vector3 aimPosition)
         {
             if (TurnManager.Instance.IsExecuting) return;
@@ -242,7 +294,8 @@ namespace Ability.NewAbilitySystem
             Vector3 lookDirection = aimPosition - player.transform.position;
             lookDirection.y = 0f;
 
-            if (lookDirection.sqrMagnitude > 0.001f) player.transform.rotation = Quaternion.LookRotation(lookDirection);
+            if (lookDirection.sqrMagnitude > 0.001f)
+                player.transform.rotation = Quaternion.LookRotation(lookDirection);
         }
 
         public void HandleMoveInput(PlayerController player, Vector3 destination)
@@ -250,7 +303,8 @@ namespace Ability.NewAbilitySystem
             if (player.BasicMoveAbility == null) return;
             AbilityContext context = new(player.gameObject, targetPosition: destination);
 
-            if (player.Abilities.QueueAbility(player.BasicMoveAbility, context)) TurnManager.Instance.RequestTurns(1);
+            if (player.Abilities.QueueAbility(player.BasicMoveAbility, context))
+                TurnManager.Instance.RequestTurns(1);
         }
 
         public void HandleAbilityInput(PlayerController player, AbilityData ability, Vector3 targetPosition)
@@ -258,13 +312,8 @@ namespace Ability.NewAbilitySystem
             if (ability == null) return;
             AbilityContext context = new(player.gameObject, player.FirePoint, null, targetPosition);
 
-            if (player.Abilities.QueueAbility(ability, context)) TurnManager.Instance.RequestTurns(1);
-        }
-
-        public void ExecuteTurn(PlayerController player)
-        {
-            player.Agent.isStopped = false;
-            player.Abilities.ExecuteAction();
+            if (player.Abilities.QueueAbility(ability, context))
+                TurnManager.Instance.RequestTurns(1);
         }
 
         public void EndTurn(PlayerController player)
@@ -272,10 +321,6 @@ namespace Ability.NewAbilitySystem
             player.Agent.isStopped = true;
             if (player.Agent.hasPath) player.Agent.ResetPath();
             player.Abilities.EndTurn();
-        }
-
-        public void Exit(PlayerController player)
-        {
         }
     }
 }

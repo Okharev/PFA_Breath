@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Ability.NewAbilitySystem;
 using UnityEngine;
 
 namespace Skills
@@ -185,7 +186,10 @@ namespace Skills
             public int MaxLevel = 4; // How many times it can be upgraded
 
             public bool UnlocksAbility;
-            public string GrantedAbilityId;
+            
+            // REFACTORED: We drop the string and directly reference the SO
+            public AbilityData GrantedAbility; 
+            
             public AbilitySlot IntendedSlot;
 
             // We still include stats, but maybe these scale with the node's level!

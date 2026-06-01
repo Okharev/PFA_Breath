@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Ability.NewAbilitySystem; // NEW: Required for AbilityData
 using Skills.Skills;
 using Skills.UI;
 using UnityEditor;
@@ -230,11 +231,17 @@ namespace Skills.Editor
             abilityToggle.RegisterValueChangedCallback(evt => data.UnlocksAbility = evt.newValue);
             inspectorPanel.Add(abilityToggle);
 
-            TextField abilityIdField = new("Granted Ability ID") { value = data.GrantedAbilityId };
-            abilityIdField.RegisterValueChangedCallback(evt => data.GrantedAbilityId = evt.newValue);
-            inspectorPanel.Add(abilityIdField);
+            // --- REFACTORED: Changed from a String TextField to a ScriptableObject Drag & Drop Field ---
+            ObjectField abilityDataField = new("Granted Ability") 
+            { 
+                objectType = typeof(AbilityData), 
+                value = data.GrantedAbility, 
+                allowSceneObjects = false 
+            };
+            abilityDataField.RegisterValueChangedCallback(evt => data.GrantedAbility = evt.newValue as AbilityData);
+            inspectorPanel.Add(abilityDataField);
+            // -----------------------------------------------------------------------------------------
 
-            // --- THE FIX: Expose the AbilitySlot to the Graph Inspector ---
             EnumField intendedSlotField = new("Intended Slot", data.IntendedSlot);
             intendedSlotField.RegisterValueChangedCallback(evt => data.IntendedSlot = (AbilitySlot)evt.newValue);
             inspectorPanel.Add(intendedSlotField);

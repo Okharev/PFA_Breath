@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Ability;
+using Ability.NewAbilitySystem; 
+using Skills; 
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -9,118 +10,172 @@ namespace UI
     public class ActionBarController : MonoBehaviour
     {
         [Header("References")]
-        public PlayerAbilityController playerController;
-        public VisualTreeAsset slotTemplate; // Drag AbilitySlot.uxml here
+        public Ability.NewAbilitySystem.PlayerController player; 
+        public VisualTreeAsset slotTemplate; 
 
         private VisualElement actionBarContainer;
-    
-        // Maps the Ability ID to its specific UI slot controller
-        private Dictionary<string, AbilitySlotUI> slotCache = new Dictionary<string, AbilitySlotUI>();
+        private readonly Dictionary<AbilitySlot, AbilitySlotUI> slotCache = new();
 
         private void Awake()
         {
             VisualElement root = GetComponent<UIDocument>().rootVisualElement;
             actionBarContainer = root.Q<VisualElement>("action-bar-container");
-        }
-
-        private void Start()
-        {
-            // For a tactical shooter, you'd pass a list of the player's equipped loadout.
-            // Let's pretend PlayerAbilityController exposes a method or property: GetLoadout()
-            List<IAbility> playerLoadout = playerController.GetLoadout(); 
-        
-            InitializeBar(playerLoadout);
-        }
-
-        private void OnEnable() => TurnManager.OnTurnTicked += HandleTurnTicked;
-        private void OnDisable() => TurnManager.OnTurnTicked -= HandleTurnTicked;
-
-        private void InitializeBar(List<IAbility> abilities)
-        {
             actionBarContainer.Clear();
-            slotCache.Clear();
+        }
 
-            for (int i = 0; i < abilities.Count; i++)
+        private void OnEnable()
+        {
+            TurnManager.OnTurnTicked += HandleTurnTicked;
+            
+            if (player != null)
             {
-                IAbility ability = abilities[i];
-
-                // 1. Instantiate the UI Prefab
-                VisualElement newSlot = slotTemplate.Instantiate();
-            
-                // 2. Wrap it in our helper class and initialize it
-                AbilitySlotUI slotUI = new AbilitySlotUI(newSlot, ability);
-            
-                // Optional: Map a fake hotkey string just for visuals (1, 2, 3, etc.)
-                slotUI.SetHotkey((i + 1).ToString()); 
-
-                // 3. Add to the UI and Cache
-                actionBarContainer.Add(newSlot);
-                slotCache.Add(ability.AbilityId, slotUI);
+                player.OnLoadoutChanged += HandleLoadoutChanged;
+                
+                // ARCHITECTURAL FIX: Lazy-evaluate the component. 
+                // If this OnEnable fires before PlayerController.Awake(), we safely fetch the reference directly.
+                AbilityController targetAbilities = player.Abilities != null ? player.Abilities : player.GetComponent<AbilityController>();
+                
+                if (targetAbilities != null)
+                {
+                    targetAbilities.OnAbilityExecuted += HandleAbilityExecuted; 
+                }
             }
+        }
+
+        private void OnDisable()
+        {
+            TurnManager.OnTurnTicked -= HandleTurnTicked;
+            
+            if (player != null)
+            {
+                player.OnLoadoutChanged -= HandleLoadoutChanged;
+                
+                // Ensure we cleanly unsubscribe using the same fallback logic to prevent memory leaks
+                AbilityController targetAbilities = player.Abilities != null ? player.Abilities : player.GetComponent<AbilityController>();
+                
+                if (targetAbilities != null)
+                {
+                    targetAbilities.OnAbilityExecuted -= HandleAbilityExecuted;
+                }
+            }
+        }
+
+        private void HandleLoadoutChanged(AbilitySlot slot, AbilityData ability)
+        {
+            // If the player unequipped something AND had no default, destroy the slot
+            if (ability == null)
+            {
+                if (slotCache.TryGetValue(slot, out AbilitySlotUI slotUI))
+                {
+                    actionBarContainer.Remove(slotUI.RootElement);
+                    slotCache.Remove(slot);
+                }
+            }
+            else
+            {
+                // If it already exists, update the data to the new ability
+                if (slotCache.TryGetValue(slot, out AbilitySlotUI existingSlot))
+                {
+                    existingSlot.BindAbility(ability);
+                }
+                else // Create a new UI slot for this ability
+                {
+                    VisualElement newSlot = slotTemplate.Instantiate();
+                    
+                    // Pass the player's internal ability controller so the UI can read cooldowns
+                    AbilitySlotUI slotUI = new AbilitySlotUI(newSlot, player.Abilities); 
+                    
+                    slotUI.BindAbility(ability);
+                    slotUI.SetHotkey(slot.ToString()); 
+
+                    // Standard ordering setup (Primary -> Secondary -> Dash -> Special) 
+                    // ensures they appear left-to-right correctly inside Flexbox
+                    // 1. Store the enum value inside the visual element's memory
+                    newSlot.userData = slot; 
+
+                    // 2. Add it to the container
+                    actionBarContainer.Add(newSlot);
+                    slotCache.Add(slot, slotUI);
+
+                    // 3. Sort the container's hierarchy based on the enum integer values
+                    actionBarContainer.Sort((a, b) => ((AbilitySlot)a.userData).CompareTo((AbilitySlot)b.userData));
+                }
+            }
+        }
+        
+        private void HandleAbilityExecuted()
+        {
+            int currentTurn = TurnManager.Instance != null ? TurnManager.Instance.CurrentTurn : 0;
+            // No more +1 fakeout needed!
+            HandleTurnTicked(currentTurn);
         }
 
         private void HandleTurnTicked(int currentTurn)
         {
-            // Update all slots when a turn ticks
-            foreach (var kvp in slotCache)
+            foreach (KeyValuePair<AbilitySlot, AbilitySlotUI> kvp in slotCache)
             {
-                kvp.Value.RefreshUI();
+                kvp.Value.RefreshUI(currentTurn);
             }
         }
     }
 
     /// <summary>
-    /// A non-MonoBehaviour helper class to manage the state of a single instantiated slot.
+    /// Helper class - Remains exactly the same as our previous refactor!
     /// </summary>
     public class AbilitySlotUI
     {
-        private readonly IAbility boundAbility;
-        private readonly VisualElement rootElement;
+        public VisualElement RootElement { get; private set; }
+        
+        private AbilityData boundAbility;
+        private AbilityController controller;
+        
         private readonly Label nameLabel;
         private readonly Label cooldownLabel;
         private readonly Label hotkeyLabel;
         private readonly ProgressBar channelBar;
 
-        public AbilitySlotUI(VisualElement root, IAbility ability)
+        public AbilitySlotUI(VisualElement root, AbilityController abilityController)
         {
-            rootElement = root.Q<VisualElement>("slot-root");
-            boundAbility = ability;
+            RootElement = root.Q<VisualElement>("slot-root");
+            controller = abilityController;
         
             nameLabel = root.Q<Label>("ability-name");
             cooldownLabel = root.Q<Label>("cooldown-overlay");
             hotkeyLabel = root.Q<Label>("hotkey-label");
             channelBar = root.Q<ProgressBar>("channel-bar");
+        }
 
-            nameLabel.text = ability.AbilityId.Replace("_", "\n"); // Split over long names
-            RefreshUI();
+        public void BindAbility(AbilityData newAbility)
+        {
+            boundAbility = newAbility;
+            nameLabel.text = boundAbility.abilityName.Replace(" ", "\n"); 
+            
+            int currentTurn = TurnManager.Instance != null ? TurnManager.Instance.CurrentTurn : 0;
+            RefreshUI(currentTurn);
         }
 
         public void SetHotkey(string key) => hotkeyLabel.text = key;
 
-        public void RefreshUI()
+        public void RefreshUI(int currentTurn)
         {
-            if (!boundAbility.IsReady && !boundAbility.IsChanneling)
+            if (boundAbility == null || controller == null) return;
+
+            // Just ask the controller for the raw integer
+            int remainingCooldown = controller.GetRemainingCooldown(boundAbility);
+
+            if (remainingCooldown > 0)
             {
                 cooldownLabel.style.display = DisplayStyle.Flex;
-                cooldownLabel.text = boundAbility.CurrentCooldown.ToString();
-                rootElement.AddToClassList("ability-on-cooldown");
+                cooldownLabel.text = remainingCooldown.ToString();
+                RootElement.AddToClassList("ability-on-cooldown");
             }
             else
             {
                 cooldownLabel.style.display = DisplayStyle.None;
-                rootElement.RemoveFromClassList("ability-on-cooldown");
+                RootElement.RemoveFromClassList("ability-on-cooldown");
             }
 
-            if (boundAbility.IsChanneling)
-            {
-                channelBar.style.display = DisplayStyle.Flex;
-                channelBar.highValue = boundAbility.RequiredChannelTime;
-                channelBar.value = boundAbility.CurrentChannelTime;
-            }
-            else
-            {
-                channelBar.style.display = DisplayStyle.None;
-            }
+            channelBar.style.display = DisplayStyle.None; 
         }
     }
 }
