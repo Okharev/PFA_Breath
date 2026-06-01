@@ -200,7 +200,7 @@ MonoBehaviour:
   m_PanelSettings: {fileID: 11400000, guid: 6d3dcb92f44d134419edc03964f02eaa, type: 2}
   m_ParentUI: {fileID: 0}
   sourceAsset: {fileID: 0}
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Position: 0
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920
@@ -220,7 +220,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a231a6f4a7849f7a430f4c93032fe3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Skills.UI.SkillTreeUIController
-  targetGraph: {fileID: 11400000, guid: 0a19787aa20a57049836d12698c55c76, type: 2}
+  targetGraph: {fileID: 11400000, guid: 0051d1035bb0f7843b3b6c559e591d9d, type: 2}
   toggleMenuAction:
     m_Name: ToggleSkillTree
     m_Type: 0
@@ -730,15 +730,15 @@ PrefabInstance:
     - target: {fileID: 365923815057689362, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: DefaultPrimary
       value: 
-      objectReference: {fileID: 11400000, guid: 086a16a0f04c42a45ad7f550477e9e0c, type: 2}
+      objectReference: {fileID: 11400000, guid: d96c1dc0bf7677043b8ff64abe011b18, type: 2}
     - target: {fileID: 365923815057689362, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: DefaultSpecial
       value: 
-      objectReference: {fileID: 11400000, guid: d11bba529bd19194899aec5d5daf52e1, type: 2}
+      objectReference: {fileID: 0}
     - target: {fileID: 365923815057689362, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: DefaultSecondary
       value: 
-      objectReference: {fileID: 11400000, guid: 9ba9829911d79454db7093aa65595c8e, type: 2}
+      objectReference: {fileID: 0}
     - target: {fileID: 3029938191028018037, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: m_Name
       value: Player
@@ -799,6 +799,10 @@ PrefabInstance:
     - target: {fileID: 4805482828720501141, guid: dfbfb94f0ad4c0b4796f22f021f25337, type: 3}
       propertyPath: m_Name
       value: EnemyJellyfish
+      objectReference: {fileID: 0}
+    - target: {fileID: 4805482828720501141, guid: dfbfb94f0ad4c0b4796f22f021f25337, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7276882448658245994, guid: dfbfb94f0ad4c0b4796f22f021f25337, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1060,7 +1064,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9594f7cacb929964e9d9a3f7c1882c99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.GameModeManager
-  <CurrentMode>k__BackingField: 1
+  <CurrentMode>k__BackingField: 0
 --- !u!1 &1613788959
 GameObject:
   m_ObjectHideFlags: 0
@@ -1137,6 +1141,10 @@ PrefabInstance:
     - target: {fileID: 4805482828720501141, guid: 34ad5af77eaebff408fd58296c1aee9e, type: 3}
       propertyPath: m_Name
       value: Enemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 4805482828720501141, guid: 34ad5af77eaebff408fd58296c1aee9e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7276882448658245994, guid: 34ad5af77eaebff408fd58296c1aee9e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1221,6 +1229,10 @@ PrefabInstance:
     - target: {fileID: 4805482828720501141, guid: 7d25f53ebbb714049a1bcf033eab18df, type: 3}
       propertyPath: m_Name
       value: EnemyBase 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4805482828720501141, guid: 7d25f53ebbb714049a1bcf033eab18df, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7276882448658245994, guid: 7d25f53ebbb714049a1bcf033eab18df, type: 3}
       propertyPath: m_LocalPosition.x

@@ -519,6 +519,116 @@ namespace Ability.NewAbilitySystem
             }
         }
     }
+    
+    [Serializable]
+    public class SafeLandingCondition : IAbilityCondition
+    {
+        [HideInInspector] public string name = "Safe Landing Check";
+        
+        [Tooltip("How far down we check for valid ground.")]
+        public float dropCheckTolerance = 2.0f;
+
+        public bool CanExecute(AbilityContext context)
+        {
+            // Predict the end point based on max dash distance
+            Vector3 startPos = context.Source.transform.position;
+            Vector3 direction = (context.TargetPosition - startPos).normalized;
+            
+            // Assuming max distance is 5, you might want to pull this from the effect or hardcode a max sync
+            float dist = Mathf.Min(Vector3.Distance(startPos, context.TargetPosition), 5f);
+            Vector3 predictedEndPos = startPos + (direction * dist);
+
+            // Check if there is valid NavMesh data at the landing zone
+            return NavMesh.SamplePosition(predictedEndPos, out _, dropCheckTolerance, NavMesh.AllAreas);
+        }
+    }
+    
+    [Serializable]
+    public class DashEffect : IAbilityEffect, IPreviewableEffect
+    {
+        [HideInInspector] public string name = "Dash Phasing Effect";
+
+        [Tooltip("Time in seconds the dash takes to complete. Must be less than TurnManager.secondsPerTurn!")]
+        public float dashDuration = 0.25f;
+        
+        [Tooltip("The maximum distance the player can dash.")]
+        public float maxDashDistance = 5f;
+
+        [Tooltip("The physics layer string that ignores Enemies and Projectiles.")]
+        public string ghostLayerName = "PhasingGhost";
+
+        public void Execute(AbilityContext context)
+        {
+            if (context.Source.TryGetComponent(out MonoBehaviour runner))
+            {
+                runner.StartCoroutine(DashRoutine(context));
+            }
+        }
+
+        private IEnumerator DashRoutine(AbilityContext context)
+        {
+            GameObject source = context.Source;
+            NavMeshAgent agent = source.GetComponent<NavMeshAgent>();
+            
+            // Assume you have a HealthComponent. We flag it to ignore damage calculations.
+            HealthComponent health = source.GetComponent<HealthComponent>(); 
+
+            // 1. Setup: Disable Agent to cross voids and swap to Ghost Layer
+            if (agent != null) agent.enabled = false;
+            if (health != null) health.IsInvincible = true;
+
+            int originalLayer = source.layer;
+            source.layer = LayerMask.NameToLayer(ghostLayerName);
+
+            // 2. Calculate clamped destination
+            Vector3 startPos = source.transform.position;
+            Vector3 direction = (context.TargetPosition - startPos).normalized;
+            float requestedDistance = Vector3.Distance(startPos, context.TargetPosition);
+            float actualDistance = Mathf.Min(requestedDistance, maxDashDistance);
+            
+            Vector3 endPos = startPos + (direction * actualDistance);
+
+            // 3. Execute Movement
+            float elapsed = 0f;
+            while (elapsed < dashDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / dashDuration);
+                
+                // Using an ease-out curve makes the dash feel punchier
+                float easedT = 1f - Mathf.Pow(1f - t, 3f); 
+                
+                source.transform.position = Vector3.Lerp(startPos, endPos, easedT);
+                yield return null;
+            }
+
+            source.transform.position = endPos;
+
+            // 4. Cleanup: Re-enable Agent securely on the nearest NavMesh
+            if (agent != null)
+            {
+                // Ensure we don't re-enable the agent over a bottomless pit
+                if (NavMesh.SamplePosition(endPos, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
+                {
+                    source.transform.position = hit.position;
+                }
+                agent.enabled = true;
+            }
+
+            if (health != null) health.IsInvincible = false;
+            source.layer = originalLayer;
+        }
+
+        public void DrawPreview(AbilityContext context, IntentDrawer drawer)
+        {
+            Vector3 start = context.Source.transform.position;
+            Vector3 direction = (context.TargetPosition - start).normalized;
+            float dist = Mathf.Min(Vector3.Distance(start, context.TargetPosition), maxDashDistance);
+            
+            // Draw a bright cyan line to indicate a safe utility dash
+            drawer.DrawLine(start, start + (direction * dist), Color.cyan);
+        }
+    }
 
     [Serializable]
     public class TeleportEffect : IAbilityEffect

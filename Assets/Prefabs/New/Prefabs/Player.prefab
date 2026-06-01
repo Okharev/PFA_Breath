@@ -183,10 +183,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.PlayerController
   BasicMoveAbility: {fileID: 11400000, guid: faa2715a6b936ac489c3e07edebbb408, type: 2}
-  PrimaryAbility: {fileID: 11400000, guid: 086a16a0f04c42a45ad7f550477e9e0c, type: 2}
-  SecondaryAbility: {fileID: 11400000, guid: 9ba9829911d79454db7093aa65595c8e, type: 2}
-  DashAbility: {fileID: 0}
-  UltimateAbility: {fileID: 11400000, guid: d11bba529bd19194899aec5d5daf52e1, type: 2}
+  DefaultPrimary: {fileID: 11400000, guid: d96c1dc0bf7677043b8ff64abe011b18, type: 2}
+  DefaultSecondary: {fileID: 0}
+  DefaultDash: {fileID: 0}
+  DefaultSpecial: {fileID: 0}
   GroundLayer:
     serializedVersion: 2
     m_Bits: 64

@@ -7,17 +7,30 @@ using UnityEngine.Events;
 /// </summary>
 public class HealthComponent : MonoBehaviour
 {
-    [Header("Health Settings")] public float maxHealth = 100f;
+    [Header("Health Settings")] 
+    [Tooltip("The maximum health capacity of the entity.")]
+    public float maxHealth = 100f;
 
-    [Header("Events")] public UnityEvent<float, float> OnHealthChanged; // Passes (Current, Max)
+    // --- NEW: Invincibility Flag ---
+    /// <summary>
+    ///     When true, the entity ignores all incoming damage. Used for phasing, dashing, or i-frames.
+    /// </summary>
+    public bool IsInvincible { get; set; } = false;
 
-    public  event Action<float> OnTakeDamage; // Passes (Damage Amount)
-    public  event Action<float> OnHealed; // Passes (Heal Amount)
+    [Header("Events")] 
+    [Tooltip("Fired when health changes. Passes (CurrentHealth, MaxHealth).")]
+    public UnityEvent<float, float> OnHealthChanged; 
+
+    public event Action<float> OnTakeDamage; // Passes (Damage Amount)
+    public event Action<float> OnHealed;     // Passes (Heal Amount)
     public event Action<GameObject> OnDeath;
     
     private float currentHealth;
-
     private bool isDead;
+
+    // Expose current health safely for UI or other systems to read without modifying
+    public float CurrentHealth => currentHealth; 
+    public bool IsDead => isDead;
 
     private void Start()
     {
@@ -27,7 +40,9 @@ public class HealthComponent : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
-        if (isDead || amount <= 0) return;
+        // FAST FAIL: Check death, invalid amounts, OR if the entity is currently invincible.
+        // This O(1) boolean check prevents unnecessary math and event invocations during a dash.
+        if (isDead || amount <= 0 || IsInvincible) return;
 
         currentHealth -= amount;
 
@@ -54,10 +69,12 @@ public class HealthComponent : MonoBehaviour
     private void Die()
     {
         isDead = true;
+        
+        // Broadcast the death event BEFORE destroying the object, 
+        // ensuring listeners (like TurnManager or UI) can safely read its data one last time.
         OnDeath?.Invoke(gameObject);
 
-        // You can handle destroying the object via the UnityEvent in the Inspector,
-        // or just Destroy it here directly.
+        // Architectural Note: Consider replacing Destroy with Object Pooling in the future!
         Destroy(gameObject);
     }
 }

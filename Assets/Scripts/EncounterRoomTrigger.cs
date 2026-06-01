@@ -1,14 +1,12 @@
 ﻿using System.Collections.Generic;
 using TechArtPlayground.Water;
 using UnityEngine;
+using Ability.NewAbilitySystem; // Required to access GameModeManager
 
 [System.Serializable]
 public struct EnemySpawnData
 {
-    [Tooltip("The physical Transform where the enemy will spawn.")]
     public Transform SpawnPoint;
-
-    [Tooltip("The specific enemy prefab to spawn here.")]
     public GameObject EnemyPrefab; 
 }
 
@@ -20,16 +18,17 @@ public class EncounterRoomTrigger : MonoBehaviour
     public bool autoClearOnEnemiesDefeated = true;
 
     [Header("Doors")]
-    [Tooltip("Drag all DoorControllers associated with this room here.")]
     [SerializeField] private List<DoorController> roomDoors = new List<DoorController>();
     
     [Header("Encounter Configuration")]
     [SerializeField] private List<EnemySpawnData> enemySpawns = new List<EnemySpawnData>();
-
     [SerializeField] private OceanWeatherController weatherController;
     
-    // Track active enemies to know when the room is cleared
-    private readonly List<GameObject> activeEnemies = new List<GameObject>();
+    // NEW: Track if the encounter is currently running
+    private bool isEncounterActive = false;
+    
+    // DSA OPTIMIZATION: HashSet provides O(1) insertion and removal
+    private readonly HashSet<GameObject> activeEnemies = new HashSet<GameObject>();
 
     private void Awake()
     {
@@ -38,7 +37,8 @@ public class EncounterRoomTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (isCleared) return;
+        // GUARD CLAUSE: Ignore if we already beat it, OR if we are currently fighting!
+        if (isCleared || isEncounterActive) return;
 
         if (other.CompareTag("Player"))
         {
@@ -50,22 +50,18 @@ public class EncounterRoomTrigger : MonoBehaviour
     {
         Debug.Log($"[EncounterRoom] Player entered {gameObject.name}. Initiating Combat!");
         
-        // var playerCtrl = FindAnyObjectByType<PlayerController>(); 
-        // if (playerCtrl is not null) playerCtrl.StopMovement();
+        // 1. Lock state and disable physics checks for this trigger
+        isEncounterActive = true;
+        GetComponent<Collider>().enabled = false; 
 
-        // 1. Lock the player inside
         foreach (DoorController door in roomDoors)
         {
             if (door != null) door.CloseDoor();
         }
 
-        if (weatherController != null)
-        {
-            weatherController.TriggerTempest();
-        }
+        if (weatherController != null) weatherController.TriggerTempest();
 
-        // 2. Switch mode and spawn enemies
-        GameModeManager.Instance.SwitchToCombat();
+        GameModeManager.Instance.SetGameMode(GameMode.Combat);
         SpawnEnemies();
     }
 
@@ -73,13 +69,8 @@ public class EncounterRoomTrigger : MonoBehaviour
     {
         foreach (EnemySpawnData spawnData in enemySpawns)
         {
-            if (spawnData.SpawnPoint is null || spawnData.EnemyPrefab is null)
-            {
-                Debug.LogWarning($"[EncounterRoom] Invalid spawn data in {gameObject.name}!");
-                continue;
-            }
+            if (spawnData.SpawnPoint == null || spawnData.EnemyPrefab == null) continue;
 
-            // Instantiate the enemy
             GameObject spawnedEnemy = Instantiate(
                 spawnData.EnemyPrefab, 
                 spawnData.SpawnPoint.position, 
@@ -88,17 +79,24 @@ public class EncounterRoomTrigger : MonoBehaviour
 
             activeEnemies.Add(spawnedEnemy);
 
-            // TODO: Subscribe to the enemy's death event here
-            spawnedEnemy.GetComponent<HealthComponent>().OnDeath += HandleEnemyDeath;
+            // OBSERVER PATTERN: Subscribe to the death event safely
+            if (spawnedEnemy.TryGetComponent(out HealthComponent health))
+            {
+                health.OnDeath += HandleEnemyDeath;
+            }
         }
     }
 
-    /// <summary>
-    /// Call this whenever an enemy dies to evaluate if the room is cleared.
-    /// </summary>
     public void HandleEnemyDeath(GameObject deadEnemy)
     {
+        // O(1) Removal
         activeEnemies.Remove(deadEnemy);
+
+        // OBSERVER PATTERN: Always unsubscribe to prevent memory leaks!
+        if (deadEnemy.TryGetComponent(out HealthComponent health))
+        {
+            health.OnDeath -= HandleEnemyDeath;
+        }
 
         if (autoClearOnEnemiesDefeated && activeEnemies.Count == 0)
         {
@@ -111,21 +109,17 @@ public class EncounterRoomTrigger : MonoBehaviour
         isCleared = true;
         Debug.Log($"[EncounterRoom] Room cleared. Returning to Exploration.");
     
-        // 1. Unlock the room
         foreach (DoorController door in roomDoors)
         {
-            if (door is not null) door.OpenDoor();
+            if (door != null) door.OpenDoor();
         }
 
-        if (weatherController != null)
-        {
-            weatherController.TriggerCalm();
-        }
+        if (weatherController != null) weatherController.TriggerCalm();
 
-        // 2. Resume normal gameplay
-        GameModeManager.Instance.SwitchToExploration();
+        // REFACTORED: Switch back to Exploration mode
+        GameModeManager.Instance.SetGameMode(GameMode.Exploration);
     }
-
+    
     // --- QUALITY OF LIFE: Level Designer Tooling ---
     private void OnDrawGizmosSelected()
     {

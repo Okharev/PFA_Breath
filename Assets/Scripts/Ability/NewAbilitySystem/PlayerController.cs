@@ -170,6 +170,9 @@ namespace Ability.NewAbilitySystem
 
         private void HandleInput()
         {
+            // If the UI is open, instantly drop out of this function to prevent bleeding.
+            if (Skills.UI.SkillTreeUIController.IsOpen) return;
+
             if (Keyboard.current == null || Mouse.current == null) return;
             if (!TryGetMousePosition(out Vector3 targetPos)) return;
 
@@ -256,11 +259,14 @@ namespace Ability.NewAbilitySystem
 
         public void HandleAbilityInput(PlayerController player, AbilityData ability, Vector3 targetPosition)
         {
-            if (ability == null) return;
-            AbilityContext context = new(player.gameObject, targetPosition: targetPosition);
-
-            // ARCHITECTURAL FIX: Route directly through the controller to guarantee cooldown enforcement
-            player.Abilities.TryExecuteImmediate(ability, context);
+            // Only allow the Dash ability to be fired during exploration
+            if (ability == player.DefaultDash)
+            {
+                AbilityContext context = new AbilityContext(player.gameObject, player.FirePoint, null, targetPosition);
+                
+                // Use the TryExecuteImmediate method you already built for real-time firing!
+                player.Abilities.TryExecuteImmediate(ability, context);
+            }
         }
 
         public void Exit(PlayerController player)
