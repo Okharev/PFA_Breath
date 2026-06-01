@@ -73,7 +73,6 @@ namespace TechArtPlayground.Cloth
             }
 
             solverIterations = Mathf.Max(1, solverIterations);
-            float subStepDelta = Time.deltaTime / solverIterations;
 
             clothCompute.SetFloat("_Time", Time.time);
             clothCompute.SetFloat("_Stiffness", stiffness);
@@ -82,6 +81,9 @@ namespace TechArtPlayground.Cloth
             clothCompute.SetVector("_Gravity", gravity);
             clothCompute.SetVector("_WindVelocity", windVelocity);
             clothCompute.SetFloat("_WindTurbulence", windTurbulence);
+            float safeDelta = Mathf.Min(Time.deltaTime, 0.0333f); // Caps physics at a worst-case 30 FPS step
+            float subStepDelta = safeDelta / solverIterations;
+
             clothCompute.SetFloat("_DeltaTime", subStepDelta);
 
             int groupsX_Vertices = Mathf.CeilToInt(_vertexCount / 64f);

@@ -5,18 +5,17 @@ namespace Ability.NewAbilitySystem
 {
     public class AmmoComponent : MonoBehaviour
     {
-        [Header("Magazine Settings")]
-        public int maxAmmo = 30;
-    
-        public int CurrentAmmo { get; private set; }
+        [Header("Magazine Settings")] public int maxAmmo = 30;
 
-        // Optional: Event for UI to update instantly when ammo changes
-        public event Action<int, int> OnAmmoChanged; 
+        [field: SerializeField] public int CurrentAmmo { get; private set; }
 
         private void Awake()
         {
             CurrentAmmo = maxAmmo;
         }
+
+        // Event for UI to update instantly when ammo changes
+        public event Action<int, int> OnAmmoChanged;
 
         public bool HasAmmo(int amount)
         {

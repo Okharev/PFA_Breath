@@ -1,0 +1,152 @@
+#pragma kernel UpdateStalks
+#pragma kernel UpdateLeaves
+
+// --- STRICT 16-BYTE ALIGNED STRUCTS ---
+struct KelpType {
+    float4 colorBase;
+    float4 colorTip;
+    float windStrength;
+    float windScale;
+    float gravity;
+    float leafScale;
+    float stalkThickness;
+    float3 padding; // Forces exactly 64 bytes
+};
+
+struct StalkNode {
+    float3 position;
+    float3 prevPosition;
+    float3 normal;
+    float3 tangent;
+    int typeIndex;
+    float3 padding; // Forces exactly 64 bytes
+};
+
+struct LeafObject {
+    int stalkNodeIndex;
+    int leafNodeStartIndex;
+    int typeIndex;
+    float colorGradientLerp;
+    float4 restRotation;
+    float coneAngle;
+    float3 padding; // Forces exactly 48 bytes
+};
+
+struct LeafNode {
+    float3 position;
+    float3 prevPosition;
+    float2 padding; // Forces exactly 32 bytes
+};
+
+// BUFFERS & UNIFORMS
+StructuredBuffer<KelpType> _KelpTypes;
+RWStructuredBuffer<StalkNode> _StalkNodes;
+RWStructuredBuffer<LeafObject> _LeafObjects;
+RWStructuredBuffer<LeafNode> _LeafNodes;
+
+float _DeltaTime;
+float _Time;
+float3 _UpwardGravity;
+float3 _WindDirection;
+float _WindSpeed;
+float _StalkSegmentLength;
+float _LeafSegmentLength;
+
+// NEW: Safety bounds
+uint _TotalStalkNodes;
+uint _TotalLeaves;
+uint _NodesPerStalk;
+
+float hash(float3 p) {
+    p = frac(p * 0.3183099 + .1);
+    p *= 17.0;
+    return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float noise3D(float3 x) {
+    float3 p = floor(x);
+    float3 f = frac(x);
+    f = f * f * (3.0 - 2.0 * f);
+    return lerp(lerp(lerp(hash(p + float3(0,0,0)), hash(p + float3(1,0,0)),f.x),
+                     lerp(hash(p + float3(0,1,0)), hash(p + float3(1,1,0)),f.x),f.y),
+                lerp(lerp(hash(p + float3(0,0,1)), hash(p + float3(1,0,1)),f.x),
+                     lerp(hash(p + float3(0,1,1)), hash(p + float3(1,1,1)),f.x),f.y),f.z);
+}
+
+float3 RotateByQuat(float3 v, float4 q) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+[numthreads(64, 1, 1)]
+void UpdateStalks (uint3 id : SV_DispatchThreadID) {
+    uint idx = id.x;
+    if (idx >= _TotalStalkNodes) return; // FIX: Prevent Compute Crash
+    
+    StalkNode node = _StalkNodes[idx];
+    KelpType typeData = _KelpTypes[node.typeIndex];
+    
+    bool isRoot = (idx % _NodesPerStalk == 0); // FIX: Dynamic nodes per stalk
+    
+    if (!isRoot) {
+        float3 pos = node.position;
+        float3 prev = node.prevPosition;
+        
+        float3 windPos = pos * typeData.windScale + _WindDirection * (_Time * _WindSpeed);
+        float windForce = (noise3D(windPos) * 2.0 - 1.0) * typeData.windStrength;
+        float3 totalForce = (_UpwardGravity * typeData.gravity) + (_WindDirection * windForce);
+        
+        float3 velocity = (pos - prev) * 0.98; 
+        float3 nextPos = pos + velocity + totalForce * (_DeltaTime * _DeltaTime);
+        
+        node.prevPosition = pos;
+        node.position = nextPos;
+        
+        StalkNode parent = _StalkNodes[idx - 1];
+        float3 diff = node.position - parent.position;
+        float dist = max(length(diff), 0.0001);
+        float error = (dist - _StalkSegmentLength) / dist;
+        
+        node.position -= diff * error;
+    }
+    _StalkNodes[idx] = node;
+}
+
+[numthreads(64, 1, 1)]
+void UpdateLeaves (uint3 id : SV_DispatchThreadID) {
+    uint idx = id.x;
+    if (idx >= _TotalLeaves) return; // FIX: Prevent Compute Crash
+    
+    LeafObject leaf = _LeafObjects[idx];
+    StalkNode attachedStalk = _StalkNodes[leaf.stalkNodeIndex];
+    uint n0 = leaf.leafNodeStartIndex;
+    
+    _LeafNodes[n0].position = attachedStalk.position; 
+    
+    for (int i = 1; i < 3; i++) {
+        uint currNodeIdx = n0 + i;
+        uint parentNodeIdx = n0 + i - 1;
+        
+        float3 pos = _LeafNodes[currNodeIdx].position;
+        float3 prev = _LeafNodes[currNodeIdx].prevPosition;
+        
+        float3 velocity = (pos - prev) * 0.95; 
+        float3 nextPos = pos + velocity; 
+        
+        _LeafNodes[currNodeIdx].prevPosition = pos;
+        _LeafNodes[currNodeIdx].position = nextPos;
+        
+        float3 diff = _LeafNodes[currNodeIdx].position - _LeafNodes[parentNodeIdx].position;
+        float dist = max(length(diff), 0.001);
+        float error = (dist - _LeafSegmentLength) / dist;
+        _LeafNodes[currNodeIdx].position -= diff * error;
+        
+        float3 targetDir = RotateByQuat(float3(1,0,0), leaf.restRotation); 
+        float3 currentDir = normalize(diff);
+        
+        float angleDiff = dot(targetDir, currentDir);
+        if (angleDiff < leaf.coneAngle) {
+            float3 restorativeForce = (targetDir - currentDir) * 0.1;
+            _LeafNodes[currNodeIdx].position += restorativeForce;
+        }
+    }
+}

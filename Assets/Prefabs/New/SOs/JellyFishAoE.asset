@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a529fe6cad98467fbee1ccd9e64b92f5, type: 3}
+  m_Name: JellyFishAoE
+  m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
+  abilityName: JellyFishAoE
+  turnCost: 1
+  cooldownTurns: 0
+  channelTurns: 0
+  conditions: []
+  effects:
+  - rid: 996992787387777087
+  references:
+    version: 2
+    RefIds:
+    - rid: 996992787387777087
+      type: {class: AoEDamageEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: AoE Damage Effect
+        radius: 4.5
+        damageAmount: 15
+        hitMask:
+          serializedVersion: 2
+          m_Bits: 2048

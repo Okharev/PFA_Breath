@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a529fe6cad98467fbee1ccd9e64b92f5, type: 3}
+  m_Name: BasicShootPlayer
+  m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
+  abilityName: BasicShootPlayer
+  turnCost: 1
+  cooldownTurns: 0
+  channelTurns: 0
+  conditions:
+  - rid: 996992785912430656
+  effects:
+  - rid: 996992785912430658
+  references:
+    version: 2
+    RefIds:
+    - rid: 996992785912430656
+      type: {class: OxygenCondition, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Oxygen Requirement
+        requiredOxygen: 10
+    - rid: 996992785912430658
+      type: {class: SpawnProjectileEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Projectile Effect
+        projectilePrefab: {fileID: 5772256993663862570, guid: 97aeae69c1145f5418032c791d041657, type: 3}
+        count: 1
+        coneAngle: 10
+        baseAngleOffset: 0
+        forcePlanar: 1
+        burstDuration: 1
+        onShotEffects:
+        - rid: 996992785912430659
+        - rid: 996992785912430660
+    - rid: 996992785912430659
+      type: {class: ConsumeAmmoEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Consume Ammo effect
+        ammoCost: 1
+    - rid: 996992785912430660
+      type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Consume Oxygen
+        oxygenCost: 10

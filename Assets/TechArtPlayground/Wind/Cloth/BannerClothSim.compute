@@ -3,24 +3,44 @@
 #pragma kernel CSAccumulateNormals
 #pragma kernel CSApplyNormals
 
+// Spatial Hashing Kernels
+#pragma kernel CSBuildHash
+#pragma kernel CSClearOffsets
+#pragma kernel CSBuildOffsets
+#pragma kernel CSReorderData      // NEW: Cache Optimization
+#pragma kernel CSSelfCollision
+
+// Radix Sort Kernels
+#pragma kernel LocalHistogram
+#pragma kernel GlobalScan
+#pragma kernel Scatter
+
+// ==========================================
+// --- STRUCTS (Must match C# exactly) ---
+// ==========================================
+
 struct VertexData
 {
     float3 position;
     float3 normal;
     float2 uv;
-}; //
+};
 
 struct PhysicsState
 {
     float3 velocity;
     float inverseMass;
-}; //
+    uint colliderStart;
+    uint colliderCount;
+    float selfCollideMask;
+    float padding;
+};
 
 struct SpringLink
 {
     uint startIndex;
     uint count;
-}; //
+};
 
 struct Spring
 {
@@ -28,31 +48,79 @@ struct Spring
     float restLength;
     float stiffnessMult;
     float padding;
-}; //
+};
 
-// Unified Buffers (1:1 Physics to Render mapping)
+struct ClothCollider
+{
+    int type;
+    float radius;
+    float2 padding1;
+    float3 posA;
+    float padding2;
+    float3 posB;
+    float padding3;
+    float4x4 worldToLocal;
+    float4x4 localToWorld;
+    float3 extents;
+    float padding4;
+};
+
+struct VertexHashPair
+{
+    uint vertexIndex;
+    uint cellHash;
+};
+
+// ==========================================
+// --- BUFFERS ---
+// ==========================================
+
+// Core
 RWStructuredBuffer<VertexData> Vertices;
 RWStructuredBuffer<PhysicsState> PhysicsData;
 StructuredBuffer<SpringLink> SpringLinks;
 StructuredBuffer<Spring> Springs;
 StructuredBuffer<int3> Triangles;
 RWStructuredBuffer<int> NormalAccumBuffer;
+StructuredBuffer<ClothCollider> Colliders;
+
+// Spatial Hash & Radix Sort
+StructuredBuffer<VertexHashPair> InputBuffer;
+RWStructuredBuffer<VertexHashPair> OutputBuffer;
+RWStructuredBuffer<uint2> CellOffsets; 
+RWStructuredBuffer<uint> LocalOffsets;
+RWStructuredBuffer<uint> GlobalHist;
+
+// Cache Optimization
+RWStructuredBuffer<float3> SortedPositions; // NEW: SoA Coalesced Read Buffer
+
+// ==========================================
+// --- UNIFORMS ---
+// ==========================================
 
 uint _VertexCount;
 uint _TriangleCount;
-
 float _DeltaTime;
 float _Time;
 float _Stiffness;
 float _Damping;
 float _Drag;
-
 float3 _Gravity;
 float3 _WindVelocity;
 float _WindTurbulence;
 
-// --- STEP 1: PHYSICS INTEGRATION ---
-// --- STEP 1: PHYSICS INTEGRATION ---
+float _GridCellSize;
+uint _TotalCells;
+float _ClothThickness;
+
+uint numElements;
+uint numBlocks;
+uint bitShift;
+
+// ==========================================
+// --- 1. CORE PHYSICS (HYBRID PBD) ---
+// ==========================================
+
 [numthreads(64, 1, 1)]
 void CSUpdatePhysics(uint3 id : SV_DispatchThreadID)
 {
@@ -60,41 +128,28 @@ void CSUpdatePhysics(uint3 id : SV_DispatchThreadID)
 
     uint idx = id.x;
     float3 pos = Vertices[idx].position;
+    float3 oldPos = pos; 
     PhysicsState p = PhysicsData[idx];
 
-    // Ignore pinned vertices
     if (p.inverseMass <= 0.0f) return;
 
     float3 force = _Gravity;
 
-    // --- UPDATED AERODYNAMIC WIND LOGIC ---
-    // 1. Safely calculate the wind direction
-    // --- BULLETPROOF AERODYNAMIC WIND LOGIC ---
+    // --- WIND ---
     float windMagnitude = length(_WindVelocity);
     float3 windDir = windMagnitude > 0.001f ? (_WindVelocity / windMagnitude) : float3(1, 0, 0);
-
-    // Subtract the spatial projection so the ripple travels WITH the wind
     float spatialProj = dot(pos, windDir);
     float noise = sin((_Time * 5.0f) - (spatialProj * 2.0f) + (pos.y * 2.0f)) * _WindTurbulence;
-
     float3 actualWind = _WindVelocity * (1.0f + noise);
-
-    // Calculate how directly the fabric is facing the wind (absolute value so it doesn't matter if normals are flipped)
-    float3 normal = Vertices[idx].normal;
-    float windExposure = abs(dot(normal, windDir));
-
-    // Force it to move EXACTLY in the actualWind direction. 
-    // It moves stronger if facing the wind (windExposure), and still gets a baseline push (0.2f) if parallel.
+    float windExposure = abs(dot(Vertices[idx].normal, windDir));
     force += actualWind * (0.2f + windExposure * 0.8f) * 0.5f;
-    // --------------------------------------
-    // --------------------------------------
 
-    // Spring Accumulation
+    // --- SPRINGS ---
     SpringLink link = SpringLinks[idx];
     for (uint i = 0; i < link.count; i++)
     {
         Spring spring = Springs[link.startIndex + i];
-        float3 neighborPos = Vertices[spring.targetIndex].position; // Read directly from shared vertex buffer
+        float3 neighborPos = Vertices[spring.targetIndex].position;
         float3 neighborVel = PhysicsData[spring.targetIndex].velocity;
 
         float3 deltaP = pos - neighborPos;
@@ -105,84 +160,339 @@ void CSUpdatePhysics(uint3 id : SV_DispatchThreadID)
             float3 dir = deltaP / dist;
             float springForce = -(_Stiffness * spring.stiffnessMult) * (dist - spring.restLength);
             float dampForce = -_Damping * dot(p.velocity - neighborVel, dir);
-
             force += dir * (springForce + dampForce);
         }
     }
 
-    // Safeties & Integration
+    // --- INTEGRATION ---
     float forceLen = length(force);
+    if (forceLen > 100000.0f) force = (force / forceLen) * 100000.0f; 
     if (!(forceLen >= 0.0f)) force = float3(0, 0, 0);
 
     p.velocity += force * p.inverseMass * _DeltaTime;
-
-    float currentSpeed = length(p.velocity);
-    if (!(currentSpeed >= 0.0f)) p.velocity = float3(0, 0, 0);
-    else if (currentSpeed > 40.0f) p.velocity = (p.velocity / currentSpeed) * 40.0f;
-
     pos += p.velocity * _DeltaTime;
+
+    // --- STATIC COLLISIONS ---
+    for (uint c = 0; c < p.colliderCount; c++)
+    {
+        ClothCollider col = Colliders[p.colliderStart + c];
+        float3 normal = float3(0, 0, 0);
+        float penetration = 0;
+
+        if (col.type == 0) // Sphere
+        {
+            float3 dir = pos - col.posA;
+            float dist = max(length(dir), 0.0001f);
+            if (dist < col.radius)
+            {
+                normal = dir / dist;
+                penetration = col.radius - dist;
+            }
+        }
+        else if (col.type == 1) // Capsule
+        {
+            float3 ab = col.posB - col.posA;
+            float t = saturate(dot(pos - col.posA, ab) / max(dot(ab, ab), 0.0001f));
+            float3 closest = col.posA + t * ab;
+            float3 dir = pos - closest;
+            float dist = max(length(dir), 0.0001f);
+            
+            if (dist < col.radius)
+            {
+                normal = dir / dist;
+                penetration = col.radius - dist;
+            }
+        }
+        else if (col.type == 2) // Box
+        {
+            float3 localPos = mul(col.worldToLocal, float4(pos, 1.0)).xyz;
+            float3 d = abs(localPos) - col.extents;
+            float dist = length(max(d, 0.0)) + min(max(d.x, max(d.y, d.z)), 0.0);
+
+            if (dist < 0.0) 
+            {
+                float3 normalLocal = float3(0,0,0);
+                if (d.x > d.y && d.x > d.z) normalLocal = float3(sign(localPos.x), 0, 0);
+                else if (d.y > d.z) normalLocal = float3(0, sign(localPos.y), 0);
+                else normalLocal = float3(0, 0, sign(localPos.z));
+
+                normal = normalize(mul((float3x3)col.localToWorld, normalLocal));
+                penetration = -dist;
+            }
+        }
+
+        if (penetration > 0.0) pos += normal * penetration; 
+    }
+
+    // --- HARD STRAIN LIMITER ---
+    float3 positionCorrection = float3(0, 0, 0);
+    float correctionCount = 0.0f;
+
+    for (uint j = 0; j < link.count; j++)
+    {
+        Spring spring = Springs[link.startIndex + j];
+        float3 neighborPos = Vertices[spring.targetIndex].position;
+        float3 deltaP = pos - neighborPos;
+        float dist = max(length(deltaP), 0.0001f);
+        
+        float maxDist = spring.restLength * 1.15f; 
+        if (dist > maxDist)
+        {
+            float3 dir = deltaP / dist;
+            positionCorrection += neighborPos + dir * maxDist;
+            correctionCount += 1.0f;
+        }
+    }
+
+    if (correctionCount > 0.0f) pos = lerp(pos, positionCorrection / correctionCount, 0.5f);
+
+    // --- VERLET VELOCITY DERIVATION ---
+    p.velocity = (pos - oldPos) / _DeltaTime;
     p.velocity *= saturate(1.0f - _Drag * _DeltaTime);
 
     Vertices[idx].position = pos;
     PhysicsData[idx] = p;
 }
 
-// --- STEP 2: NORMALS (RESET) ---
+// ==========================================
+// --- 2. NORMALS ---
+// ==========================================
+
 [numthreads(64, 1, 1)]
 void CSResetNormals(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
     NormalAccumBuffer[id.x * 3 + 0] = 0;
     NormalAccumBuffer[id.x * 3 + 1] = 0;
-    NormalAccumBuffer[id.x * 3 + 2] = 0; //
+    NormalAccumBuffer[id.x * 3 + 2] = 0; 
 }
 
-// --- STEP 3: NORMALS (ACCUMULATE) ---
 [numthreads(64, 1, 1)]
 void CSAccumulateNormals(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _TriangleCount) return;
-
     int3 tri = Triangles[id.x];
     float3 v0 = Vertices[tri.x].position;
     float3 v1 = Vertices[tri.y].position;
     float3 v2 = Vertices[tri.z].position;
+    
+    float3 crossProd = cross(v1 - v0, v2 - v0); 
+    int3 fixedNormal = int3(crossProd * 100000.0f);
 
-    float3 crossProd = cross(v1 - v0, v2 - v0); //
-    int3 fixedNormal = int3(crossProd * 100000.0f); //
+    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 0], fixedNormal.x); 
+    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 1], fixedNormal.y);
+    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 2], fixedNormal.z); 
 
-    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 0], fixedNormal.x); //
-    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 1], fixedNormal.y); //
-    InterlockedAdd(NormalAccumBuffer[tri.x * 3 + 2], fixedNormal.z); //
+    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 0], fixedNormal.x);
+    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 1], fixedNormal.y); 
+    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 2], fixedNormal.z);
 
-    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 0], fixedNormal.x); //
-    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 1], fixedNormal.y); //
-    InterlockedAdd(NormalAccumBuffer[tri.y * 3 + 2], fixedNormal.z); //
-
-    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 0], fixedNormal.x); //
-    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 1], fixedNormal.y); //
-    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 2], fixedNormal.z); //
+    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 0], fixedNormal.x); 
+    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 1], fixedNormal.y);
+    InterlockedAdd(NormalAccumBuffer[tri.z * 3 + 2], fixedNormal.z);
 }
 
-// --- STEP 4: NORMALS (APPLY) ---
 [numthreads(64, 1, 1)]
 void CSApplyNormals(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
-
     float3 accumulatedNormal = float3(
         NormalAccumBuffer[id.x * 3 + 0],
         NormalAccumBuffer[id.x * 3 + 1],
         NormalAccumBuffer[id.x * 3 + 2]
-    ) / 100000.0f; //
+    ) / 100000.0f;
 
-    float len = length(accumulatedNormal); //
-    if (len > 0.00001f)
+    float len = length(accumulatedNormal); 
+    if (len > 0.00001f) Vertices[id.x].normal = accumulatedNormal / len;
+    else Vertices[id.x].normal = float3(0, 0, -1);
+}
+
+// ==========================================
+// --- 3. SPATIAL HASHING & SELF COLLISION ---
+// ==========================================
+
+[numthreads(64, 1, 1)]
+void CSBuildHash(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    float3 pos = Vertices[id.x].position;
+    int3 cell3D = floor(pos / _GridCellSize);
+
+    // OPTIMIZED: Addition produces fewer hash collisions than XOR
+    uint hash = (uint)(cell3D.x * 73856093 + cell3D.y * 19349663 + cell3D.z * 83492791) % _TotalCells;
+
+    VertexHashPair pair;
+    pair.vertexIndex = id.x;
+    pair.cellHash = hash;
+    
+    OutputBuffer[id.x] = pair; 
+}
+
+[numthreads(256, 1, 1)]
+void CSClearOffsets(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _TotalCells) return;
+    CellOffsets[id.x] = uint2(0, 0);
+}
+
+[numthreads(64, 1, 1)]
+void CSBuildOffsets(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    uint hash = OutputBuffer[id.x].cellHash;
+    uint prevHash = (id.x == 0) ? 0xFFFFFFFF : OutputBuffer[id.x - 1].cellHash;
+
+    if (hash != prevHash) CellOffsets[hash].x = id.x; 
+    
+    InterlockedAdd(CellOffsets[hash].y, 1);
+}
+
+// --- NEW CACHE OPTIMIZATION KERNEL ---
+[numthreads(64, 1, 1)]
+void CSReorderData(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+    
+    // Reads original positions and packs them contiguously based on their sorted Hash order.
+    // 12 Bytes (float3) packs perfectly into L1 Cache compared to a heavy 32-Byte Vertex Struct.
+    uint originalIdx = OutputBuffer[id.x].vertexIndex;
+    SortedPositions[id.x] = Vertices[originalIdx].position;
+}
+
+[numthreads(64, 1, 1)]
+void CSSelfCollision(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+    
+    // ABORT if painted mask disables self collision (Saves GPU cycles)
+    if (PhysicsData[id.x].selfCollideMask < 0.5f) return;
+
+    float3 pos = Vertices[id.x].position;
+    int3 centerCell = floor(pos / _GridCellSize);
+    
+    float3 positionCorrection = float3(0, 0, 0);
+    float weight = 0.0f;
+
+    for (int i = -1; i <= 1; i++)
+    for (int j = -1; j <= 1; j++)
+    for (int k = -1; k <= 1; k++)
     {
-        Vertices[id.x].normal = accumulatedNormal / len; //
+        int3 cell3D = centerCell + int3(i, j, k);
+        uint hash = (uint)(cell3D.x * 73856093 + cell3D.y * 19349663 + cell3D.z * 83492791) % _TotalCells;
+        
+        uint2 cellData = CellOffsets[hash];
+        
+        for (uint idx = 0; idx < cellData.y; idx++)
+        {
+            uint sortedIdx = cellData.x + idx;
+            uint neighborIdx = OutputBuffer[sortedIdx].vertexIndex;
+            if (neighborIdx == id.x) continue; 
+            
+            // CACHE OPTIMIZATION: We are now reading from a contiguous float3 array.
+            // This is a coalesced read because neighboring threads are checking neighboring grid cells.
+            float3 neighborPos = SortedPositions[sortedIdx];
+            float3 deltaPos = pos - neighborPos;
+            float dist = length(deltaPos);
+
+            if (dist < _ClothThickness && dist > 0.0001f)
+            {
+                float push = (_ClothThickness - dist) * 0.5f; 
+                positionCorrection += (deltaPos / dist) * push;
+                weight += 1.0f;
+            }
+        }
     }
-    else
+
+    if (weight > 0.0f)
     {
-        Vertices[id.x].normal = float3(0, 0, -1); //
+        Vertices[id.x].position += positionCorrection / weight;
+        PhysicsData[id.x].velocity = (Vertices[id.x].position - (pos - PhysicsData[id.x].velocity * _DeltaTime)) / _DeltaTime;
+    }
+}
+
+// ==========================================
+// --- 4. RADIX SORT ---
+// ==========================================
+
+groupshared uint counts[4096];
+groupshared uint digitTotals[16];
+groupshared uint digitPrefix[16];
+
+[numthreads(256, 1, 1)]
+void LocalHistogram(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex, uint3 groupID : SV_GroupID)
+{
+    uint digit = 0;
+    if (id.x < numElements) digit = (InputBuffer[id.x].cellHash >> bitShift) & 0xF;
+
+    [unroll]
+    for (uint i = 0; i < 16; i++) counts[(i * 256) + groupIndex] = (digit == i && id.x < numElements) ? 1 : 0;
+    GroupMemoryBarrierWithGroupSync();
+
+    [unroll]
+    for (uint offset = 1; offset < 256; offset *= 2)
+    {
+        uint temp[16];
+        [unroll]
+        for (uint j = 0; j < 16; j++) temp[j] = (groupIndex >= offset) ? counts[(j * 256) + groupIndex - offset] : 0;
+        GroupMemoryBarrierWithGroupSync();
+
+        [unroll]
+        for (uint k = 0; k < 16; k++) counts[(k * 256) + groupIndex] += temp[k];
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    if (id.x < numElements) LocalOffsets[id.x] = counts[(digit * 256) + groupIndex] - 1;
+
+    if (groupIndex == 255)
+    {
+        [unroll]
+        for (uint m = 0; m < 16; m++) GlobalHist[m * numBlocks + groupID.x] = counts[(m * 256) + 255];
+    }
+}
+
+[numthreads(16, 1, 1)]
+void GlobalScan(uint3 id : SV_DispatchThreadID)
+{
+    uint digit = id.x;
+    uint sum = 0;
+
+    for (uint b = 0; b < numBlocks; b++)
+    {
+        uint idx = digit * numBlocks + b;
+        uint count = GlobalHist[idx];
+        GlobalHist[idx] = sum; 
+        sum += count;
+    }
+    digitTotals[digit] = sum;
+    GroupMemoryBarrierWithGroupSync();
+
+    if (digit == 0)
+    {
+        uint total = 0;
+        for (uint i = 0; i < 16; i++)
+        {
+            digitPrefix[i] = total;
+            total += digitTotals[i];
+        }
+    }
+    GroupMemoryBarrierWithGroupSync();
+
+    uint baseOffset = digitPrefix[digit];
+    for (uint b2 = 0; b2 < numBlocks; b2++) GlobalHist[digit * numBlocks + b2] += baseOffset;
+}
+
+[numthreads(256, 1, 1)]
+void Scatter(uint3 id : SV_DispatchThreadID, uint3 groupID : SV_GroupID)
+{
+    if (id.x < numElements)
+    {
+        uint digit = (InputBuffer[id.x].cellHash >> bitShift) & 0xF;
+        uint localOffset = LocalOffsets[id.x];
+        uint globalOffset = GlobalHist[digit * numBlocks + groupID.x];
+
+        uint finalIndex = globalOffset + localOffset;
+        OutputBuffer[finalIndex] = InputBuffer[id.x];
     }
 }
