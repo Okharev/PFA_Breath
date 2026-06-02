@@ -27,15 +27,21 @@ MonoBehaviour:
       data:
         name: Projectile Effect
         projectilePrefab: {fileID: 5772256993663862570, guid: 97aeae69c1145f5418032c791d041657, type: 3}
-        count: 3
-        coneAngle: 20
+        count: 4
+        coneAngle: 13.5
         baseAngleOffset: 0
         forcePlanar: 1
         burstDuration: 1
         onShotEffects:
         - rid: 996992785912430664
+        - rid: 3664169831335723071
     - rid: 996992785912430664
       type: {class: ConsumeAmmoEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
       data:
         name: Consume Ammo effect
         ammoCost: 1
+    - rid: 3664169831335723071
+      type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Consume Oxygen
+        oxygenCost: 5
