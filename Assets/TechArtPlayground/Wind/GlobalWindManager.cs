@@ -6,6 +6,9 @@ namespace TechArtPlayground.Wind
     [ExecuteAlways] // Permet de voir le vent global même dans l'éditeur sans lancer le mode Play !
     public class GlobalWindManager : MonoBehaviour
     {
+        private static readonly int GlobalWindVelocity = Shader.PropertyToID("_GlobalWindVelocity");
+        private static readonly int GlobalWindTurbulence = Shader.PropertyToID("_GlobalWindTurbulence");
+
         [Header("Global Wind Settings")] [Tooltip("Direction and speed of the wind.")]
         public Vector3 windVelocity = new(5f, 0f, 2f);
 
@@ -17,8 +20,8 @@ namespace TechArtPlayground.Wind
         private void Update()
         {
             // Met à jour les variables globales pour tous les Shaders classiques (comme les Bannières)
-            Shader.SetGlobalVector("_GlobalWindVelocity", windVelocity);
-            Shader.SetGlobalFloat("_GlobalWindTurbulence", windTurbulence);
+            Shader.SetGlobalVector(GlobalWindVelocity, windVelocity);
+            Shader.SetGlobalFloat(GlobalWindTurbulence, windTurbulence);
         }
 
         private void OnEnable()

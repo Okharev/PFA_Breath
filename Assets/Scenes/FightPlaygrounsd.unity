@@ -442,8 +442,8 @@ GameObject:
   m_Component:
   - component: {fileID: 353785541}
   - component: {fileID: 353785542}
-  - component: {fileID: 353785543}
   - component: {fileID: 353785544}
+  - component: {fileID: 353785545}
   m_Layer: 0
   m_Name: HUDUI
   m_TagString: Untagged
@@ -489,20 +489,6 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
---- !u!114 &353785543
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 353785540}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0f1248f07c314825999ddd046af079c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UI.ActionBarController
-  player: {fileID: 2003264407}
-  slotTemplate: {fileID: 9197481963319205126, guid: 5c09df5e599330547a7c3ff1c33fb887, type: 3}
 --- !u!114 &353785544
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -518,6 +504,20 @@ MonoBehaviour:
   _uiDocument: {fileID: 353785542}
   _playerController: {fileID: 2003264407}
   _ammoComponent: {fileID: 2003264419}
+--- !u!114 &353785545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 353785540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d50acf76a9164b2da294fd2d890b358a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UI.PlayerStatsUIController
+  playerHealth: {fileID: 957588397}
+  playerOxygen: {fileID: 957588396}
 --- !u!1 &714175112
 GameObject:
   m_ObjectHideFlags: 0
@@ -910,6 +910,28 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
+--- !u!114 &957588396 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 372391916227279492, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
+  m_PrefabInstance: {fileID: 957588395}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 976c457f37129bb4b8b8a5d8c80b147d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.OxygenComponent
+--- !u!114 &957588397 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4945781926517479658, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
+  m_PrefabInstance: {fileID: 957588395}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4e5a71c79d640db9a50b3ad5d299931, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealthComponent
 --- !u!1 &1247505234
 GameObject:
   m_ObjectHideFlags: 0

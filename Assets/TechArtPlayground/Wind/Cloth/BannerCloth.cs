@@ -6,6 +6,14 @@ namespace TechArtPlayground.Cloth
 {
     public class ComputeClothSim : MonoBehaviour
     {
+        private static readonly int Time1 = Shader.PropertyToID("_Time");
+        private static readonly int Stiffness = Shader.PropertyToID("_Stiffness");
+        private static readonly int Damping = Shader.PropertyToID("_Damping");
+        private static readonly int Drag = Shader.PropertyToID("_Drag");
+        private static readonly int Gravity = Shader.PropertyToID("_Gravity");
+        private static readonly int WindVelocity = Shader.PropertyToID("_WindVelocity");
+        private static readonly int WindTurbulence = Shader.PropertyToID("_WindTurbulence");
+        private static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
         [Header("Resources")] public ComputeShader clothCompute;
 
         public Material clothMaterial;
@@ -74,17 +82,17 @@ namespace TechArtPlayground.Cloth
 
             solverIterations = Mathf.Max(1, solverIterations);
 
-            clothCompute.SetFloat("_Time", Time.time);
-            clothCompute.SetFloat("_Stiffness", stiffness);
-            clothCompute.SetFloat("_Damping", damping);
-            clothCompute.SetFloat("_Drag", drag);
-            clothCompute.SetVector("_Gravity", gravity);
-            clothCompute.SetVector("_WindVelocity", windVelocity);
-            clothCompute.SetFloat("_WindTurbulence", windTurbulence);
+            clothCompute.SetFloat(Time1, Time.time);
+            clothCompute.SetFloat(Stiffness, stiffness);
+            clothCompute.SetFloat(Damping, damping);
+            clothCompute.SetFloat(Drag, drag);
+            clothCompute.SetVector(Gravity, gravity);
+            clothCompute.SetVector(WindVelocity, windVelocity);
+            clothCompute.SetFloat(WindTurbulence, windTurbulence);
             float safeDelta = Mathf.Min(Time.deltaTime, 0.0333f); // Caps physics at a worst-case 30 FPS step
             float subStepDelta = safeDelta / solverIterations;
 
-            clothCompute.SetFloat("_DeltaTime", subStepDelta);
+            clothCompute.SetFloat(DeltaTime, subStepDelta);
 
             int groupsX_Vertices = Mathf.CeilToInt(_vertexCount / 64f);
             int groupsX_Triangles = Mathf.CeilToInt(_triangleCount / 64f);
@@ -380,6 +388,10 @@ namespace TechArtPlayground.Cloth
         {
             public Vector3 velocity;
             public float inverseMass;
+            public uint colliderStart;
+            public uint colliderCount;
+            public float selfCollideMask; 
+            public float padding;
         }
 
         [StructLayout(LayoutKind.Sequential)]
