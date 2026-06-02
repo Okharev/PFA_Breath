@@ -60,8 +60,7 @@ namespace Ability.NewAbilitySystem
 
         public event Action OnAbilityExecuted;
 
-        // --- NEW: CENTRALIZED COOLDOWN CHECKERS ---
-// --- RELATIVE COOLDOWN TRACKER ---
+        // --- RELATIVE COOLDOWN TRACKER ---
         private readonly Dictionary<AbilityData, int> activeCooldowns = new();
 
         public bool IsOnCooldown(AbilityData ability)
@@ -81,7 +80,7 @@ namespace Ability.NewAbilitySystem
         public int GetRemainingCooldown(AbilityData ability)
         {
             // Just return the raw integer. No more math against CurrentTurn!
-            return activeCooldowns.TryGetValue(ability, out int cd) ? cd : 0;
+            return activeCooldowns.GetValueOrDefault(ability, 0);
         }
 
         // --- THE MAGIC DECREMENTER ---

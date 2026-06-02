@@ -55,7 +55,6 @@ public class ActionVisualizer : MonoBehaviour
         lr.enabled = false;
         lr.useWorldSpace = true;
         
-        // --- THE FLAT LINE FIX ---
         // Forces the line to face its local Z axis instead of the camera
         lr.alignment = LineAlignment.TransformZ; 
         
