@@ -127,7 +127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da6b013fded648d586bc4d2670874df8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AmmoComponent
-  maxAmmo: 30
+  maxAmmo: 16
   <CurrentAmmo>k__BackingField: 0
 --- !u!114 &4945781926517479658
 MonoBehaviour:
@@ -141,7 +141,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4e5a71c79d640db9a50b3ad5d299931, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthComponent
-  maxHealth: 10000
+  maxHealth: 177
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -157,7 +157,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 976c457f37129bb4b8b8a5d8c80b147d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.OxygenComponent
-  maxOxygen: 10000
+  maxOxygen: 278
 --- !u!114 &8521005116304305538
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -184,9 +184,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.PlayerController
   BasicMoveAbility: {fileID: 11400000, guid: faa2715a6b936ac489c3e07edebbb408, type: 2}
   DefaultPrimary: {fileID: 11400000, guid: d96c1dc0bf7677043b8ff64abe011b18, type: 2}
-  DefaultSecondary: {fileID: 0}
+  DefaultSecondary: {fileID: 11400000, guid: 9ba9829911d79454db7093aa65595c8e, type: 2}
   DefaultDash: {fileID: 11400000, guid: c0e1ae72c706b2747a50d5996c3be9d0, type: 2}
-  DefaultSpecial: {fileID: 0}
+  DefaultSpecial: {fileID: 11400000, guid: d11bba529bd19194899aec5d5daf52e1, type: 2}
   GroundLayer:
     serializedVersion: 2
     m_Bits: 64
