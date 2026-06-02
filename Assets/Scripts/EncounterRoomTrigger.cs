@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using TechArtPlayground.Water;
 using UnityEngine;
 using Ability.NewAbilitySystem; // Required to access GameModeManager
@@ -104,6 +105,9 @@ public class EncounterRoomTrigger : MonoBehaviour
         }
     }
     
+    public event Action OnRoomCleared;
+
+    
     public void ResolveEncounter()
     {
         isCleared = true;
@@ -116,8 +120,12 @@ public class EncounterRoomTrigger : MonoBehaviour
 
         if (weatherController != null) weatherController.TriggerCalm();
 
-        // REFACTORED: Switch back to Exploration mode
+        // Switch back to Exploration mode
         GameModeManager.Instance.SetGameMode(GameMode.Exploration);
+
+        // OBSERVER PATTERN: Notify all subscribed listeners that the room is cleared
+        // The ?. operator ensures we only invoke if there is at least one active subscriber.
+        OnRoomCleared?.Invoke(); 
     }
     
     // --- QUALITY OF LIFE: Level Designer Tooling ---
