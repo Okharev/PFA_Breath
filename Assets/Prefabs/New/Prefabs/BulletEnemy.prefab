@@ -169,7 +169,7 @@ MonoBehaviour:
       type: {class: DamageEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
       data:
         name: Damage Effect
-        damageAmount: 10
+        damageAmount: 31
 --- !u!114 &5897258575975069242
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -182,7 +182,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8de17e32f9bbb204b876decf213cbfad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.Projectile
-  speed: 25
+  speed: 10
   maxLifeTime: 5
   hitMask:
     serializedVersion: 2

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
   abilityName: NevroPrimary
   turnCost: 1
-  cooldownTurns: 2
+  cooldownTurns: 0
   channelTurns: 0
   conditions: []
   effects:
@@ -28,7 +28,7 @@ MonoBehaviour:
         name: Projectile Effect
         projectilePrefab: {fileID: 5772256993663862570, guid: 97aeae69c1145f5418032c791d041657, type: 3}
         count: 3
-        coneAngle: 30
+        coneAngle: 20
         baseAngleOffset: 0
         forcePlanar: 1
         burstDuration: 1
