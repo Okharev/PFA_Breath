@@ -7,11 +7,16 @@ namespace Ability.NewAbilitySystem
     {
         [Header("Oxygen Settings")] public float maxOxygen = 100f;
 
-        public float CurrentOxygen { get; private set; }
+        [SerializeField] public float CurrentOxygen;
 
         private void Awake()
         {
             CurrentOxygen = maxOxygen;
+        }
+
+        private void Start()
+        {
+            OnOxygenChanged?.Invoke(CurrentOxygen, maxOxygen);
         }
 
         // UI Event Hook

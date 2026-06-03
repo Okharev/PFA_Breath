@@ -6,6 +6,14 @@ namespace TechArtPlayground.Wind.Chimes
     [DefaultExecutionOrder(-50)]
     public class ComputeChimeSim : MonoBehaviour
     {
+        private static readonly int ChimeCount = Shader.PropertyToID("_ChimeCount");
+        private static readonly int WindVelocity = Shader.PropertyToID("_WindVelocity");
+        private static readonly int WindTurbulence = Shader.PropertyToID("_WindTurbulence");
+        private static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
+        private static readonly int Time1 = Shader.PropertyToID("_Time");
+        private static readonly int Gravity = Shader.PropertyToID("_Gravity");
+        private static readonly int Damping = Shader.PropertyToID("_Damping");
+        private static readonly int MaxAngle = Shader.PropertyToID("_MaxAngle");
         [Header("References")] public ComputeShader chimeCompute;
 
         public Material instancedMaterial;
@@ -36,29 +44,27 @@ namespace TechArtPlayground.Wind.Chimes
         {
             if (_chimeCount == 0 || _chimeDataBuffer == null || _argsBuffer == null) return;
 
-            chimeCompute.SetFloat("_DeltaTime", Time.deltaTime);
-            chimeCompute.SetFloat("_Time", Time.time);
-            chimeCompute.SetFloat("_Gravity", gravity);
-            chimeCompute.SetFloat("_Damping", damping);
-
-            // Convert degrees to radians for HLSL
-            chimeCompute.SetFloat("_MaxAngle", maxSwingAngle * Mathf.Deg2Rad);
+            chimeCompute.SetFloat(DeltaTime, Time.unscaledDeltaTime);
+            chimeCompute.SetFloat(Time1, Time.unscaledTime);
+            chimeCompute.SetFloat(Gravity, gravity);
+            chimeCompute.SetFloat(Damping, damping);
+            chimeCompute.SetFloat(MaxAngle, maxSwingAngle * Mathf.Deg2Rad);
 
             // =========================================================
-            // UPDATED: Read from the new WeatherManager
+            // UPDATED: Read from the new GlobalWeatherManager
             // =========================================================
-            Vector3 currentWindVel = WeatherManager.Instance != null
-                ? WeatherManager.Instance.CurrentWindVelocity
-                : Vector3.zero;
-                
-            float currentWindTurb = WeatherManager.Instance != null 
-                ? WeatherManager.Instance.windGusts 
-                : 0f;
+            Vector3 currentWindVel = Vector3.zero;
+            float currentWindTurb = 0f;
+
+            if (GlobalWeatherManager.Instance != null)
+            {
+                currentWindVel = GlobalWeatherManager.Instance.CurrentWindVelocity;
+                currentWindTurb = GlobalWeatherManager.Instance.CurrentWindTurbulence;
+            }
 
             // Send the global wind to the Chimes Compute Shader
-            chimeCompute.SetVector("_WindVelocity", currentWindVel);
-            chimeCompute.SetFloat("_WindTurbulence", currentWindTurb);
-            // =========================================================
+            chimeCompute.SetVector(WindVelocity, currentWindVel);
+            chimeCompute.SetFloat(WindTurbulence, currentWindTurb);
 
             int threadGroupsX = Mathf.CeilToInt(_chimeCount / 64f);
             chimeCompute.Dispatch(_kernelUpdate, threadGroupsX, 1, 1);
@@ -117,7 +123,7 @@ namespace TechArtPlayground.Wind.Chimes
 
             _kernelUpdate = chimeCompute.FindKernel("CSUpdateChimes");
             chimeCompute.SetBuffer(_kernelUpdate, "Chimes", _chimeDataBuffer);
-            chimeCompute.SetInt("_ChimeCount", _chimeCount);
+            chimeCompute.SetInt(ChimeCount, _chimeCount);
 
             instancedMaterial.SetBuffer("_ChimeDataBuffer", _chimeDataBuffer);
         }

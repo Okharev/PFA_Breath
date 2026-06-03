@@ -117,6 +117,9 @@ Shader "Custom/Ocean_FFT_Volumetric"
             SAMPLER(sampler_DerivTex);
 
             CBUFFER_START(UnityPerMaterial)
+                float _GlobalUnscaledTime;
+            
+            
                 float _FFTScale;
                 float _Choppiness;
 
@@ -212,8 +215,8 @@ half4 frag(Varyings input) : SV_Target
     // STYLIZED FIX: Multi-Frequency Micro-Normals
     // We sample the detail normal twice at different scales/speeds to break up 
     // visible tiling and create chaotic, organic surface interference.
-    float2 panningUV1 = (input.positionWS.xz * _DetailScale) + (_Time.y * _DetailSpeed);
-    float2 panningUV2 = (input.positionWS.xz * _DetailScale * 0.5) + (_Time.y * float2(-_DetailSpeed.y, _DetailSpeed.x) * 0.7);
+    float2 panningUV1 = (input.positionWS.xz * _DetailScale) + (_GlobalUnscaledTime * _DetailSpeed);
+    float2 panningUV2 = (input.positionWS.xz * _DetailScale * 0.5) + (_GlobalUnscaledTime * float2(-_DetailSpeed.y, _DetailSpeed.x) * 0.7);
 
     float3 n1 = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, panningUV1), _NormalStrength * detailFade);
     float3 n2 = UnpackNormalScale(SAMPLE_TEXTURE2D(_DetailNormal, sampler_DetailNormal, panningUV2), _NormalStrength * detailFade * 0.8);
@@ -264,8 +267,8 @@ half4 frag(Varyings input) : SV_Target
     float3 backgroundWS = ComputeWorldSpacePosition(refractUV, depthForWS, UNITY_MATRIX_I_VP);
 
     float2 causticsUV = backgroundWS.xz * _CausticsScale + normalWS.xz * 0.2;
-    float2 pan1 = causticsUV + _Time.y * _CausticsSpeed * float2(1.0, 0.5);
-    float2 pan2 = (causticsUV * 0.8) - _Time.y * _CausticsSpeed * float2(0.5, 1.0);
+    float2 pan1 = causticsUV + _GlobalUnscaledTime * _CausticsSpeed * float2(1.0, 0.5);
+    float2 pan2 = (causticsUV * 0.8) - _GlobalUnscaledTime * _CausticsSpeed * float2(0.5, 1.0);
     
     // STYLIZED FIX: Chromatic Aberration
     // We offset the UVs slightly for Red and Blue channels to create a glassy, prismatic effect
@@ -290,8 +293,8 @@ half4 frag(Varyings input) : SV_Target
 // =========================================================================
     // 4. FOAM SYSTEM (Stylized & Solidified)
     // =========================================================================
-    float2 foamUV1 = (input.positionWS.xz * _FoamNoiseScale) + (_Time.y * _FoamNoiseSpeed);
-    float2 foamUV2 = (input.positionWS.xz * _FoamNoiseScale * 0.75) + (_Time.y * _FoamNoiseSpeed * 0.5);
+    float2 foamUV1 = (input.positionWS.xz * _FoamNoiseScale) + (_GlobalUnscaledTime * _FoamNoiseSpeed);
+    float2 foamUV2 = (input.positionWS.xz * _FoamNoiseScale * 0.75) + (_GlobalUnscaledTime * _FoamNoiseSpeed * 0.5);
 
     float noise1 = SAMPLE_TEXTURE2D(_FoamNoise, sampler_FoamNoise, foamUV1).r;
     float noise2 = SAMPLE_TEXTURE2D(_FoamNoise, sampler_FoamNoise, foamUV2).r;

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: JellyFishAoE
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
   abilityName: JellyFishAoE
-  turnCost: 1
+  turnCost: 2
   cooldownTurns: 0
   channelTurns: 0
   conditions: []
@@ -27,7 +27,7 @@ MonoBehaviour:
       data:
         name: AoE Damage Effect
         radius: 4.5
-        damageAmount: 15
+        damageAmount: 28
         hitMask:
           serializedVersion: 2
           m_Bits: 2048

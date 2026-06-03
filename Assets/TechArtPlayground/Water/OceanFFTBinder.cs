@@ -103,22 +103,20 @@ namespace TechArtPlayground.Water
 
         void Update()
         {
-// =========================================================
-            // NEW: PULL DIRECTION FROM WEATHER MANAGER
             // =========================================================
-            if (WeatherManager.Instance != null)
+            // UPDATED: Safely pull direction from Weather Manager
+            // =========================================================
+            if (GlobalWeatherManager.Instance != null)
             {
-                // Grab the raw direction
-                Vector3 globalDir = WeatherManager.Instance.windDirection;
-                
+                // Fix: Access the exposed CurrentWindVelocity property
+                Vector3 globalDir = GlobalWeatherManager.Instance.CurrentWindVelocity;
+        
                 // Project the 3D direction onto the 2D ocean plane (X, Z)
                 Vector2 globalWind2D = new Vector2(globalDir.x, globalDir.z);
 
-                // Prevent normalization errors
+                // Prevent normalization errors (Divide by Zero)
                 if (globalWind2D.sqrMagnitude > 0.001f)
                 {
-                    // Overwrite local wind direction. 
-                    // Intensity/choppiness/amplitude remain controlled by the OceanWeatherController.
                     windDirection = globalWind2D.normalized; 
                 }
             }
@@ -132,18 +130,10 @@ namespace TechArtPlayground.Water
             oceanMaterial.SetFloat(Choppiness, choppiness);
             oceanMaterial.SetVector(WindDirection1, windDirection.normalized * (windSpeed * 0.05f));
 
-            // =========================================================
-            // NEW: DYNAMIC SSS NORMALIZATION
-            // =========================================================
-            // Calculate an approximate max wave height based on your simulation parameters.
-            // In Phillips spectrum, height is proportional to windSpeed^2 / Gravity.
-            // We multiply by your custom phillipsAmplitude to scale it to your specific visual settings.
+            // Dynamic SSS Normalization
             float gravity = 9.81f;
-            float estimatedMaxHeight = ((windSpeed * windSpeed) / gravity) * phillipsAmplitude * 250.0f; // Scale factor based on your visual tuning
-    
-            // Ensure it never hits 0 to avoid division by zero in the shader
+            float estimatedMaxHeight = ((windSpeed * windSpeed) / gravity) * phillipsAmplitude * 250.0f; 
             estimatedMaxHeight = Mathf.Max(0.5f, estimatedMaxHeight);
-    
             oceanMaterial.SetFloat(MaxWaveHeight, estimatedMaxHeight);
         }
 
@@ -158,7 +148,7 @@ namespace TechArtPlayground.Water
             float normalizedPhillips = phillipsAmplitude * Mathf.Pow(resolution, 4);
 
             // --- 0. Set Global Simulation Parameters ---
-            fftCompute.SetFloat(Time1, Time.time * timeScale);
+            fftCompute.SetFloat(Time1, Time.unscaledTime * timeScale);
             fftCompute.SetInt(Resolution1, resolution);
             fftCompute.SetInt(NumStages, numStages); 
             fftCompute.SetFloat(Size, oceanSize);

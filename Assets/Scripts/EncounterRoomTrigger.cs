@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
-using TechArtPlayground.Water;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Ability.NewAbilitySystem; // Required to access GameModeManager
+using TechArtPlayground.Wind;
 
 [System.Serializable]
 public struct EnemySpawnData
@@ -22,9 +23,11 @@ public class EncounterRoomTrigger : MonoBehaviour
     
     [Header("Encounter Configuration")]
     [SerializeField] private List<EnemySpawnData> enemySpawns = new List<EnemySpawnData>();
-    [SerializeField] private OceanWeatherController weatherController;
     
-    // NEW: Track if the encounter is currently running
+    // REMOVED: [SerializeField] private OceanWeatherController weatherController;
+    // We no longer need a localized reference. We rely on the global state.
+
+    // Track if the encounter is currently running
     private bool isEncounterActive = false;
     
     // DSA OPTIMIZATION: HashSet provides O(1) insertion and removal
@@ -59,7 +62,14 @@ public class EncounterRoomTrigger : MonoBehaviour
             if (door != null) door.CloseDoor();
         }
 
-        if (weatherController != null) weatherController.TriggerTempest();
+        // =========================================================
+        // UPDATED: Broadcast to the Global Weather Manager
+        // =========================================================
+        if (GlobalWeatherManager.Instance != null)
+        {
+            // Transition to Tempest over 5 seconds
+            GlobalWeatherManager.Instance.TransitionToTempest(5f);
+        }
 
         GameModeManager.Instance.SetGameMode(GameMode.Combat);
         SpawnEnemies();
@@ -104,6 +114,8 @@ public class EncounterRoomTrigger : MonoBehaviour
         }
     }
     
+    public event Action OnRoomCleared;
+
     public void ResolveEncounter()
     {
         isCleared = true;
@@ -114,10 +126,20 @@ public class EncounterRoomTrigger : MonoBehaviour
             if (door != null) door.OpenDoor();
         }
 
-        if (weatherController != null) weatherController.TriggerCalm();
+        // =========================================================
+        // UPDATED: Broadcast to the Global Weather Manager
+        // =========================================================
+        if (GlobalWeatherManager.Instance != null)
+        {
+            // Transition back to Calm over 10 seconds
+            GlobalWeatherManager.Instance.TransitionToCalm(10f);
+        }
 
-        // REFACTORED: Switch back to Exploration mode
+        // Switch back to Exploration mode
         GameModeManager.Instance.SetGameMode(GameMode.Exploration);
+
+        // OBSERVER PATTERN: Notify all subscribed listeners that the room is cleared
+        OnRoomCleared?.Invoke(); 
     }
     
     // --- QUALITY OF LIFE: Level Designer Tooling ---
@@ -129,15 +151,12 @@ public class EncounterRoomTrigger : MonoBehaviour
         {
             if (spawn.SpawnPoint is not null)
             {
-                // Draw a red sphere at the spawn location
                 Gizmos.color = new Color(1f, 0f, 0f, 0.5f);
                 Gizmos.DrawSphere(spawn.SpawnPoint.position, 0.5f);
 
-                // Draw a line connecting the room trigger to the spawn point
                 Gizmos.color = Color.yellow;
                 Gizmos.DrawLine(transform.position, spawn.SpawnPoint.position);
 
-                // Draw a directional ray to show which way the enemy will face
                 Gizmos.color = Color.blue;
                 Gizmos.DrawRay(spawn.SpawnPoint.position, spawn.SpawnPoint.forward * 1.5f);
             }

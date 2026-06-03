@@ -108,6 +108,7 @@
             };
             #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
             StructuredBuffer<Boid> boidsBuffer;
+            StructuredBuffer<uint> VisibleBoidIndices;
             #endif
 
             // --- PROCEDURAL RECONSTRUCTION ---
@@ -157,7 +158,13 @@
                 float animSpeed = _BaseSpeed;
 
                 #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-                uint bufferIndex = input.instanceID;
+                // 1. SV_InstanceID is now just an index (0 to VisibleCount)
+                uint visibleArrayIndex = input.instanceID;
+
+                // 2. Fetch the true Boid ID from our compute-generated culling list
+                uint bufferIndex = VisibleBoidIndices[visibleArrayIndex];
+
+                // 3. Fetch the boid data as normal
                 Boid b = boidsBuffer[bufferIndex];
 
                 uint persistentID = b.packedData >> 16;
@@ -330,6 +337,7 @@
             };
             #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
             StructuredBuffer<Boid> boidsBuffer;
+            StructuredBuffer<uint> VisibleBoidIndices;
             #endif
 
             inline float CustHash(uint s)
@@ -365,7 +373,13 @@
                 float3 worldPos = input.positionOS.xyz;
 
                 #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-                uint bufferIndex = input.instanceID;
+                // 1. SV_InstanceID is now just an index (0 to VisibleCount)
+                uint visibleArrayIndex = input.instanceID;
+
+                // 2. Fetch the true Boid ID from our compute-generated culling list
+                uint bufferIndex = VisibleBoidIndices[visibleArrayIndex];
+
+                // 3. Fetch the boid data as normal
                 Boid b = boidsBuffer[bufferIndex];
 
                 // ZERO-COST LOOKUP

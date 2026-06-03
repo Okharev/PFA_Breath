@@ -41,6 +41,9 @@ namespace TechArtPlayground
         private static readonly int SwirlStrength = Shader.PropertyToID("swirlStrength");
         private static readonly int TargetWeight = Shader.PropertyToID("targetWeight");
         private static readonly int TargetPosition = Shader.PropertyToID("targetPosition");
+        private static readonly int CameraFrustumPlanes = Shader.PropertyToID("cameraFrustumPlanes");
+        private static readonly int CullingRadius = Shader.PropertyToID("cullingRadius");
+        private static readonly int VisibleBoidIndices = Shader.PropertyToID("VisibleBoidIndices");
 
         [Header("Core References")]
         public ComputeShader boidsCompute;
@@ -51,7 +54,13 @@ namespace TechArtPlayground
 
 
         private BoidSwarm[] swarms;
+        private Camera _cam;
 
+
+        private void Awake()
+        {
+            _cam = Camera.main;
+        }
 
         private void Start()
         {
@@ -74,11 +83,22 @@ namespace TechArtPlayground
             int kernelPopulate = boidsCompute.FindKernel("PopulateHashes");
             int kernelBuildOffsets = boidsCompute.FindKernel("BuildGridOffsets");
             int kernelReorder = boidsCompute.FindKernel("ReorderBoids");
+            int kernelCull = boidsCompute.FindKernel("FrustumCull");
+
 
             // 1. Clear the command buffer for this frame
             asyncComputeCmd.Clear();
 
             asyncComputeCmd.SetExecutionFlags(CommandBufferExecutionFlags.AsyncCompute);
+
+            Plane[] planes = GeometryUtility.CalculateFrustumPlanes(_cam);
+            Vector4[] frustumPlanes = new Vector4[6];
+            for (int i = 0; i < 6; i++) {
+                frustumPlanes[i] = new Vector4(planes[i].normal.x, planes[i].normal.y, planes[i].normal.z, planes[i].distance);
+            }
+
+            boidsCompute.SetVectorArray(CameraFrustumPlanes, frustumPlanes);
+            boidsCompute.SetFloat(CullingRadius, 1.5f); // Set to max boid size + wag allowance
 
             foreach (BoidSwarm swarm in swarms)
             {
@@ -130,7 +150,7 @@ namespace TechArtPlayground
                 asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, PredatorsBuffer, swarm.predatorsBuffer);
                 asyncComputeCmd.SetComputeIntParam(boidsCompute, NumPredators, swarm.CurrentPredatorCount);
                 asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, ObstaclesBuffer, swarm.obstaclesBuffer);
-                asyncComputeCmd.SetComputeIntParam(boidsCompute, NumObstacles, 0);
+                asyncComputeCmd.SetComputeIntParam(boidsCompute, NumObstacles, swarm.CurrentObstacleCount);
                 
                 asyncComputeCmd.SetComputeIntParam(boidsCompute, NumBoids, swarm.boidCount);
                 asyncComputeCmd.SetComputeBufferParam(boidsCompute, activeKernel, ReadBoidsBuffer, swarm.readBuffer);
@@ -161,6 +181,19 @@ namespace TechArtPlayground
 
                 asyncComputeCmd.DispatchCompute(boidsCompute, activeKernel, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
                 
+                asyncComputeCmd.SetBufferCounterValue(swarm.visibleBoidsBuffer, 0);
+
+                asyncComputeCmd.SetComputeIntParam(boidsCompute, NumBoids, swarm.boidCount);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelCull, ReadBoidsBuffer, swarm.readBuffer);
+                asyncComputeCmd.SetComputeBufferParam(boidsCompute, kernelCull, "visibleBoidIndices", swarm.visibleBoidsBuffer);
+
+                asyncComputeCmd.DispatchCompute(boidsCompute, kernelCull, Mathf.CeilToInt(swarm.boidCount / 64f), 1, 1);
+
+                // 3. COPY THE VISIBLE COUNT TO THE ARGS BUFFER
+                // The draw command looks for [indexCount, instanceCount, startIndex, baseVertex, startInstance].
+                // The instanceCount is the 2nd uint, so the byte offset is 4 (1 * sizeof(uint)).
+                asyncComputeCmd.CopyCounterValue(swarm.visibleBoidsBuffer, swarm.argsBuffer, 4);
+                
                 // Note: The Ping-pong occurs immediately on the CPU side. Since CommandBuffer records the buffer reference
                 // at the time 'SetComputeBufferParam' is called, this is completely safe and guarantees the graphics queue
                 // renders the currently calculated frame while the compute queue calculates the next one.
@@ -183,6 +216,11 @@ namespace TechArtPlayground
                     matProps = propertyBlock,
                     shadowCastingMode = ShadowCastingMode.On
                 };
+                
+                propertyBlock.Clear();
+                propertyBlock.SetBuffer(BoidsBuffer, swarm.readBuffer);
+// Bind the indirection map
+                propertyBlock.SetBuffer(VisibleBoidIndices, swarm.visibleBoidsBuffer);
 
                 Graphics.RenderMeshIndirect(renderParams, swarm.swarmMesh, swarm.argsBuffer);
             }

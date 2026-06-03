@@ -43,7 +43,10 @@ namespace TechArtPlayground
         [Header("Flocking Behaviors")] [Range(0.1f, 20f)]
         public float speed = 4.0f;
         
-        
+        public int maxObstacles = 32;
+        private readonly List<BoidObstacle> activeObstacles = new();
+        private ObstacleData[] obstacleDataCache;
+        public int CurrentObstacleCount => Mathf.Min(activeObstacles.Count, maxObstacles);
 
         [Header("Optimization")]
         [Tooltip(
@@ -91,6 +94,8 @@ namespace TechArtPlayground
 
 // 2. Add the buffer variable
         public GraphicsBuffer obstaclesBuffer { get; private set; }
+        
+        public GraphicsBuffer visibleBoidsBuffer { get; private set; }
 
 
         // Buffers
@@ -130,6 +135,16 @@ namespace TechArtPlayground
             globalHistBuffer?.Release();
             localOffsetsBuffer?.Release();
         }
+        
+        public void RegisterObstacle(BoidObstacle o)
+        {
+            if (!activeObstacles.Contains(o)) activeObstacles.Add(o);
+        }
+
+        public void UnregisterObstacle(BoidObstacle o)
+        {
+            activeObstacles.Remove(o);
+        }
 
 // --- REGISTRATION METHODS ---
         public void RegisterAttractor(BoidAttractor a)
@@ -151,9 +166,43 @@ namespace TechArtPlayground
         {
             activePredators.Remove(p);
         }
+        
+        public void ReleaseAllBuffers()
+        {
+            readBuffer?.Release();
+            writeBuffer?.Release();
+            sortBuffer?.Release();
+            gridOffsets?.Release();
+            splineBuffer?.Release();
+            argsBuffer?.Release();
+            attractorsBuffer?.Release();
+            predatorsBuffer?.Release();
+            obstaclesBuffer?.Release();
+            tempSortBuffer?.Release();
+            globalHistBuffer?.Release();
+            localOffsetsBuffer?.Release();
+            visibleBoidsBuffer?.Release();
+    
+            // Clear references to prevent null ref checks on stale buffers
+            readBuffer = null;
+            writeBuffer = null;
+            sortBuffer = null;
+            gridOffsets = null;
+            splineBuffer = null;
+            argsBuffer = null;
+            attractorsBuffer = null;
+            predatorsBuffer = null;
+            obstaclesBuffer = null;
+            tempSortBuffer = null;
+            globalHistBuffer = null;
+            localOffsetsBuffer = null;
+            visibleBoidsBuffer = null;
+        }
 
         public void Initialize()
         {
+            ReleaseAllBuffers();
+            
             defaultWaypoint = transform.position;
 
             // Assign a random frame offset to prevent multiple swarms from sorting on the exact same frame!
@@ -173,30 +222,27 @@ namespace TechArtPlayground
             attractorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, safeAttCount, 32);
             predatorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, safePredCount, 16);
 
-// 2. Core Data Buffers
+            // 2. Core Data Buffers
             readBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 48);
             writeBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, boidCount, 48);
             sortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 8);
 
-// NEW RADIX BUFFERS
+            // NEW RADIX BUFFERS
             int numBlocks = Mathf.Max(1, Mathf.CeilToInt(paddedCount / 256f));
             tempSortBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 8); 
             globalHistBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 16 * numBlocks, 4); // 16 bins * blocks
             localOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 4);
+            
+            visibleBoidsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured | GraphicsBuffer.Target.Append, boidCount, 4);
 
 
-// 256 bins * numBlocks (uints)
-            globalHistBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 256 * numBlocks, 4); 
-
-// Cache for localized scatter offsets (uints)
-            localOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, paddedCount, 4);
-// NEW
             int totalGridCells = gridSize * gridSize * gridSize;
             gridOffsets = new GraphicsBuffer(GraphicsBuffer.Target.Structured, totalGridCells, 4);
 
-            obstaclesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 1, 16);
-            obstaclesBuffer.SetData(new[] { new ObstacleData() });
-
+            obstacleDataCache = new ObstacleData[maxObstacles];
+            int safeObsCount = Mathf.Max(1, maxObstacles);
+            obstaclesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, safeObsCount, 48);
+            
             // 3. Indirect Arguments Buffer
             argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 5, sizeof(uint));
             uint[] args = new uint[5];
@@ -289,6 +335,26 @@ namespace TechArtPlayground
 
                 predatorsBuffer.SetData(predatorDataCache, 0, 0, pCount);
             }
+            
+            int oCount = CurrentObstacleCount;
+            if (oCount > 0)
+            {
+                for (int i = 0; i < oCount; i++)
+                {
+                    BoidObstacle obs = activeObstacles[i];
+                    Quaternion q = obs.transform.rotation;
+                    
+                    obstacleDataCache[i] = new ObstacleData
+                    {
+                        position = obs.transform.position,
+                        type = (int)obs.shapeType,
+                        extents = obs.extents,
+                        padding = 0f,
+                        rotation = new Vector4(q.x, q.y, q.z, q.w)
+                    };
+                }
+                obstaclesBuffer.SetData(obstacleDataCache, 0, 0, oCount);
+            }
         }
 
         private void PopulateInitialData()
@@ -331,7 +397,10 @@ namespace TechArtPlayground
         public struct ObstacleData
         {
             public Vector3 position;
-            public float radiusSq;
+            public int type;
+            public Vector3 extents;
+            public float padding;
+            public Vector4 rotation; // Quaternion mapped to float4
         }
 
         [StructLayout(LayoutKind.Sequential)]
