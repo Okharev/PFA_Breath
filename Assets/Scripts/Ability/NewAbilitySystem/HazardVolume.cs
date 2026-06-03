@@ -12,7 +12,7 @@ namespace Ability.NewAbilitySystem
         [Tooltip("Should this trigger automatically on physics collision? (Turn OFF for projectiles, ON for traps)")]
         public bool triggerOnPhysicsEnter;
 
-        [SerializeReference] [SubclassSelector]
+        [SerializeReference]
         public List<IAbilityEffect> effects = new();
 
         // Used strictly for static environmental traps (mines, acid pools)
