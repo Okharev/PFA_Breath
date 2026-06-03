@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace Ability.NewAbilitySystem
+namespace Skills.Editor
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class SubclassSelectorAttribute : PropertyAttribute

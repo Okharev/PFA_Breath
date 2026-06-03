@@ -80,7 +80,7 @@ namespace Ability.NewAbilitySystem
         [Header("Piercing Settings")] public int maxPierces;
 
         // The active flight strategy
-        [SerializeReference] [SubclassSelector]
+        [SerializeReference]
         private IProjectileBehavior currentBehavior;
 
         private float lifeTimer;

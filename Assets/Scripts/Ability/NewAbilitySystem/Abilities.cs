@@ -238,7 +238,6 @@ namespace Ability.NewAbilitySystem
         [Header("On-Shot Effects")]
         [Tooltip("Triggers exactly when EACH salvo fires (e.g., Consume Ammo, Play Muzzle Flash).")]
         [SerializeReference]
-        [SubclassSelector]
         public List<IAbilityEffect> onShotEffects = new();
 
         [Header("Hierarchy Search (By Name)")] public string leftBarrelName = "LeftBarrel";
@@ -427,7 +426,6 @@ namespace Ability.NewAbilitySystem
         [Header("On-Shot Effects")]
         [Tooltip("Triggers exactly when EACH bullet fires (e.g., Consume Ammo, Play Muzzle Flash).")]
         [SerializeReference]
-        [SubclassSelector]
         public List<IAbilityEffect> onShotEffects = new();
 
         public void Execute(AbilityContext context)
