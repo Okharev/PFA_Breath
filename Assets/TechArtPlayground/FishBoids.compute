@@ -4,6 +4,8 @@
 #pragma kernel BuildGridOffsets
 #pragma kernel CSMain
 #pragma kernel CSMain_SplineFlow
+#pragma kernel FrustumCull
+
 
 struct Boid 
 { 
@@ -28,8 +30,63 @@ struct Attractor
 struct Obstacle
 {
     float3 position;
-    float radiusSq;
+    int type;       // 0 = Sphere, 1 = Box
+    float3 extents; // Sphere: x = radius. Box: xyz = half extents
+    float padding;
+    float4 rot;     // Quaternion for box rotation
 };
+
+// --- SDF HELPER FUNCTIONS ---
+float3 RotateVectorByQuaternion(float3 v, float4 q)
+{
+    float3 t = 2.0f * cross(q.xyz, v);
+    return v + q.w * t + cross(q.xyz, t);
+}
+
+float3 RotateVectorByInverseQuaternion(float3 v, float4 q)
+{
+    float4 invQ = float4(-q.x, -q.y, -q.z, q.w);
+    return RotateVectorByQuaternion(v, invQ);
+}
+
+// Calculates distance and push direction from an obstacle
+void EvaluateObstacleSDF(Obstacle obs, float3 boidPos, out float dist, out float3 pushDir)
+{
+    float3 localPos = boidPos - obs.position;
+    
+    if (obs.type == 0) // Sphere
+    {
+        dist = length(localPos) - obs.extents.x;
+        pushDir = dist < 0.001f ? float3(0,1,0) : normalize(localPos);
+    }
+    else // Box (OBB)
+    {
+        // Transform position to box local space
+        float3 localRotPos = RotateVectorByInverseQuaternion(localPos, obs.rot);
+        float3 d = abs(localRotPos) - obs.extents;
+        
+        // Exact distance to the box edge
+        dist = length(max(d, 0.0f)) + min(max(d.x, max(d.y, d.z)), 0.0f);
+        
+        // Calculate gradient (normal) to push boids away
+        float3 stepSigns = sign(localRotPos);
+        if (dist > 0.0f) 
+        {
+            float3 closestPoint = clamp(localRotPos, -obs.extents, obs.extents);
+            pushDir = normalize(localRotPos - closestPoint);
+        } 
+        else 
+        {
+            // If trapped inside, push to the nearest face
+            if (d.x > d.y && d.x > d.z) pushDir = float3(stepSigns.x, 0, 0);
+            else if (d.y > d.z) pushDir = float3(0, stepSigns.y, 0);
+            else pushDir = float3(0, 0, stepSigns.z);
+        }
+        
+        // Rotate the push direction back to world space
+        pushDir = RotateVectorByQuaternion(pushDir, obs.rot);
+    }
+}
 
 struct Predator
 {
@@ -291,16 +348,22 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     if (length(fleeDirection) > 0.01f) fleeDirection = normalize(fleeDirection) * 5.0f;
 
     // Obstacle Avoidance
+    // --- OBSTACLE AVOIDANCE (SDF Implementation) ---
     float3 obstacleAvoidance = float3(0, 0, 0);
+    float avoidanceDistance = 3.0f; // Distance from surface to start weaving
+    
     for (int j = 0; j < numObstacles; j++)
     {
-        Obstacle obs = obstaclesBuffer[j];
-        float3 obsDiff = boid.position - obs.position;
-        float obsDistSq = dot(obsDiff, obsDiff);
-        if (obsDistSq < obs.radiusSq && obsDistSq > 0.001f)
+        float dist;
+        float3 pushDir;
+        EvaluateObstacleSDF(obstaclesBuffer[j], boid.position, dist, pushDir);
+        
+        if (dist < avoidanceDistance)
         {
-            obstacleAvoidance += obsDiff * (10.0f / obsDistSq);
-            targetSpeed = max(targetSpeed, speed * 1.5f);
+            // Weight increases exponentially as the boid gets closer to the surface
+            float weight = 1.0f / max(dist + 0.1f, 0.001f); 
+            obstacleAvoidance += pushDir * (15.0f * weight);
+            targetSpeed = max(targetSpeed, speed * 2.0f); // Panic burst
         }
     }
 
@@ -487,7 +550,6 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
         Predator pred = predatorsBuffer[p];
         float3 predDiff = boid.position - pred.position;
         float predDistSq = dot(predDiff, predDiff);
-
         if (predDistSq < pred.radiusSq && predDistSq > 0.001f)
         {
             fleeDirection += predDiff * (predatorFleeWeight / predDistSq);
@@ -496,24 +558,31 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
         }
     }
 
-    // Obstacles
+    // Obstacles (SDF Implementation)
+    float3 obstacleAvoidance = float3(0, 0, 0);
+    float avoidanceDistance = 0.001f; // Distance from surface to start weaving
+    
     for (int j = 0; j < numObstacles; j++)
     {
-        float3 obsDiff = boid.position - obstaclesBuffer[j].position;
-        float obsDistSq = dot(obsDiff, obsDiff);
-        if (obsDistSq < obstaclesBuffer[j].radiusSq && obsDistSq > 0.001f)
+        float dist;
+        float3 pushDir;
+        EvaluateObstacleSDF(obstaclesBuffer[j], boid.position, dist, pushDir);
+        
+        if (dist < avoidanceDistance)
         {
-            fleeDirection += obsDiff * (15.0f / obsDistSq);
-            targetSpeed = max(targetSpeed, speed * 2.0f);
-            isFleeing = true;
+            float weight = 1.0f / max(dist + 0.1f, 0.001f); 
+            obstacleAvoidance += pushDir * (15.0f * weight);
+            targetSpeed = max(targetSpeed, speed * 2.0f); // Panic burst
+            isFleeing = true; // Loosens the spline containment so they can actually dodge
         }
     }
 
     // --- 7. FINAL STEERING CALCULATION ---
     float survivalMultiplier = isFleeing ? 0.1f : 1.0f;
     float3 containment = (targetPathPos - boid.position) * 1.5f * survivalMultiplier;
-
-    float3 targetDir = (pt.tangent * targetWeight * survivalMultiplier) + containment + (separation * separationWeight) + fleeDirection;
+    
+    // Notice we are adding + obstacleAvoidance at the end here!
+    float3 targetDir = (pt.tangent * targetWeight * survivalMultiplier) + containment + (separation * separationWeight) + fleeDirection + obstacleAvoidance;
     float3 normalizedTargetDir = FastSafeNormalize(targetDir, boidDirection);
 
     // --- 8. INTEGRATION ---
@@ -534,4 +603,39 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
     if (boid.splineT > 1.0f) boid.splineT -= 1.0f;
 
     WriteBoidsBuffer[id.x] = boid;
+}
+
+// --- CULLING VARIABLES ---
+float4 cameraFrustumPlanes[6];
+float cullingRadius;
+
+// Append buffer to store indices of boids that pass the frustum check
+AppendStructuredBuffer<uint> visibleBoidIndices;
+
+[numthreads(64, 1, 1)]
+void FrustumCull(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)numBoids) return;
+
+    // Use ReadBoidsBuffer (the sorted, current frame buffer)
+    float3 pos = ReadBoidsBuffer[id.x].position;
+    bool isVisible = true;
+
+    // Standard plane distance check
+    [unroll]
+    for (int i = 0; i < 6; i++)
+    {
+        // If distance to plane is less than negative radius, it's completely outside
+        if (dot(cameraFrustumPlanes[i].xyz, pos) + cameraFrustumPlanes[i].w < -cullingRadius)
+        {
+            isVisible = false;
+            break;
+        }
+    }
+
+    if (isVisible)
+    {
+        // Atomically add this boid's index to the visible list
+        visibleBoidIndices.Append(id.x);
+    }
 }

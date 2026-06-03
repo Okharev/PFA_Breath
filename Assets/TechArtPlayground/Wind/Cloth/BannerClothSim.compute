@@ -3,6 +3,11 @@
 #pragma kernel CSIntegrate
 #pragma kernel CSComputeNormals
 
+#pragma kernel CSHashParticles
+#pragma kernel CSClearCellOffsets
+#pragma kernel CSBuildCellOffsets
+#pragma kernel CSSolveSelfCollisions
+
 // ==========================================
 // --- STRUCTURE OF ARRAYS (SoA) BUFFERS ---
 // ==========================================
@@ -21,7 +26,6 @@ struct ClothCollider
 };
 StructuredBuffer<ClothCollider> Colliders;
 
-// Ensure your PhysicsState matches your C# struct again!
 struct PhysicsState
 {
     float3 velocity;
@@ -31,7 +35,6 @@ struct PhysicsState
     float selfCollideMask;
     float padding;
 };
-
 RWStructuredBuffer<PhysicsState> PhysicsData;
 
 struct SpringLink { uint startIndex; uint count; };
@@ -41,7 +44,7 @@ struct Spring
 {
     uint targetIndex;
     float restLength;
-    float compliance; // Inverse stiffness (alpha)
+    float compliance;
     float padding;
 };
 StructuredBuffer<Spring> Springs;
@@ -59,6 +62,136 @@ float3 _WindVelocity;
 float _WindTurbulence;
 float _Drag;
 
+// --- NEW UNIFORMS & BUFFERS ---
+uint _HashGridSize;
+float _CellSize;
+float _SelfCollisionThickness;
+
+struct ParticleHashPair 
+{ 
+    uint particleIndex; 
+    uint cellHash; 
+};
+
+RWStructuredBuffer<ParticleHashPair> HashPairs;
+StructuredBuffer<ParticleHashPair> SortedHashPairs;
+RWStructuredBuffer<uint> CellOffsets;
+
+
+// --- SPATIAL HASHING MATH ---
+uint Hash(int3 cell) 
+{
+    return ((uint)(cell.x * 73856093) ^ (uint)(cell.y * 19349663) ^ (uint)(cell.z * 83492791)) % _HashGridSize;
+}
+
+[numthreads(64, 1, 1)]
+void CSHashParticles(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    // OPTIMIZATION: Build the grid based on current Positions, not Predictions
+    float3 pos = Positions[id.x]; 
+    int3 cell = floor(pos / _CellSize);
+    
+    ParticleHashPair pair;
+    pair.particleIndex = id.x;
+    pair.cellHash = Hash(cell);
+    
+    HashPairs[id.x] = pair;
+}
+[numthreads(64, 1, 1)]
+void CSClearCellOffsets(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _HashGridSize) return;
+    CellOffsets[id.x] = 0xFFFFFFFF;
+}
+
+[numthreads(64, 1, 1)]
+void CSBuildCellOffsets(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    uint hash = SortedHashPairs[id.x].cellHash;
+    uint prevHash = 0xFFFFFFFF;
+    
+    // SAFELY check previous array index without out-of-bounds read
+    if (id.x > 0) 
+    {
+        prevHash = SortedHashPairs[id.x - 1].cellHash;
+    }
+    
+    if (hash != prevHash)
+    {
+        CellOffsets[hash] = id.x;
+    }
+}
+
+[numthreads(64, 1, 1)]
+void CSSolveSelfCollisions(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    PhysicsState p = PhysicsData[id.x];
+    if (p.inverseMass <= 0.0f || p.selfCollideMask <= 0.0f) return;
+
+    // The current predicted position we want to push away from neighbors
+    float3 pos = PredictedPositions[id.x];
+    
+    // OPTIMIZATION: Find our query center using the exact same Positions 
+    // array we built the static grid with at the start of the frame!
+    int3 cell = floor(Positions[id.x] / _CellSize);
+    
+    float3 posDelta = float3(0, 0, 0);
+    float weightCount = 0.0f;
+    float thickSq = _SelfCollisionThickness * _SelfCollisionThickness;
+
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+                
+                uint hash = Hash(cell + int3(x, y, z));
+                uint startIndex = CellOffsets[hash];
+                
+                if (startIndex == 0xFFFFFFFF) continue;
+
+                for (uint i = startIndex; i < _VertexCount; i++) 
+                {
+                    ParticleHashPair neighborPair = SortedHashPairs[i];
+                    if (neighborPair.cellHash != hash) break; 
+                    if (neighborPair.particleIndex == id.x) continue;
+                    
+                    // Penetrations are resolved using the active PredictedPositions
+                    float3 neighborPos = PredictedPositions[neighborPair.particleIndex];
+                    float3 dir = pos - neighborPos;
+                    float distSq = dot(dir, dir);
+
+                    if (distSq > 0.000001f && distSq < thickSq) 
+                    {
+                        float dist = sqrt(distSq);
+                        float3 normal = dir / dist;
+                        float penetration = _SelfCollisionThickness - dist;
+
+                        float neighborInvMass = PhysicsData[neighborPair.particleIndex].inverseMass;
+                        float invMassSum = p.inverseMass + neighborInvMass;
+                        
+                        if (invMassSum > 0.0f) 
+                        {
+                            float w = p.inverseMass / invMassSum;
+                            posDelta += normal * penetration * w;
+                            weightCount += 1.0f;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (weightCount > 0.0f)
+    {
+        PredictedPositions[id.x] += posDelta / weightCount;
+    }
+}
+
 // ==========================================
 // --- 1. PREDICT POSITIONS & WIND ---
 // ==========================================
@@ -66,7 +199,7 @@ float _Drag;
 void CSPredict(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
-    
+
     PhysicsState p = PhysicsData[id.x];
     if (p.inverseMass <= 0.0f) 
     {
@@ -76,28 +209,21 @@ void CSPredict(uint3 id : SV_DispatchThreadID)
 
     float3 force = _Gravity;
 
-    // --- AERODYNAMIC WIND ---
     float windMag = length(_WindVelocity);
     if (windMag > 0.001f)
     {
-        // Add high-frequency spatial noise to simulate gusts/ripples
         float noise = sin(_Time * 8.0f + Positions[id.x].x * 4.0f + Positions[id.x].y * 4.0f) * _WindTurbulence;
         float3 actualWind = _WindVelocity * (1.0f + noise);
         
-        // Calculate how much the cloth surface faces the wind
         float3 normal = Normals[id.x];
         float3 windDir = actualWind / length(actualWind);
         
-        // Aerodynamic drag: wind pushes harder against flat surfaces
         float windExposure = abs(dot(windDir, normal));
-        
-        // Base aerodynamic multiplier (cranked up to fight gravity)
-        float aeroMultiplier = 8.0f; 
-        
+        float aeroMultiplier = 1.0f;
+
         force += actualWind * (0.1f + windExposure * 0.9f) * aeroMultiplier;
     }
 
-    // Explicit Euler Integration
     p.velocity += force * p.inverseMass * _DeltaTime;
     PredictedPositions[id.x] = Positions[id.x] + p.velocity * _DeltaTime;
     
@@ -111,7 +237,7 @@ void CSPredict(uint3 id : SV_DispatchThreadID)
 void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
-    
+
     PhysicsState p = PhysicsData[id.x];
     if (p.inverseMass <= 0.0f) return;
 
@@ -120,33 +246,30 @@ void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
 
     float3 posDelta = float3(0,0,0);
     float weightCount = 0.0f;
-
-    // Successive Over-Relaxation (SOR) parameter to fix Jacobi stretchiness.
-    // 1.0 is standard (stretchy). 1.5 to 1.8 forces rapid stiffness.
-    float omega = 1.6f; 
+    float omega = 1.0f;
 
     for (uint i = 0; i < link.count; i++)
     {
         Spring spring = Springs[link.startIndex + i];
+
         float3 neighborPos = PredictedPositions[spring.targetIndex];
         float neighborInvMass = PhysicsData[spring.targetIndex].inverseMass;
 
         float3 deltaP = currentPos - neighborPos;
         float dist = length(deltaP);
-        
+
         if (dist > 0.0001f)
         {
             float3 dir = deltaP / dist;
             float constraint = dist - spring.restLength;
             
             float invMassSum = p.inverseMass + neighborInvMass;
+
             if (invMassSum > 0.0f)
             {
-                // XPBD Formulation
                 float alphaTilde = spring.compliance / (_DeltaTime * _DeltaTime);
                 float lambda = -constraint / (invMassSum + alphaTilde);
                 
-                // Apply Over-Relaxation
                 posDelta += p.inverseMass * lambda * dir * omega;
                 weightCount += 1.0f;
             }
@@ -165,7 +288,7 @@ void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
         float3 normal = float3(0, 0, 0);
         float penetration = 0;
         
-        float3 pos = PredictedPositions[id.x]; 
+        float3 pos = PredictedPositions[id.x];
 
         if (col.type == 0) // Sphere
         {
@@ -178,8 +301,10 @@ void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
             float3 ab = col.posB - col.posA;
             float t = saturate(dot(pos - col.posA, ab) / max(dot(ab, ab), 0.0001f));
             float3 closest = col.posA + t * ab;
+
             float3 dir = pos - closest;
             float dist = max(length(dir), 0.0001f);
+
             if (dist < col.radius) { normal = dir / dist; penetration = col.radius - dist; }
         }
         else if (col.type == 2) // Box
@@ -187,9 +312,11 @@ void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
             float3 localPos = mul(col.worldToLocal, float4(pos, 1.0)).xyz;
             float3 d = abs(localPos) - col.extents;
             float dist = length(max(d, 0.0)) + min(max(d.x, max(d.y, d.z)), 0.0);
+
             if (dist < 0.0) 
             {
                 float3 normalLocal = float3(0,0,0);
+
                 if (d.x > d.y && d.x > d.z) normalLocal = float3(sign(localPos.x), 0, 0);
                 else if (d.y > d.z) normalLocal = float3(0, sign(localPos.y), 0);
                 else normalLocal = float3(0, 0, sign(localPos.z));
@@ -199,13 +326,12 @@ void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
             }
         }
 
-        // If inside a collider, instantly push the predicted position out
         if (penetration > 0.0)
         {
             PredictedPositions[id.x] += normal * penetration;
         }
     }
-} // End of CSSolveConstraints
+}
 
 // ==========================================
 // --- 3. INTEGRATE (UPDATE VELOCITY) ---
@@ -214,16 +340,12 @@ void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
 void CSIntegrate(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
-    
+
     PhysicsState p = PhysicsData[id.x];
     if (p.inverseMass > 0.0f)
     {
-        // 1. Derive the raw new velocity via Verlet
         float3 newVelocity = (PredictedPositions[id.x] - Positions[id.x]) / _DeltaTime;
         
-        // 2. Structural Friction (Velocity Smoothing)
-        // Averages velocity with neighbors to simulate thread friction.
-        // Reading from PhysicsData here creates a lock-free asynchronous blur.
         int4 adj = Adjacency[id.x];
         float3 avgVel = newVelocity;
         float count = 1.0f;
@@ -235,22 +357,18 @@ void CSIntegrate(uint3 id : SV_DispatchThreadID)
 
         avgVel /= count;
         
-        // Blend factor: 0.1 is standard friction. Higher values (0.2) = heavy canvas.
         newVelocity = lerp(newVelocity, avgVel, 0.1f);
-        
-        // 3. Quadratic Air Drag (Aggressively kills fast pendulum swings)
+
         float speed = length(newVelocity);
         newVelocity -= newVelocity * min(speed * _Drag * _DeltaTime, 1.0f);
-        
-        // 4. Global Linear Drag (Standard air resistance)
         newVelocity *= exp(-_Drag * _DeltaTime);
-        
-        // Apply final state
+
         p.velocity = newVelocity;
         Positions[id.x] = PredictedPositions[id.x];
         PhysicsData[id.x] = p;
     }
 }
+
 // ==========================================
 // --- 4. ATOMIC-FREE NORMALS ---
 // ==========================================
@@ -263,12 +381,22 @@ void CSComputeNormals(uint3 id : SV_DispatchThreadID)
     float3 p = Positions[id.x];
     float3 n = float3(0,0,0);
 
-    // Reconstruct tangent/bitangent locally using neighbors.
-    // If a neighbor is missing (edge of grid), fallback to mirroring the opposite side.
-    float3 left =  (adj.x != -1) ? Positions[adj.x] - p : p - Positions[adj.y];
-    float3 right = (adj.y != -1) ? Positions[adj.y] - p : p - left;
-    float3 up =    (adj.z != -1) ? Positions[adj.z] - p : p - Positions[adj.w];
-    float3 down =  (adj.w != -1) ? Positions[adj.w] - p : p - up;
+    // FIXED: Safely fetch vectors without risking an out-of-bounds array read (-1)
+    float3 left = float3(0,0,0);
+    if (adj.x != -1) left = Positions[adj.x] - p;
+    else if (adj.y != -1) left = p - Positions[adj.y]; // Fallback to mirror
+
+    float3 right = float3(0,0,0);
+    if (adj.y != -1) right = Positions[adj.y] - p;
+    else if (adj.x != -1) right = p - Positions[adj.x];
+
+    float3 up = float3(0,0,0);
+    if (adj.z != -1) up = Positions[adj.z] - p;
+    else if (adj.w != -1) up = p - Positions[adj.w];
+
+    float3 down = float3(0,0,0);
+    if (adj.w != -1) down = Positions[adj.w] - p;
+    else if (adj.z != -1) down = p - Positions[adj.z];
 
     n += cross(right, up);
     n += cross(left, down);

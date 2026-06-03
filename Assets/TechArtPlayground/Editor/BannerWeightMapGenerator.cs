@@ -1,8 +1,8 @@
-﻿using UnityEngine;
+﻿using System.IO;
 using UnityEditor;
-using System.IO;
+using UnityEngine;
 
-namespace TechArtPlayground.EditorTools
+namespace TechArtPlayground.Editor
 {
     public class BannerWeightMapGenerator : EditorWindow
     {
@@ -15,23 +15,21 @@ namespace TechArtPlayground.EditorTools
         [Header("Physics Settings")]
         private int _pinnedTopRows = 1; // How many rows of vertices are frozen
         
-        [Tooltip("1.0 = Rigid, 0.0 = Flexible")]
-        private float _topStiffness = 1.0f;
-        [Tooltip("1.0 = Rigid, 0.0 = Flexible")]
+        // FIX 4: Updated Defaults and Tooltips to match exactly what happens under the hood
+        [Tooltip("1.0 = Rigid (0 stretch), 0.0 = Flexible (Max Stretch)")]
+        private float _topStiffness = 0.8f;
+        [Tooltip("1.0 = Rigid (0 stretch), 0.0 = Flexible (Max Stretch)")]
         private float _bottomStiffness = 0.0f;
 
         [Tooltip("Percentage of the cloth (from the top down) that skips self-collision. 0.5 disables collision for the top half.")]
         private float _selfCollideCutoff = 0.5f;
         
-        // Creates the menu item and opens the window
         [MenuItem("Tools/TechArt/Banner Weight Map Generator")]
         public static void ShowWindow()
         {
-            // Opens a custom dockable Unity window
             GetWindow<BannerWeightMapGenerator>("Weight Map Gen");
         }
 
-        // Draws the UI inside the window
         private void OnGUI()
         {
             GUILayout.Label("Texture Resolution", EditorStyles.boldLabel);
@@ -45,10 +43,9 @@ namespace TechArtPlayground.EditorTools
             
             EditorGUILayout.Space();
             GUILayout.Label("Stiffness (Green Channel)", EditorStyles.miniLabel);
-            _topStiffness = EditorGUILayout.Slider("Top Stiffness", _topStiffness, 0f, 1f);
-            _bottomStiffness = EditorGUILayout.Slider("Bottom Stiffness", _bottomStiffness, 0f, 1f);
+            _topStiffness = EditorGUILayout.Slider(new GUIContent("Top Stiffness", "1.0 = Rigid (Cardboard), 0.0 = Flexible (Silk)"), _topStiffness, 0f, 1f);
+            _bottomStiffness = EditorGUILayout.Slider(new GUIContent("Bottom Stiffness", "1.0 = Rigid (Cardboard), 0.0 = Flexible (Silk)"), _bottomStiffness, 0f, 1f);
 
-            // Add this right below your Stiffness sliders
             EditorGUILayout.Space();
             GUILayout.Label("Optimization (Blue Channel)", EditorStyles.miniLabel);
             _selfCollideCutoff = EditorGUILayout.Slider(new GUIContent("Disable Collision Top %", "Saves GPU cycles by turning off self-collision for the top taut parts of the cloth."), _selfCollideCutoff, 0f, 1f);
@@ -61,8 +58,7 @@ namespace TechArtPlayground.EditorTools
 
             EditorGUILayout.Space();
 
-            // The big generate button
-            GUI.backgroundColor = new Color(0.2f, 0.8f, 0.3f); // Make it pop!
+            GUI.backgroundColor = new Color(0.2f, 0.8f, 0.3f);
             if (GUILayout.Button("Generate Weight Map", GUILayout.Height(40)))
             {
                 GenerateTexture();
@@ -72,7 +68,6 @@ namespace TechArtPlayground.EditorTools
 
         private void GenerateTexture()
         {
-            // Sanitize inputs
             _width = Mathf.Max(2, _width);
             _height = Mathf.Max(2, _height);
             if (string.IsNullOrEmpty(_fileName)) _fileName = "DefaultWeightMap";
@@ -83,41 +78,36 @@ namespace TechArtPlayground.EditorTools
             {
                 for (int x = 0; x < _width; x++)
                 {
-                    float v = (float)y / (_height - 1); // 0.0 at bottom, 1.0 at top
+                    float v = (float)y / (_height - 1); 
 
                     // --- RED (Mass) ---
                     bool isPinned = y >= (_height - _pinnedTopRows);
                     float r = isPinned ? 0.0f : 1.0f;
 
                     // --- GREEN (Stiffness) ---
+                    // Generates 1.0 where you want stiffness, 0.0 where you want flexibility.
                     float g = Mathf.Lerp(_bottomStiffness, _topStiffness, v);
 
                     // --- BLUE (Self-Collision Mask) ---
-                    // If V (height) is greater than our cutoff threshold, disable collision (0.0).
-                    // Example: If cutoff is 0.5, the top 50% of the cloth gets 0.0 (No Collision).
                     float collisionThreshold = 1.0f - _selfCollideCutoff;
                     float b = (v >= collisionThreshold) ? 0.0f : 1.0f;
 
-                    // Apply all three channels
                     tex.SetPixel(x, y, new Color(r, g, b, 1f));
                 }
             }
             tex.Apply();
 
-            // Ensure directory exists
             if (!Directory.Exists(_folderPath))
             {
                 Directory.CreateDirectory(_folderPath);
             }
 
-            // Format file path
             string fullPath = $"{_folderPath}/{_fileName}.png";
             byte[] bytes = tex.EncodeToPNG();
             File.WriteAllBytes(fullPath, bytes);
 
             AssetDatabase.Refresh();
 
-            // Auto-configure Unity Import Settings
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(fullPath);
             if (importer != null)
             {
@@ -133,7 +123,6 @@ namespace TechArtPlayground.EditorTools
 
             Debug.Log($"<color=cyan>[TechArt]</color> Successfully generated Weight Map at: {fullPath}");
             
-            // Optionally "ping" the asset in the project window so you don't have to look for it
             Object pingObj = AssetDatabase.LoadAssetAtPath<Texture2D>(fullPath);
             if (pingObj != null) EditorGUIUtility.PingObject(pingObj);
         }
