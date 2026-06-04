@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: MI_Fountain_01
+  m_Name: M_Statue_Mockery
   m_Shader: {fileID: -6465566751694194690, guid: af0143a8e2c5e7247bc577787eaa80d8, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -25,7 +25,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _AO:
-        m_Texture: {fileID: 2800000, guid: c9a0645acd82b3d41ae61f51a72c5401, type: 3}
+        m_Texture: {fileID: 2800000, guid: fcdb1771f76fb194f8807330827ba15b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
@@ -33,7 +33,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Basecolor:
-        m_Texture: {fileID: 2800000, guid: d713c27b212dd554fb473ea6b4eee202, type: 3}
+        m_Texture: {fileID: 2800000, guid: 8951778f830ecd54396b267bc2513cf6, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -65,7 +65,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Metalic:
-        m_Texture: {fileID: 2800000, guid: c9a0645acd82b3d41ae61f51a72c5401, type: 3}
+        m_Texture: {fileID: 2800000, guid: fcdb1771f76fb194f8807330827ba15b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -73,11 +73,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: bee8b74819b78254cb358ef1700a0e73, type: 3}
+        m_Texture: {fileID: 2800000, guid: d5940042d34ea9d428c3de11dbf54c74, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ORM_Oclusion_Roughtess_Metal:
-        m_Texture: {fileID: 2800000, guid: c9a0645acd82b3d41ae61f51a72c5401, type: 3}
+        m_Texture: {fileID: 2800000, guid: fcdb1771f76fb194f8807330827ba15b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -89,7 +89,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Smoothness:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: fcdb1771f76fb194f8807330827ba15b, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
@@ -130,7 +130,7 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
-    - _MettalicValue: 0
+    - _MettalicValue: 0.5
     - _NOAO: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.005
@@ -139,12 +139,12 @@ Material:
     - _ReceiveShadows: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SmoothnessValue: 1
+    - _SmoothnessValue: 0.5
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _UseAO: 0
+    - _UseAO: 1
     - _UseBaseColor: 1
     - _UseEmissive: 0
     - _UseMettalic: 0
@@ -161,7 +161,7 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!114 &8620300093599178710
+--- !u!114 &660338013062498694
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
