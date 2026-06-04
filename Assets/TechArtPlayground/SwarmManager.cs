@@ -101,7 +101,7 @@ namespace TechArtPlayground
                 // ==========================================
                 if (shouldSort)
                 {
-                    int totalCells = swarm.gridSize * swarm.gridSize * swarm.gridSize;
+                    int totalCells = swarm.GridSize * swarm.GridSize * swarm.GridSize;
                     
                     asyncComputeCmd.SetComputeBufferParam(localCompute, _kClearGrid, GridOffsets, swarm.gridOffsets);
                     asyncComputeCmd.DispatchCompute(localCompute, _kClearGrid, Mathf.CeilToInt(totalCells / 64f), 1, 1);

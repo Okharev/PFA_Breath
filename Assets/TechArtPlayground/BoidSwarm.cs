@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Splines;
-using R3;
 using Random = UnityEngine.Random;
 
 namespace TechArtPlayground
@@ -61,7 +60,7 @@ namespace TechArtPlayground
 
     public class BoidSwarm : MonoBehaviour
     {
-        // Compute Shader Cache IDs mapped strictly for this local Swarm
+        // Compute Shader Cache IDs
         private static readonly int SpeedID = Shader.PropertyToID("speed");
         private static readonly int SightRadiusID = Shader.PropertyToID("sightRadius");
         private static readonly int SeparationWeightID = Shader.PropertyToID("separationWeight");
@@ -86,7 +85,7 @@ namespace TechArtPlayground
 
         [Header("Swarm Configuration")] 
         public int boidCount = 5000;
-        public Bounds swarmBounds = new(Vector3.zero, new Vector3(100, 100, 100));
+        public Bounds swarmBounds = new Bounds(Vector3.zero, new Vector3(100, 100, 100));
         public bool followSpline;
 
         [Header("Dynamic Environment Limits")] 
@@ -97,56 +96,66 @@ namespace TechArtPlayground
         [Header("Spline Settings")] 
         public SplineContainer splineContainer;
         public int splineResolution = 100;
+        
         [Range(0.1f, 10f)] [SerializeField] private float tubeRadius = 2.0f;
+        public float TubeRadius { get => tubeRadius; set { tubeRadius = value; PushFloat(TubeRadiusID, value); } }
         public float splineLength { get; private set; }
 
         [Header("Flocking Behaviors")] 
         [Range(0.1f, 20f)] [SerializeField] private float speed = 4.0f;
+        public float Speed { get => speed; set { speed = value; PushFloat(SpeedID, value); } }
+
         [Range(0.1f, 10f)] [SerializeField] private float sightRadius = 2.5f;
+        public float SightRadius { get => sightRadius; set { sightRadius = value; PushFloat(SightRadiusID, value); } }
+
         [Range(0.0f, 5f)] [SerializeField] private float separationWeight = 1.5f;
+        public float SeparationWeight { get => separationWeight; set { separationWeight = value; PushFloat(SeparationWeightID, value); } }
+
         [Range(0.0f, 5f)] [SerializeField] private float alignmentWeight = 1.0f;
+        public float AlignmentWeight { get => alignmentWeight; set { alignmentWeight = value; PushFloat(AlignmentWeightID, value); } }
+
         [Range(0.0f, 5f)] [SerializeField] private float cohesionWeight = 1.5f;
+        public float CohesionWeight { get => cohesionWeight; set { cohesionWeight = value; PushFloat(CohesionWeightID, value); } }
 
         [Header("Environment & Avoidance")] 
         [SerializeField] private float floorY = -10f;
+        public float FloorY { get => floorY; set { floorY = value; PushFloat(FloorYID, value); } }
+
         [SerializeField] private float avoidanceMargin = 2.0f;
+        public float AvoidanceMargin { get => avoidanceMargin; set { avoidanceMargin = value; PushFloat(AvoidanceMarginID, value); } }
+
         [Range(0f, 10f)] [SerializeField] private float predatorFleeWeight = 5.0f;
+        public float PredatorFleeWeight { get => predatorFleeWeight; set { predatorFleeWeight = value; PushFloat(PredatorFleeWeightID, value); } }
 
         [Header("Attractors & Waypoints")] 
-        [SerializeField] private Vector3 defaultWaypoint = Vector3.zero;
+        [SerializeField] private Vector3 targetPosition = Vector3.zero;
+        public Vector3 TargetPosition { get => targetPosition; set { targetPosition = value; PushVector(TargetPositionID, value); } }
+
         [Range(0f, 5f)] [SerializeField] private float targetWeight = 1.0f;
+        public float TargetWeight { get => targetWeight; set { targetWeight = value; PushFloat(TargetWeightID, value); } }
+
         [SerializeField] private float swirlStrength = 2.0f;
+        public float SwirlStrength { get => swirlStrength; set { swirlStrength = value; PushFloat(SwirlStrengthID, value); } }
+
         [SerializeField] private float arrivalRadiusSq = 25.0f; 
+        public float ArrivalRadiusSq { get => arrivalRadiusSq; set { arrivalRadiusSq = value; PushFloat(ArrivalRadiusSqID, value); } }
+
         [SerializeField] private float arrivalMinSpeed = 0.5f;
+        public float ArrivalMinSpeed { get => arrivalMinSpeed; set { arrivalMinSpeed = value; PushFloat(ArrivalMinSpeedID, value); } }
+
         [SerializeField] private float singularitySoften = 1.0f;
+        public float SingularitySoften { get => singularitySoften; set { singularitySoften = value; PushFloat(SingularitySoftenID, value); } }
 
         [Header("Optimization")]
         [Range(1, 10)] public int sortFrequency = 4;
 
         [Header("Spatial Grid Tuning")] 
-        [SerializeField] public float cellSize = 3.0f;
-        [SerializeField] public int gridSize = 64;
+        [SerializeField] private float cellSize = 3.0f;
+        public float CellSize { get => cellSize; set { cellSize = value; PushFloat(CellSizeID, value); } }
 
-        // --- R3 BACK-END ---
-        private readonly ReactiveProperty<float> _speedRx = new();
-        private readonly ReactiveProperty<float> _sightRadiusRx = new();
-        private readonly ReactiveProperty<float> _separationRx = new();
-        private readonly ReactiveProperty<float> _alignmentRx = new();
-        private readonly ReactiveProperty<float> _cohesionRx = new();
-        private readonly ReactiveProperty<float> _floorYRx = new();
-        private readonly ReactiveProperty<float> _avoidanceRx = new();
-        private readonly ReactiveProperty<float> _predatorFleeRx = new();
-        private readonly ReactiveProperty<float> _tubeRadiusRx = new();
-        private readonly ReactiveProperty<float> _singularityRx = new();
-        private readonly ReactiveProperty<float> _arrivalMinSpeedRx = new();
-        private readonly ReactiveProperty<float> _arrivalRadiusSqRx = new();
-        private readonly ReactiveProperty<float> _swirlStrengthRx = new();
-        private readonly ReactiveProperty<float> _targetWeightRx = new();
-        private readonly ReactiveProperty<Vector3> _targetPositionRx = new();
-        private readonly ReactiveProperty<float> _cellSizeRx = new();
-        private readonly ReactiveProperty<int> _gridSizeRx = new();
+        [SerializeField] private int gridSize = 64;
+        public int GridSize { get => gridSize; set { gridSize = value; PushInt(GridSizeID, value); } }
 
-        private DisposableBag _disposables;
 
         // --- INTERNAL TRACKING ---
         private readonly List<BoidAttractor> activeAttractors = new();
@@ -184,13 +193,12 @@ namespace TechArtPlayground
         public void Initialize(ComputeShader baseCompute)
         {
             ReleaseAllBuffers();
-            _disposables = new DisposableBag();
 
             // 1. ISOLATE THE COMPUTE SHADER
             SwarmCompute = Instantiate(baseCompute);
-            SwarmCompute.name = $"BoidsCompute_{gameObject.name}";
+            SwarmCompute.name = "BoidsCompute_" + gameObject.name;
 
-            defaultWaypoint = transform.position;
+            targetPosition = transform.position;
             frameOffset = Random.Range(0, 10);
             paddedCount = Mathf.NextPowerOfTwo(boidCount);
 
@@ -254,58 +262,41 @@ namespace TechArtPlayground
             }
 
             PopulateInitialData();
-            InitializeReactivePipelines();
-            ForceUpdateReactiveState();
+            PushAllComputeData();
         }
 
-        private void InitializeReactivePipelines()
-        {
-            _speedRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(SpeedID, v)).AddTo(ref _disposables);
-            _sightRadiusRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(SightRadiusID, v)).AddTo(ref _disposables);
-            _separationRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(SeparationWeightID, v)).AddTo(ref _disposables);
-            _alignmentRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(AlignmentWeightID, v)).AddTo(ref _disposables);
-            _cohesionRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(CohesionWeightID, v)).AddTo(ref _disposables);
-            _floorYRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(FloorYID, v)).AddTo(ref _disposables);
-            _avoidanceRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(AvoidanceMarginID, v)).AddTo(ref _disposables);
-            _predatorFleeRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(PredatorFleeWeightID, v)).AddTo(ref _disposables);
-            _tubeRadiusRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(TubeRadiusID, v)).AddTo(ref _disposables);
-            _singularityRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(SingularitySoftenID, v)).AddTo(ref _disposables);
-            _arrivalMinSpeedRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(ArrivalMinSpeedID, v)).AddTo(ref _disposables);
-            _arrivalRadiusSqRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(ArrivalRadiusSqID, v)).AddTo(ref _disposables);
-            _swirlStrengthRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(SwirlStrengthID, v)).AddTo(ref _disposables);
-            _targetWeightRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(TargetWeightID, v)).AddTo(ref _disposables);
-            _targetPositionRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetVector(TargetPositionID, v)).AddTo(ref _disposables);
-            _cellSizeRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetFloat(CellSizeID, v)).AddTo(ref _disposables);
-            _gridSizeRx.DistinctUntilChanged().Subscribe(this, (v, s) => s.SwarmCompute.SetInt(GridSizeID, v)).AddTo(ref _disposables);
-        }
+        // --- HELPER METHODS FOR STATE SYNC ---
+        private void PushFloat(int id, float val) { if (SwarmCompute != null) SwarmCompute.SetFloat(id, val); }
+        private void PushInt(int id, int val) { if (SwarmCompute != null) SwarmCompute.SetInt(id, val); }
+        private void PushVector(int id, Vector3 val) { if (SwarmCompute != null) SwarmCompute.SetVector(id, val); }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (!Application.isPlaying || SwarmCompute == null) return;
-            ForceUpdateReactiveState();
+            PushAllComputeData();
         }
 #endif
 
-        private void ForceUpdateReactiveState()
+        private void PushAllComputeData()
         {
-            _speedRx.Value = speed;
-            _sightRadiusRx.Value = sightRadius;
-            _separationRx.Value = separationWeight;
-            _alignmentRx.Value = alignmentWeight;
-            _cohesionRx.Value = cohesionWeight;
-            _floorYRx.Value = floorY;
-            _avoidanceRx.Value = avoidanceMargin;
-            _predatorFleeRx.Value = predatorFleeWeight;
-            _tubeRadiusRx.Value = tubeRadius;
-            _singularityRx.Value = singularitySoften;
-            _arrivalMinSpeedRx.Value = arrivalMinSpeed;
-            _arrivalRadiusSqRx.Value = arrivalRadiusSq;
-            _swirlStrengthRx.Value = swirlStrength;
-            _targetWeightRx.Value = targetWeight;
-            _targetPositionRx.Value = defaultWaypoint;
-            _cellSizeRx.Value = cellSize;
-            _gridSizeRx.Value = gridSize;
+            PushFloat(SpeedID, speed);
+            PushFloat(SightRadiusID, sightRadius);
+            PushFloat(SeparationWeightID, separationWeight);
+            PushFloat(AlignmentWeightID, alignmentWeight);
+            PushFloat(CohesionWeightID, cohesionWeight);
+            PushFloat(FloorYID, floorY);
+            PushFloat(AvoidanceMarginID, avoidanceMargin);
+            PushFloat(PredatorFleeWeightID, predatorFleeWeight);
+            PushFloat(TubeRadiusID, tubeRadius);
+            PushFloat(SingularitySoftenID, singularitySoften);
+            PushFloat(ArrivalMinSpeedID, arrivalMinSpeed);
+            PushFloat(ArrivalRadiusSqID, arrivalRadiusSq);
+            PushFloat(SwirlStrengthID, swirlStrength);
+            PushFloat(TargetWeightID, targetWeight);
+            PushVector(TargetPositionID, targetPosition);
+            PushFloat(CellSizeID, cellSize);
+            PushInt(GridSizeID, gridSize);
         }
 
         public void RegisterAttractor(BoidAttractor a) { if (!activeAttractors.Contains(a)) activeAttractors.Add(a); }
@@ -314,7 +305,7 @@ namespace TechArtPlayground
         public void UnregisterPredator(BoidPredator p) => activePredators.Remove(p);
         public void RegisterObstacle(BoidObstacle o) { if (!activeObstacles.Contains(o)) activeObstacles.Add(o); }
         public void UnregisterObstacle(BoidObstacle o) => activeObstacles.Remove(o);
-        public void SetTargetPosition(Vector3 newTarget) => _targetPositionRx.Value = newTarget;
+        public void SetTargetPosition(Vector3 newTarget) => TargetPosition = newTarget;
 
         public void SyncEnvironmentData()
         {
@@ -376,7 +367,7 @@ namespace TechArtPlayground
             Boid[] boids = new Boid[boidCount];
             for (int i = 0; i < boidCount; i++)
             {
-                ushort roll16 = (ushort)(0.5f * 65535f); 
+                const ushort roll16 = (ushort)(0.5f * 65535f); 
                 ushort id16 = (ushort)i;
                 uint packed = ((uint)id16 << 16) | roll16;
 
@@ -414,7 +405,6 @@ namespace TechArtPlayground
 
         private void OnDestroy()
         {
-            _disposables.Dispose();
             ReleaseAllBuffers();
             if (SwarmCompute != null) Destroy(SwarmCompute);
         }

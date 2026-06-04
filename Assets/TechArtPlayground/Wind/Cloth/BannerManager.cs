@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using R3;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,17 +10,17 @@ namespace TechArtPlayground.Wind.Cloth
         private const float FixedTimeStep = 0.01666f;
 
         // --- Shader Properties ---
-        private static readonly int WindVelocity = Shader.PropertyToID("_WindVelocity");
-        private static readonly int WindTurbulence = Shader.PropertyToID("_WindTurbulence");
-        private static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
-        private static readonly int Time1 = Shader.PropertyToID("_Time");
-        private static readonly int Gravity = Shader.PropertyToID("_Gravity");
-        private static readonly int Drag = Shader.PropertyToID("_Drag");
-        private static readonly int CellSize = Shader.PropertyToID("_CellSize");
-        private static readonly int SelfCollisionThickness = Shader.PropertyToID("_SelfCollisionThickness");
-        private static readonly int HashGridSize = Shader.PropertyToID("_HashGridSize");
+        private static readonly int WindVelocityID = Shader.PropertyToID("_WindVelocity");
+        private static readonly int WindTurbulenceID = Shader.PropertyToID("_WindTurbulence");
+        private static readonly int DeltaTimeID = Shader.PropertyToID("_DeltaTime");
+        private static readonly int TimeID = Shader.PropertyToID("_Time");
+        private static readonly int GravityID = Shader.PropertyToID("_Gravity");
+        private static readonly int DragID = Shader.PropertyToID("_Drag");
+        private static readonly int CellSizeID = Shader.PropertyToID("_CellSize");
+        private static readonly int SelfCollisionThicknessID = Shader.PropertyToID("_SelfCollisionThickness");
+        private static readonly int HashGridSizeID = Shader.PropertyToID("_HashGridSize");
 
-        // Compute Buffer IDs (Hidden for brevity, assuming they remain exactly as in your original script)
+        // Compute Buffer IDs 
         private static readonly int PredictedPositions = Shader.PropertyToID("PredictedPositions");
         private static readonly int HashPairs = Shader.PropertyToID("HashPairs");
         private static readonly int CellOffsets = Shader.PropertyToID("CellOffsets");
@@ -41,50 +40,90 @@ namespace TechArtPlayground.Wind.Cloth
         private static readonly int BITShift = Shader.PropertyToID("bitShift");
         private static readonly int InputBuffer = Shader.PropertyToID("InputBuffer");
         private static readonly int OutputBuffer = Shader.PropertyToID("OutputBuffer");
-        private static readonly int Buffer = Shader.PropertyToID("_NormalsBuffer");
-        private static readonly int PositionsBuffer1 = Shader.PropertyToID("_PositionsBuffer");
+        private static readonly int BufferID = Shader.PropertyToID("_NormalsBuffer");
+        private static readonly int PositionsBufferID = Shader.PropertyToID("_PositionsBuffer");
         private static readonly int VsBuffer = Shader.PropertyToID("_UVsBuffer");
 
-        [Header("Resources")] public ComputeShader clothCompute;
-
+        [Header("Resources")] 
+        public ComputeShader clothCompute;
         public Material clothMaterial;
         public ComputeShader radixSortCompute;
 
         // ----------------------------------------------------
-        // 1. INSPECTOR FRONT-END
+        // 1. INSPECTOR & ENCAPSULATED PROPERTIES
         // ----------------------------------------------------
-        [Header("XPBD Physics Settings")] [SerializeField]
-        private Vector3 gravity = new(0, -9.81f, 0);
+        [Header("XPBD Physics Settings")] 
+        [SerializeField] private Vector3 gravity = new(0, -9.81f, 0);
+        public Vector3 Gravity 
+        { 
+            get => gravity; 
+            set { if (gravity == value) return; gravity = value; PushVector(GravityID, value); } 
+        }
 
         [Range(0f, 15f)] [SerializeField] private float drag = 2.5f;
-        [SerializeField] private float springCompliance = 0.001f;
+        public float Drag 
+        { 
+            get => drag; 
+            set { if (Mathf.Approximately(drag, value)) return; drag = value; PushFloat(DragID, value); } 
+        }
+
+        [SerializeField] private float springCompliance = 0.001f; // Initialized per instance, no dynamic push needed
+
         [Range(1, 40)] [SerializeField] private int solverIterations = 20;
+        public int SolverIterations 
+        { 
+            get => solverIterations; 
+            set 
+            { 
+                if (solverIterations == value) return; 
+                solverIterations = value; 
+                // Sub-step delta pre-calculation pushed instantly to shader
+                float subStepDelta = FixedTimeStep / Mathf.Max(1, solverIterations);
+                PushFloat(DeltaTimeID, subStepDelta); 
+            } 
+        }
 
-        [Header("Optimization & Culling")] public float sleepDelay = 2.0f;
+        [Header("Optimization & Culling")] 
+        public float sleepDelay = 2.0f;
 
-        [Header("Self Collision")] public bool enableSelfCollision = true;
+        [Header("Self Collision")] 
+        public bool enableSelfCollision = true;
 
         [SerializeField] private float clothThickness = 0.05f;
+        public float ClothThickness 
+        { 
+            get => clothThickness; 
+            set { if (Mathf.Approximately(clothThickness, value)) return; clothThickness = value; PushFloat(SelfCollisionThicknessID, value); } 
+        }
+
         [SerializeField] private float spatialCellSize = 0.1f;
+        public float SpatialCellSize 
+        { 
+            get => spatialCellSize; 
+            set { if (Mathf.Approximately(spatialCellSize, value)) return; spatialCellSize = value; PushFloat(CellSizeID, value); } 
+        }
+
         [SerializeField] private int hashGridSize = 8192;
-        private readonly ReactiveProperty<float> _cellSizeRx = new();
-        private readonly ReactiveProperty<float> _dragRx = new();
 
-        // ----------------------------------------------------
-        // 2. R3 BACK-END (Push-based States)
-        // ----------------------------------------------------
-        private readonly ReactiveProperty<Vector3> _gravityRx = new();
-        private readonly ReactiveProperty<int> _solverIterationsRx = new();
-        private readonly ReactiveProperty<float> _thicknessRx = new();
-        private readonly ReactiveProperty<float> _windTurbulenceRx = new();
-        private readonly ReactiveProperty<Vector3> _windVelocityRx = new();
+        // Hidden dynamic weather properties
+        private Vector3 _windVelocity;
+        public Vector3 WindVelocity 
+        { 
+            get => _windVelocity; 
+            set { if (_windVelocity == value) return; _windVelocity = value; PushVector(WindVelocityID, value); } 
+        }
 
+        private float _windTurbulence;
+        public float WindTurbulence 
+        { 
+            get => _windTurbulence; 
+            set { if (Mathf.Approximately(_windTurbulence, value)) return; _windTurbulence = value; PushFloat(WindTurbulenceID, value); } 
+        }
+
+        // --- Core Systems ---
         private readonly List<BannerInstance> _bannerInstances = new();
-
-        private DisposableBag _disposables;
         private readonly Plane[] _frustumPlanes = new Plane[6];
 
-        // --- Kernels & State ---
         private int _kHash, _kClearOffsets, _kBuildOffsets, _kSelfCollide;
         private int _kPredict, _kSolve, _kIntegrate, _kNormals;
         private Camera _mainCam;
@@ -94,6 +133,57 @@ namespace TechArtPlayground.Wind.Cloth
 
         private float _timeAccumulator;
 
+        private void OnEnable()
+        {
+            _mainCam = Camera.main;
+
+            InitializeKernels();
+            InitializeBanners();
+            PushAllComputeData();
+        }
+
+        private void OnDisable()
+        {
+            foreach (BannerInstance inst in _bannerInstances) inst.Dispose();
+            _sharedGlobalHistBuffer?.Dispose();
+            _sharedLocalOffsetsBuffer?.Dispose();
+            _bannerInstances.Clear();
+        }
+
+        private void OnDestroy()
+        {
+            foreach (BannerInstance inst in _bannerInstances) inst.Dispose();
+            _sharedGlobalHistBuffer?.Dispose();
+            _sharedLocalOffsetsBuffer?.Dispose();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!Application.isPlaying) return;
+            PushAllComputeData();
+        }
+#endif
+
+        private void PushFloat(int id, float val) { if (clothCompute != null) clothCompute.SetFloat(id, val); }
+        private void PushInt(int id, int val) { if (clothCompute != null) clothCompute.SetInt(id, val); }
+        private void PushVector(int id, Vector3 val) { if (clothCompute != null) clothCompute.SetVector(id, val); }
+
+        private void PushAllComputeData()
+        {
+            PushVector(GravityID, gravity);
+            PushFloat(DragID, drag);
+            PushFloat(SelfCollisionThicknessID, clothThickness);
+            PushFloat(CellSizeID, spatialCellSize);
+            PushVector(WindVelocityID, _windVelocity);
+            PushFloat(WindTurbulenceID, _windTurbulence);
+            PushInt(HashGridSizeID, hashGridSize);
+
+            // Force initial sub-step delta push
+            float subStepDelta = FixedTimeStep / Mathf.Max(1, solverIterations);
+            PushFloat(DeltaTimeID, subStepDelta);
+        }
+
         private void Update()
         {
             if (_bannerInstances.Count == 0) return;
@@ -101,9 +191,9 @@ namespace TechArtPlayground.Wind.Cloth
             // 1. Wind Polling Firewall
             if (GlobalWeatherManager.Instance != null)
             {
-                // R3 stops execution if these values haven't shifted
-                _windVelocityRx.Value = GlobalWeatherManager.Instance.CurrentWindVelocity;
-                _windTurbulenceRx.Value = GlobalWeatherManager.Instance.CurrentWindTurbulence;
+                // Properties will halt execution here if weather hasn't shifted
+                WindVelocity = GlobalWeatherManager.Instance.CurrentWindVelocity;
+                WindTurbulence = GlobalWeatherManager.Instance.CurrentWindTurbulence;
             }
 
             // 2. Frustum Culling Check
@@ -111,8 +201,6 @@ namespace TechArtPlayground.Wind.Cloth
 
             foreach (BannerInstance inst in _bannerInstances)
             {
-                // NOTE: inst.UpdateDynamicColliders() REMOVED. Colliders are now strictly static!
-
                 inst.IsVisible = GeometryUtility.TestPlanesAABB(_frustumPlanes, inst.WorldBounds);
 
                 if (inst.IsVisible)
@@ -138,91 +226,12 @@ namespace TechArtPlayground.Wind.Cloth
             // 4. Render Loop
             foreach (BannerInstance inst in _bannerInstances)
                 if (inst.IsVisible)
-                    Graphics.DrawMesh(inst.RenderMesh, Matrix4x4.identity, clothMaterial, gameObject.layer, _mainCam, 0,
-                        inst.MatBlock);
-        }
-
-        private void OnEnable()
-        {
-            _mainCam = Camera.main;
-            _disposables = new DisposableBag();
-
-            InitializeKernels();
-            InitializeBanners();
-            InitializeReactivePipelines();
-            ForceUpdateReactiveState();
-        }
-
-
-        private void OnDisable()
-        {
-            _disposables.Dispose();
-            foreach (BannerInstance inst in _bannerInstances) inst.Dispose();
-            _sharedGlobalHistBuffer?.Dispose();
-            _sharedLocalOffsetsBuffer?.Dispose();
-            _bannerInstances.Clear();
-        }
-
-        private void OnDestroy()
-        {
-            foreach (BannerInstance inst in _bannerInstances) inst.Dispose();
-            _sharedGlobalHistBuffer?.Dispose();
-            _sharedLocalOffsetsBuffer?.Dispose();
-        }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (!Application.isPlaying) return;
-            ForceUpdateReactiveState();
-        }
-#endif
-
-        private void InitializeReactivePipelines()
-        {
-            // Zero-allocation, stateful R3 subscriptions
-            _gravityRx.DistinctUntilChanged().Subscribe(this, (g, state) => state.clothCompute.SetVector(Gravity, g))
-                .AddTo(ref _disposables);
-            _dragRx.DistinctUntilChanged().Subscribe(this, (d, state) => state.clothCompute.SetFloat(Drag, d))
-                .AddTo(ref _disposables);
-            _thicknessRx.DistinctUntilChanged()
-                .Subscribe(this, (t, state) => state.clothCompute.SetFloat(SelfCollisionThickness, t))
-                .AddTo(ref _disposables);
-            _cellSizeRx.DistinctUntilChanged().Subscribe(this, (c, state) => state.clothCompute.SetFloat(CellSize, c))
-                .AddTo(ref _disposables);
-
-            _windVelocityRx.DistinctUntilChanged()
-                .Subscribe(this, (v, state) => state.clothCompute.SetVector(WindVelocity, v)).AddTo(ref _disposables);
-            _windTurbulenceRx.DistinctUntilChanged()
-                .Subscribe(this, (t, state) => state.clothCompute.SetFloat(WindTurbulence, t)).AddTo(ref _disposables);
-
-            // Sub-step delta pre-calculation
-            _solverIterationsRx.DistinctUntilChanged().Subscribe(this, (iters, state) =>
-            {
-                float subStepDelta = FixedTimeStep / Mathf.Max(1, iters);
-                state.clothCompute.SetFloat(DeltaTime, subStepDelta);
-            }).AddTo(ref _disposables);
-
-            // Static bindings that never change after initialization
-            clothCompute.SetInt(HashGridSize, hashGridSize);
-        }
-
-        private void ForceUpdateReactiveState()
-        {
-            _gravityRx.Value = gravity;
-            _dragRx.Value = drag;
-            _solverIterationsRx.Value = solverIterations;
-            _thicknessRx.Value = clothThickness;
-            _cellSizeRx.Value = spatialCellSize;
+                    Graphics.DrawMesh(inst.RenderMesh, Matrix4x4.identity, clothMaterial, gameObject.layer, _mainCam, 0, inst.MatBlock);
         }
 
         // ==========================================
         // PUBLIC API: ON-DEMAND COLLIDER REFRESH
         // ==========================================
-        /// <summary>
-        ///     Explicitly triggers a collider memory refresh for a specific banner.
-        ///     Use this via scripts only when a wall/door physically moves near a banner.
-        /// </summary>
         public void RefreshCollidersFor(PhysicsBannerNode targetNode)
         {
             foreach (BannerInstance inst in _bannerInstances)
@@ -235,9 +244,8 @@ namespace TechArtPlayground.Wind.Cloth
 
         private void StepSimulation()
         {
-            // The simulation loop is now completely purged of property binding overhead!
-            // Only Continuous Time needs to be updated.
-            clothCompute.SetFloat(Time1, Time.unscaledTime);
+            // Only Continuous Time needs to be updated per tick.
+            clothCompute.SetFloat(TimeID, Time.unscaledTime);
 
             int hashGroups = Mathf.CeilToInt(hashGridSize / 64f);
 
@@ -259,7 +267,6 @@ namespace TechArtPlayground.Wind.Cloth
                 }
 
                 // --- XPBD SUB-STEP SOLVER ---
-                // solverIterations logic removed; loop directly reads the inspector value.
                 for (int i = 0; i < solverIterations; i++)
                 {
                     clothCompute.Dispatch(_kPredict, groupsX, 1, 1);
@@ -363,8 +370,7 @@ namespace TechArtPlayground.Wind.Cloth
 
         private void InitializeBanners()
         {
-            PhysicsBannerNode[] nodes =
-                FindObjectsByType<PhysicsBannerNode>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            PhysicsBannerNode[] nodes = FindObjectsByType<PhysicsBannerNode>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             int maxVerticesInAnyBanner = 0;
 
             foreach (PhysicsBannerNode node in nodes)
@@ -496,8 +502,7 @@ namespace TechArtPlayground.Wind.Cloth
                 List<Int4> adjacency = new(VertexCount);
                 List<int> meshIndices = new();
 
-                Vector2 step = new(node.dimensions.x / (node.resolution.x - 1),
-                    node.dimensions.y / (node.resolution.y - 1));
+                Vector2 step = new(node.dimensions.x / (node.resolution.x - 1), node.dimensions.y / (node.resolution.y - 1));
 
                 for (int y = 0; y < node.resolution.y; y++)
                 for (int x = 0; x < node.resolution.x; x++)
@@ -516,10 +521,8 @@ namespace TechArtPlayground.Wind.Cloth
 
                     if (node.weightMap != null)
                     {
-                        int texX = Mathf.Clamp(Mathf.RoundToInt(uCoord * (node.weightMap.width - 1)), 0,
-                            node.weightMap.width - 1);
-                        int texY = Mathf.Clamp(Mathf.RoundToInt(vCoord * (node.weightMap.height - 1)), 0,
-                            node.weightMap.height - 1);
+                        int texX = Mathf.Clamp(Mathf.RoundToInt(uCoord * (node.weightMap.width - 1)), 0, node.weightMap.width - 1);
+                        int texY = Mathf.Clamp(Mathf.RoundToInt(vCoord * (node.weightMap.height - 1)), 0, node.weightMap.height - 1);
                         Color c = node.weightMap.GetPixel(texX, texY);
                         invMass = c.r;
                         selfCollide = c.b;
@@ -556,12 +559,8 @@ namespace TechArtPlayground.Wind.Cloth
                     float stiffnessMult = 1.0f;
                     if (node.weightMap != null)
                     {
-                        int texX = Mathf.Clamp(
-                            Mathf.RoundToInt((float)x / (node.resolution.x - 1) * (node.weightMap.width - 1)), 0,
-                            node.weightMap.width - 1);
-                        int texY = Mathf.Clamp(
-                            Mathf.RoundToInt((1.0f - (float)y / (node.resolution.y - 1)) * (node.weightMap.height - 1)),
-                            0, node.weightMap.height - 1);
+                        int texX = Mathf.Clamp(Mathf.RoundToInt((float)x / (node.resolution.x - 1) * (node.weightMap.width - 1)), 0, node.weightMap.width - 1);
+                        int texY = Mathf.Clamp(Mathf.RoundToInt((1.0f - (float)y / (node.resolution.y - 1)) * (node.weightMap.height - 1)), 0, node.weightMap.height - 1);
                         stiffnessMult = Mathf.Lerp(1.0f, 0.0f, node.weightMap.GetPixel(texX, texY).g);
                     }
 
@@ -569,8 +568,7 @@ namespace TechArtPlayground.Wind.Cloth
                     {
                         if (nx >= 0 && nx < node.resolution.x && ny >= 0 && ny < node.resolution.y)
                         {
-                            if (node.isPrayerFlagMode && !(y == 0 && ny == 0) &&
-                                x / node.flagWidth != nx / node.flagWidth) return;
+                            if (node.isPrayerFlagMode && !(y == 0 && ny == 0) && x / node.flagWidth != nx / node.flagWidth) return;
                             int nIdx = ny * node.resolution.x + nx;
                             float dist = Vector3.Distance(positions[index], positions[nIdx]);
                             springs.Add(new Spring
@@ -615,8 +613,7 @@ namespace TechArtPlayground.Wind.Cloth
                 RenderMesh = new Mesh { name = "BannerMesh_" + node.name, indexFormat = IndexFormat.UInt32 };
                 RenderMesh.SetVertices(new Vector3[VertexCount]);
                 RenderMesh.SetIndices(meshIndices.ToArray(), MeshTopology.Triangles, 0);
-                RenderMesh.bounds =
-                    new Bounds(Vector3.zero, Vector3.one * 1000f); // Render bounds handles by frustum logic
+                RenderMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
 
                 // 4. Allocate Independent GPU Buffers
                 PositionsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 12);
@@ -630,8 +627,7 @@ namespace TechArtPlayground.Wind.Cloth
                 HashPairsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 8);
                 SortedHashPairsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 8);
                 CellOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, hashSize, 4);
-                CollidersBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured,
-                    Mathf.Max(1, _activeColliders.Length), 192);
+                CollidersBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, _activeColliders.Length), 192);
 
                 PositionsBuffer.SetData(positions);
                 PredictedPositionsBuffer.SetData(positions);
@@ -645,15 +641,13 @@ namespace TechArtPlayground.Wind.Cloth
                 UpdateDynamicColliders();
 
                 MatBlock = new MaterialPropertyBlock();
-                MatBlock.SetBuffer(PositionsBuffer1, PositionsBuffer);
-                MatBlock.SetBuffer(Buffer, NormalsBuffer);
+                MatBlock.SetBuffer(PositionsBufferID, PositionsBuffer);
+                MatBlock.SetBuffer(BufferID, NormalsBuffer);
                 MatBlock.SetBuffer(VsBuffer, UVsBuffer);
             }
 
             public void UpdateDynamicColliders()
             {
-                // Logic remains exactly the same, but it is now an Event-Driven method
-                // instead of a Polled method.
                 if (_activeColliders == null || _activeColliders.Length == 0) return;
 
                 for (int i = 0; i < _activeColliders.Length; i++)

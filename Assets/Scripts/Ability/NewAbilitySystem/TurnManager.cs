@@ -65,7 +65,7 @@ namespace Ability.NewAbilitySystem
             // Plan moves if we are in Combat and not currently executing a turn
             if (GameModeManager.Instance.CurrentMode == GameMode.Combat && !IsExecuting)
             {
-                // NEW: Clear old visuals at the start of the frame before entities rethink their plans
+                // Clear old visuals at the start of the frame before entities rethink their plans
                 if (IntentDrawer.Instance != null) IntentDrawer.Instance.ClearAll();
 
                 // Copy to buffer to prevent modification exceptions if entities spawn/die during planning
@@ -73,7 +73,7 @@ namespace Ability.NewAbilitySystem
 
                 foreach (ITurnEntity entity in entityIterationBuffer) entity.PlanAction();
 
-                // NEW: Allow all entities to draw their confirmed intent for this frame
+                //  Allow all entities to draw their confirmed intent for this frame
                 foreach (ITurnEntity entity in entityIterationBuffer) entity.DrawIntents();
 
                 // --- Safe Execution Phase ---
@@ -81,7 +81,7 @@ namespace Ability.NewAbilitySystem
                 // we safely check if a turn needs to be executed.
                 if (!IsExecuting && pendingTurnCost > 0)
                 {
-                    // NEW: Erase all intent visuals the exact moment the turn begins executing
+                    // Erase all intent visuals the exact moment the turn begins executing
                     if (IntentDrawer.Instance != null) IntentDrawer.Instance.ClearAll();
 
                     turnExecutionCoroutine = StartCoroutine(ExecuteTurnsRoutine());
@@ -131,7 +131,6 @@ namespace Ability.NewAbilitySystem
                 entity.ExecuteAction(); // Entities handle their own channeling state internally
 
             // Wait for the duration of the turn (using scaled time so pauses/slow-mo affect it)
-// Wait for the duration of the turn
             yield return new WaitForSeconds(secondsPerTurn);
 
             CurrentTurn++;

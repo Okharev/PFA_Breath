@@ -157,10 +157,11 @@ inline float3 FastSafeNormalize(float3 v, float3 fallback)
     return sqLen > 1e-8f ? v * rsqrt(sqLen) : fallback; 
 }
 
-int FastWrap(int val, int maxVal)
+inline int FastWrap(int val, int maxVal)
 {
-    int res = val % maxVal;
-    return res < 0 ? res + maxVal : res;
+    // WARNING: This ONLY works correctly if maxVal is a power of 2!
+    // Safely cast to uint for the bitwise masking, which wraps negatives flawlessly.
+    return (int)((uint)val & (uint)(maxVal - 1));
 }
 
 int3 GetCellCoordinates(float3 pos)

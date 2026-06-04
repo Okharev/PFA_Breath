@@ -1,7 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using TechArtPlayground.Wind;
 using UnityEngine;
-using R3;
 
 namespace TechArtPlayground.Wind.Chimes
 {
@@ -11,15 +10,16 @@ namespace TechArtPlayground.Wind.Chimes
         // ----------------------------------------------------
         // SHADER PROPERTY IDS
         // ----------------------------------------------------
-        private static readonly int ChimeCount = Shader.PropertyToID("_ChimeCount");
-        private static readonly int WindVelocity = Shader.PropertyToID("_WindVelocity");
-        private static readonly int WindTurbulence = Shader.PropertyToID("_WindTurbulence");
-        private static readonly int DeltaTime = Shader.PropertyToID("_DeltaTime");
-        private static readonly int Time1 = Shader.PropertyToID("_Time");
-        private static readonly int Gravity = Shader.PropertyToID("_Gravity");
-        private static readonly int Damping = Shader.PropertyToID("_Damping");
-        private static readonly int MaxAngle = Shader.PropertyToID("_MaxAngle");
-        private static readonly int Chimes1 = Shader.PropertyToID("Chimes");
+        private static readonly int ChimeCountID = Shader.PropertyToID("_ChimeCount");
+        private static readonly int WindVelocityID = Shader.PropertyToID("_WindVelocity");
+        private static readonly int WindTurbulenceID = Shader.PropertyToID("_WindTurbulence");
+        private static readonly int DeltaTimeID = Shader.PropertyToID("_DeltaTime");
+        private static readonly int TimeID = Shader.PropertyToID("_Time");
+        private static readonly int GravityID = Shader.PropertyToID("_Gravity");
+        private static readonly int DampingID = Shader.PropertyToID("_Damping");
+        private static readonly int MaxAngleID = Shader.PropertyToID("_MaxAngle");
+        private static readonly int ChimesID = Shader.PropertyToID("Chimes");
+        private static readonly int ChimeDataBuffer = Shader.PropertyToID("_ChimeDataBuffer");
 
         [Header("References")] 
         public ComputeShader chimeCompute;
@@ -27,27 +27,52 @@ namespace TechArtPlayground.Wind.Chimes
         public Mesh chimeMesh;
 
         // ----------------------------------------------------
-        // 1. INSPECTOR FRONT-END
+        // 1. INSPECTOR & ENCAPSULATED PROPERTIES
         // ----------------------------------------------------
         [Header("Environment Physics")] 
         [SerializeField] private float gravity = 9.81f;
+        public float Gravity 
+        { 
+            get => gravity; 
+            set { if (Mathf.Approximately(gravity, value)) return; gravity = value; PushFloat(GravityID, value); } 
+        }
+
         [SerializeField] private float damping = 0.5f;
+        public float Damping 
+        { 
+            get => damping; 
+            set { if (Mathf.Approximately(damping, value)) return; damping = value; PushFloat(DampingID, value); } 
+        }
 
         [Header("Constraints")]
         [Tooltip("Angle maximum en degrés avant que le carillon ne soit bloqué.")]
         [Range(10f, 170f)]
         [SerializeField] private float maxSwingAngle = 80f;
+        public float MaxSwingAngle 
+        { 
+            get => maxSwingAngle; 
+            set 
+            { 
+                if (Mathf.Approximately(maxSwingAngle, value)) return; 
+                maxSwingAngle = value; 
+                PushFloat(MaxAngleID, value * Mathf.Deg2Rad); // Calculate Rads only on change
+            } 
+        }
 
-        // ----------------------------------------------------
-        // 2. R3 BACK-END (Push-based States)
-        // ----------------------------------------------------
-        private readonly ReactiveProperty<float> _gravityRx = new();
-        private readonly ReactiveProperty<float> _dampingRx = new();
-        private readonly ReactiveProperty<float> _maxSwingAngleRx = new();
-        private readonly ReactiveProperty<Vector3> _windVelocityRx = new();
-        private readonly ReactiveProperty<float> _windTurbulenceRx = new();
-        
-        private DisposableBag _disposables;
+        // Hidden dynamic properties driven by weather manager
+        private Vector3 _windVelocity;
+        public Vector3 WindVelocity 
+        { 
+            get => _windVelocity; 
+            set { if (_windVelocity == value) return; _windVelocity = value; PushVector(WindVelocityID, value); } 
+        }
+
+        private float _windTurbulence;
+        public float WindTurbulence 
+        { 
+            get => _windTurbulence; 
+            set { if (Mathf.Approximately(_windTurbulence, value)) return; _windTurbulence = value; PushFloat(WindTurbulenceID, value); } 
+        }
 
         // --- Core Systems ---
         private GraphicsBuffer _argsBuffer;
@@ -60,41 +85,28 @@ namespace TechArtPlayground.Wind.Chimes
 
         private void OnEnable()
         {
-            _disposables = new DisposableBag();
-            
             InitializeSystem();
-            InitializeReactivePipelines();
-            ForceUpdateReactiveState();
-        }
-
-        private void InitializeReactivePipelines()
-        {
-            if (chimeCompute == null) return;
-
-            // Zero-allocation stateful subscriptions pushing directly to the Compute Shader
-            _gravityRx.DistinctUntilChanged().Subscribe(this, (v, state) => state.chimeCompute.SetFloat(Gravity, v)).AddTo(ref _disposables);
-            _dampingRx.DistinctUntilChanged().Subscribe(this, (v, state) => state.chimeCompute.SetFloat(Damping, v)).AddTo(ref _disposables);
-            
-            // Mathematical transformation (Deg2Rad) happens ONCE when the property changes, not every frame
-            _maxSwingAngleRx.DistinctUntilChanged().Subscribe(this, (v, state) => state.chimeCompute.SetFloat(MaxAngle, v * Mathf.Deg2Rad)).AddTo(ref _disposables);
-            
-            _windVelocityRx.DistinctUntilChanged().Subscribe(this, (v, state) => state.chimeCompute.SetVector(WindVelocity, v)).AddTo(ref _disposables);
-            _windTurbulenceRx.DistinctUntilChanged().Subscribe(this, (v, state) => state.chimeCompute.SetFloat(WindTurbulence, v)).AddTo(ref _disposables);
+            PushAllComputeData();
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (!Application.isPlaying) return;
-            ForceUpdateReactiveState();
+            PushAllComputeData();
         }
 #endif
 
-        private void ForceUpdateReactiveState()
+        private void PushFloat(int id, float val) { if (chimeCompute != null) chimeCompute.SetFloat(id, val); }
+        private void PushVector(int id, Vector3 val) { if (chimeCompute != null) chimeCompute.SetVector(id, val); }
+
+        private void PushAllComputeData()
         {
-            _gravityRx.Value = gravity;
-            _dampingRx.Value = damping;
-            _maxSwingAngleRx.Value = maxSwingAngle;
+            PushFloat(GravityID, gravity);
+            PushFloat(DampingID, damping);
+            PushFloat(MaxAngleID, maxSwingAngle * Mathf.Deg2Rad);
+            PushVector(WindVelocityID, _windVelocity);
+            PushFloat(WindTurbulenceID, _windTurbulence);
         }
 
         private void Update()
@@ -102,16 +114,16 @@ namespace TechArtPlayground.Wind.Chimes
             if (_chimeCount == 0 || _chimeDataBuffer == null || _argsBuffer == null) return;
 
             // 1. Wind Polling Firewall
+            // Properties intercept redundant assignments inherently via the equality check in the setters.
             if (GlobalWeatherManager.Instance != null)
             {
-                // R3 strictly intercepts these and drops the execution if the values haven't shifted.
-                _windVelocityRx.Value = GlobalWeatherManager.Instance.CurrentWindVelocity;
-                _windTurbulenceRx.Value = GlobalWeatherManager.Instance.CurrentWindTurbulence;
+                WindVelocity = GlobalWeatherManager.Instance.CurrentWindVelocity;
+                WindTurbulence = GlobalWeatherManager.Instance.CurrentWindTurbulence;
             }
 
             // 2. Pure Time Dispatches
-            chimeCompute.SetFloat(DeltaTime, Time.unscaledDeltaTime);
-            chimeCompute.SetFloat(Time1, Time.unscaledTime);
+            chimeCompute.SetFloat(DeltaTimeID, Time.unscaledDeltaTime);
+            chimeCompute.SetFloat(TimeID, Time.unscaledTime);
 
             // 3. Execution (Using the cached thread group value!)
             chimeCompute.Dispatch(_kernelUpdate, _threadGroupsX, 1, 1);
@@ -167,14 +179,13 @@ namespace TechArtPlayground.Wind.Chimes
             _threadGroupsX = Mathf.CeilToInt(_chimeCount / 64f);
 
             // 3. Bind properties that literally never change
-            chimeCompute.SetBuffer(_kernelUpdate, Chimes1, _chimeDataBuffer);
-            chimeCompute.SetInt(ChimeCount, _chimeCount);
-            instancedMaterial.SetBuffer($"_ChimeDataBuffer", _chimeDataBuffer);
+            chimeCompute.SetBuffer(_kernelUpdate, ChimesID, _chimeDataBuffer);
+            chimeCompute.SetInt(ChimeCountID, _chimeCount);
+            instancedMaterial.SetBuffer(ChimeDataBuffer, _chimeDataBuffer);
         }
 
         private void OnDisable()
         {
-            _disposables.Dispose();
             _chimeDataBuffer?.Dispose();
             _argsBuffer?.Dispose();
         }
