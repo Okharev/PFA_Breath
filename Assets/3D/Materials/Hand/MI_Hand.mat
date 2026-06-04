@@ -33,7 +33,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Basecolor:
-        m_Texture: {fileID: 2800000, guid: d0b737b7d216a434b9116d2fc1cfd514, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3bf5fbbbb16e3004692f98737bb05d9d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -57,7 +57,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Emissive:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 56e726dbec4d6fb47a888fc3417bc6eb, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -65,7 +65,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Metalic:
-        m_Texture: {fileID: 2800000, guid: 975c695c46a2b0948b560d2dab5eda86, type: 3}
+        m_Texture: {fileID: 2800000, guid: d298392bc409a2f41839aad6743b838d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -73,11 +73,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: 4c704372a41feca47a7945d3bb4e05b8, type: 3}
+        m_Texture: {fileID: 2800000, guid: 44f193941448f1c44b15f7b3494d44c4, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ORM_Oclusion_Roughtess_Metal:
-        m_Texture: {fileID: 2800000, guid: 975c695c46a2b0948b560d2dab5eda86, type: 3}
+        m_Texture: {fileID: 2800000, guid: d298392bc409a2f41839aad6743b838d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -89,7 +89,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Smoothness:
-        m_Texture: {fileID: 2800000, guid: 975c695c46a2b0948b560d2dab5eda86, type: 3}
+        m_Texture: {fileID: 2800000, guid: d298392bc409a2f41839aad6743b838d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
@@ -124,7 +124,7 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EmissiveIntensity: 50
+    - _EmissiveIntensity: 3
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -146,7 +146,7 @@ Material:
     - _Surface: 0
     - _UseAO: 1
     - _UseBaseColor: 1
-    - _UseEmissive: 0
+    - _UseEmissive: 1
     - _UseMettalic: 0
     - _UseSmoothness: 0
     - _Use_ORM: 1
