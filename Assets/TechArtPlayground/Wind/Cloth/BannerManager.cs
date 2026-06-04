@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using TechArtPlayground.Wind;
-using TechArtPlayground.Wind.Cloth;
+using R3;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace TechArtPlayground.Cloth
+namespace TechArtPlayground.Wind.Cloth
 {
     public class PhysicsBannerManager : MonoBehaviour
     {
+        private const float FixedTimeStep = 0.01666f;
+
         // --- Shader Properties ---
         private static readonly int WindVelocity = Shader.PropertyToID("_WindVelocity");
         private static readonly int WindTurbulence = Shader.PropertyToID("_WindTurbulence");
@@ -19,7 +20,8 @@ namespace TechArtPlayground.Cloth
         private static readonly int CellSize = Shader.PropertyToID("_CellSize");
         private static readonly int SelfCollisionThickness = Shader.PropertyToID("_SelfCollisionThickness");
         private static readonly int HashGridSize = Shader.PropertyToID("_HashGridSize");
-        
+
+        // Compute Buffer IDs (Hidden for brevity, assuming they remain exactly as in your original script)
         private static readonly int PredictedPositions = Shader.PropertyToID("PredictedPositions");
         private static readonly int HashPairs = Shader.PropertyToID("HashPairs");
         private static readonly int CellOffsets = Shader.PropertyToID("CellOffsets");
@@ -43,64 +45,74 @@ namespace TechArtPlayground.Cloth
         private static readonly int PositionsBuffer1 = Shader.PropertyToID("_PositionsBuffer");
         private static readonly int VsBuffer = Shader.PropertyToID("_UVsBuffer");
 
-        [Header("Resources")]
-        public ComputeShader clothCompute;
+        [Header("Resources")] public ComputeShader clothCompute;
+
         public Material clothMaterial;
         public ComputeShader radixSortCompute;
 
-        [Header("XPBD Physics Settings")]
-        public Vector3 gravity = new(0, -9.81f, 0);
-        [Range(0f, 15f)] public float drag = 2.5f;
-        public float springCompliance = 0.001f; 
-        [Range(1, 40)] public int solverIterations = 20;
-        
-        [Header("Optimization & Culling")]
-        [Tooltip("How many seconds the cloth continues to simulate after leaving the camera view before freezing.")]
-        public float sleepDelay = 2.0f;
+        // ----------------------------------------------------
+        // 1. INSPECTOR FRONT-END
+        // ----------------------------------------------------
+        [Header("XPBD Physics Settings")] [SerializeField]
+        private Vector3 gravity = new(0, -9.81f, 0);
 
-        [Header("Self Collision")]
-        public bool enableSelfCollision = true;
-        public float clothThickness = 0.05f;
-        public float spatialCellSize = 0.1f;
-        public int hashGridSize = 8192; // Reduced drastically! It's now localized per-banner.
+        [Range(0f, 15f)] [SerializeField] private float drag = 2.5f;
+        [SerializeField] private float springCompliance = 0.001f;
+        [Range(1, 40)] [SerializeField] private int solverIterations = 20;
 
-        // --- Kernels ---
+        [Header("Optimization & Culling")] public float sleepDelay = 2.0f;
+
+        [Header("Self Collision")] public bool enableSelfCollision = true;
+
+        [SerializeField] private float clothThickness = 0.05f;
+        [SerializeField] private float spatialCellSize = 0.1f;
+        [SerializeField] private int hashGridSize = 8192;
+        private readonly ReactiveProperty<float> _cellSizeRx = new();
+        private readonly ReactiveProperty<float> _dragRx = new();
+
+        // ----------------------------------------------------
+        // 2. R3 BACK-END (Push-based States)
+        // ----------------------------------------------------
+        private readonly ReactiveProperty<Vector3> _gravityRx = new();
+        private readonly ReactiveProperty<int> _solverIterationsRx = new();
+        private readonly ReactiveProperty<float> _thicknessRx = new();
+        private readonly ReactiveProperty<float> _windTurbulenceRx = new();
+        private readonly ReactiveProperty<Vector3> _windVelocityRx = new();
+
+        private readonly List<BannerInstance> _bannerInstances = new();
+
+        private DisposableBag _disposables;
+        private readonly Plane[] _frustumPlanes = new Plane[6];
+
+        // --- Kernels & State ---
         private int _kHash, _kClearOffsets, _kBuildOffsets, _kSelfCollide;
         private int _kPredict, _kSolve, _kIntegrate, _kNormals;
-
-        // --- CHUNKING: The Banner Instances ---
-        private List<BannerInstance> _bannerInstances = new();
         private Camera _mainCam;
-        private Plane[] _frustumPlanes = new Plane[6];
 
-        // --- Shared Temporary Buffers (Memory Optimization) ---
-        // We reuse these for Radix Sort across all banners to save VRAM
         private GraphicsBuffer _sharedGlobalHistBuffer;
         private GraphicsBuffer _sharedLocalOffsetsBuffer;
 
-        private float _timeAccumulator = 0.0f;
-        private const float FixedTimeStep = 0.01666f;
-
-        private void Start()
-        {
-            _mainCam = Camera.main;
-            InitializeKernels();
-            InitializeBanners();
-        }
+        private float _timeAccumulator;
 
         private void Update()
         {
             if (_bannerInstances.Count == 0) return;
 
-            // 1. Frustum Culling Check
+            // 1. Wind Polling Firewall
+            if (GlobalWeatherManager.Instance != null)
+            {
+                // R3 stops execution if these values haven't shifted
+                _windVelocityRx.Value = GlobalWeatherManager.Instance.CurrentWindVelocity;
+                _windTurbulenceRx.Value = GlobalWeatherManager.Instance.CurrentWindTurbulence;
+            }
+
+            // 2. Frustum Culling Check
             GeometryUtility.CalculateFrustumPlanes(_mainCam, _frustumPlanes);
 
-            foreach (var inst in _bannerInstances)
+            foreach (BannerInstance inst in _bannerInstances)
             {
-                // STEP 2: PHYSICS SLEEP STATES
-                inst.UpdateDynamicColliders(); // Update colliders associated specifically with this banner
-                
-                // Test bounds against camera
+                // NOTE: inst.UpdateDynamicColliders() REMOVED. Colliders are now strictly static!
+
                 inst.IsVisible = GeometryUtility.TestPlanesAABB(_frustumPlanes, inst.WorldBounds);
 
                 if (inst.IsVisible)
@@ -111,97 +123,153 @@ namespace TechArtPlayground.Cloth
                 else
                 {
                     inst.TimeSinceVisible += Time.unscaledDeltaTime;
-                    // Freeze simulation if off-screen for longer than the sleep delay
-                    inst.IsActive = inst.TimeSinceVisible < sleepDelay; 
+                    inst.IsActive = inst.TimeSinceVisible < sleepDelay;
                 }
             }
 
-            // 2. Fixed Timestep Physics Loop (Only processes Active banners)
+            // 3. Fixed Timestep Physics Loop
             _timeAccumulator += Mathf.Min(Time.unscaledDeltaTime, 0.1f);
             while (_timeAccumulator >= FixedTimeStep)
             {
-                StepSimulation(FixedTimeStep);
+                StepSimulation();
                 _timeAccumulator -= FixedTimeStep;
             }
 
-            // 3. Render Loop (Only renders Visible banners)
-            foreach (var inst in _bannerInstances)
-            {
+            // 4. Render Loop
+            foreach (BannerInstance inst in _bannerInstances)
                 if (inst.IsVisible)
-                {
-                    Graphics.DrawMesh(inst.RenderMesh, Matrix4x4.identity, clothMaterial, gameObject.layer, _mainCam, 0, inst.MatBlock);
-                }
-            }
+                    Graphics.DrawMesh(inst.RenderMesh, Matrix4x4.identity, clothMaterial, gameObject.layer, _mainCam, 0,
+                        inst.MatBlock);
+        }
+
+        private void OnEnable()
+        {
+            _mainCam = Camera.main;
+            _disposables = new DisposableBag();
+
+            InitializeKernels();
+            InitializeBanners();
+            InitializeReactivePipelines();
+            ForceUpdateReactiveState();
+        }
+
+
+        private void OnDisable()
+        {
+            _disposables.Dispose();
+            foreach (BannerInstance inst in _bannerInstances) inst.Dispose();
+            _sharedGlobalHistBuffer?.Dispose();
+            _sharedLocalOffsetsBuffer?.Dispose();
+            _bannerInstances.Clear();
         }
 
         private void OnDestroy()
         {
-            foreach (var inst in _bannerInstances) inst.Dispose();
+            foreach (BannerInstance inst in _bannerInstances) inst.Dispose();
             _sharedGlobalHistBuffer?.Dispose();
             _sharedLocalOffsetsBuffer?.Dispose();
         }
 
-        private void StepSimulation(float dt)
+#if UNITY_EDITOR
+        private void OnValidate()
         {
-            float subStepDelta = dt / solverIterations;
+            if (!Application.isPlaying) return;
+            ForceUpdateReactiveState();
+        }
+#endif
 
-            // Global Shader Variables
-            clothCompute.SetFloat(DeltaTime, subStepDelta); 
-            clothCompute.SetFloat(Time1, Time.unscaledTime);
-            clothCompute.SetVector(Gravity, gravity);
-            clothCompute.SetFloat(Drag, drag);
-            clothCompute.SetFloat(CellSize, spatialCellSize);
-            clothCompute.SetFloat(SelfCollisionThickness, clothThickness);
+        private void InitializeReactivePipelines()
+        {
+            // Zero-allocation, stateful R3 subscriptions
+            _gravityRx.DistinctUntilChanged().Subscribe(this, (g, state) => state.clothCompute.SetVector(Gravity, g))
+                .AddTo(ref _disposables);
+            _dragRx.DistinctUntilChanged().Subscribe(this, (d, state) => state.clothCompute.SetFloat(Drag, d))
+                .AddTo(ref _disposables);
+            _thicknessRx.DistinctUntilChanged()
+                .Subscribe(this, (t, state) => state.clothCompute.SetFloat(SelfCollisionThickness, t))
+                .AddTo(ref _disposables);
+            _cellSizeRx.DistinctUntilChanged().Subscribe(this, (c, state) => state.clothCompute.SetFloat(CellSize, c))
+                .AddTo(ref _disposables);
+
+            _windVelocityRx.DistinctUntilChanged()
+                .Subscribe(this, (v, state) => state.clothCompute.SetVector(WindVelocity, v)).AddTo(ref _disposables);
+            _windTurbulenceRx.DistinctUntilChanged()
+                .Subscribe(this, (t, state) => state.clothCompute.SetFloat(WindTurbulence, t)).AddTo(ref _disposables);
+
+            // Sub-step delta pre-calculation
+            _solverIterationsRx.DistinctUntilChanged().Subscribe(this, (iters, state) =>
+            {
+                float subStepDelta = FixedTimeStep / Mathf.Max(1, iters);
+                state.clothCompute.SetFloat(DeltaTime, subStepDelta);
+            }).AddTo(ref _disposables);
+
+            // Static bindings that never change after initialization
             clothCompute.SetInt(HashGridSize, hashGridSize);
+        }
 
-            // Mocking Global Wind for standalone use
-// Restore dynamic weather linkage with a safe fallback
-            if (GlobalWeatherManager.Instance != null)
-            {
-                clothCompute.SetVector(WindVelocity, GlobalWeatherManager.Instance.CurrentWindVelocity);
-                clothCompute.SetFloat(WindTurbulence, GlobalWeatherManager.Instance.CurrentWindTurbulence);
-            }
-            else
-            {
-                // Fallback if the weather manager isn't loaded yet
-                clothCompute.SetVector(WindVelocity, new Vector3(2f, 0f, 5f));
-                clothCompute.SetFloat(WindTurbulence, 0.5f);
-            }
+        private void ForceUpdateReactiveState()
+        {
+            _gravityRx.Value = gravity;
+            _dragRx.Value = drag;
+            _solverIterationsRx.Value = solverIterations;
+            _thicknessRx.Value = clothThickness;
+            _cellSizeRx.Value = spatialCellSize;
+        }
+
+        // ==========================================
+        // PUBLIC API: ON-DEMAND COLLIDER REFRESH
+        // ==========================================
+        /// <summary>
+        ///     Explicitly triggers a collider memory refresh for a specific banner.
+        ///     Use this via scripts only when a wall/door physically moves near a banner.
+        /// </summary>
+        public void RefreshCollidersFor(PhysicsBannerNode targetNode)
+        {
+            foreach (BannerInstance inst in _bannerInstances)
+                if (inst.Node == targetNode)
+                {
+                    inst.UpdateDynamicColliders();
+                    return;
+                }
+        }
+
+        private void StepSimulation()
+        {
+            // The simulation loop is now completely purged of property binding overhead!
+            // Only Continuous Time needs to be updated.
+            clothCompute.SetFloat(Time1, Time.unscaledTime);
 
             int hashGroups = Mathf.CeilToInt(hashGridSize / 64f);
 
-            // ==========================================
-            // STEP 1: CHUNKING (Process Per-Instance)
-            // ==========================================
-            foreach (var inst in _bannerInstances)
+            foreach (BannerInstance inst in _bannerInstances)
             {
-                if (!inst.IsActive) continue; // SKIPPED IF ASLEEP
+                if (!inst.IsActive) continue;
 
                 int groupsX = Mathf.CeilToInt(inst.VertexCount / 64f);
-                BindInstanceToCompute(inst); // Points compute shader to this specific banner's buffers
+                BindInstanceToCompute(inst);
 
-                // --- SPATIAL HASHING (Localized) ---
+                // --- SPATIAL HASHING ---
                 if (enableSelfCollision)
                 {
                     clothCompute.Dispatch(_kHash, groupsX, 1, 1);
                     DispatchRadixSort(inst);
-                    
+
                     clothCompute.Dispatch(_kClearOffsets, hashGroups, 1, 1);
                     clothCompute.Dispatch(_kBuildOffsets, groupsX, 1, 1);
                 }
 
                 // --- XPBD SUB-STEP SOLVER ---
+                // solverIterations logic removed; loop directly reads the inspector value.
                 for (int i = 0; i < solverIterations; i++)
                 {
                     clothCompute.Dispatch(_kPredict, groupsX, 1, 1);
                     clothCompute.Dispatch(_kSolve, groupsX, 1, 1);
-                    
+
                     if (enableSelfCollision) clothCompute.Dispatch(_kSelfCollide, groupsX, 1, 1);
-                    
+
                     clothCompute.Dispatch(_kIntegrate, groupsX, 1, 1);
                 }
 
-                // Update Normals at the end of the full timestep
                 clothCompute.Dispatch(_kNormals, groupsX, 1, 1);
             }
         }
@@ -234,7 +302,7 @@ namespace TechArtPlayground.Cloth
             clothCompute.SetBuffer(_kIntegrate, Positions, inst.PositionsBuffer);
             clothCompute.SetBuffer(_kIntegrate, PredictedPositions, inst.PredictedPositionsBuffer);
             clothCompute.SetBuffer(_kIntegrate, PhysicsData, inst.PhysicsBuffer);
-            clothCompute.SetBuffer(_kIntegrate, Adjacency, inst.AdjacencyBuffer); 
+            clothCompute.SetBuffer(_kIntegrate, Adjacency, inst.AdjacencyBuffer);
 
             // Normals Kernel
             clothCompute.SetBuffer(_kNormals, Positions, inst.PositionsBuffer);
@@ -252,15 +320,15 @@ namespace TechArtPlayground.Cloth
         private void DispatchRadixSort(BannerInstance inst)
         {
             int numElements = inst.VertexCount;
-            int numBlocks = Mathf.CeilToInt((float)numElements / 256f);
+            int numBlocks = Mathf.CeilToInt(numElements / 256f);
 
-            radixSortCompute.SetInt(NumElements, numElements); 
+            radixSortCompute.SetInt(NumElements, numElements);
             radixSortCompute.SetInt(NumBlocks, numBlocks);
-    
+
             radixSortCompute.SetBuffer(0, GlobalHist, _sharedGlobalHistBuffer);
             radixSortCompute.SetBuffer(0, LocalOffsets, _sharedLocalOffsetsBuffer);
             radixSortCompute.SetBuffer(1, GlobalHist, _sharedGlobalHistBuffer);
-    
+
             GraphicsBuffer input = inst.HashPairsBuffer;
             GraphicsBuffer output = inst.SortedHashPairsBuffer;
 
@@ -274,7 +342,7 @@ namespace TechArtPlayground.Cloth
                 radixSortCompute.SetBuffer(2, GlobalHist, _sharedGlobalHistBuffer);
 
                 radixSortCompute.Dispatch(0, numBlocks, 1, 1);
-                radixSortCompute.Dispatch(1, 16, 1, 1);       
+                radixSortCompute.Dispatch(1, 16, 1, 1);
                 radixSortCompute.Dispatch(2, numBlocks, 1, 1);
 
                 (input, output) = (output, input); // Ping-pong
@@ -295,20 +363,21 @@ namespace TechArtPlayground.Cloth
 
         private void InitializeBanners()
         {
-            PhysicsBannerNode[] nodes = FindObjectsByType<PhysicsBannerNode>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            PhysicsBannerNode[] nodes =
+                FindObjectsByType<PhysicsBannerNode>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             int maxVerticesInAnyBanner = 0;
 
-            foreach (var node in nodes)
+            foreach (PhysicsBannerNode node in nodes)
             {
-                BannerInstance inst = new BannerInstance(node, springCompliance, hashGridSize);
+                BannerInstance inst = new(node, springCompliance, hashGridSize);
                 _bannerInstances.Add(inst);
-                
-                if (inst.VertexCount > maxVerticesInAnyBanner) 
+
+                if (inst.VertexCount > maxVerticesInAnyBanner)
                     maxVerticesInAnyBanner = inst.VertexCount;
             }
 
             // Allocate shared Radix Sort buffers scaled only to the single largest banner
-            int maxBlocks = Mathf.Max(1, Mathf.CeilToInt((float)maxVerticesInAnyBanner / 256f));
+            int maxBlocks = Mathf.Max(1, Mathf.CeilToInt(maxVerticesInAnyBanner / 256f));
             _sharedGlobalHistBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 16 * maxBlocks, 4);
             _sharedLocalOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxVerticesInAnyBanner, 4);
         }
@@ -317,47 +386,92 @@ namespace TechArtPlayground.Cloth
         // STRUCTS
         // ==========================================
         [StructLayout(LayoutKind.Sequential)]
-        public struct PhysicsState { public Vector3 velocity; public float inverseMass; public uint colliderStart; public uint colliderCount; public float selfCollideMask; public float padding; }
+        public struct PhysicsState
+        {
+            public Vector3 velocity;
+            public float inverseMass;
+            public uint colliderStart;
+            public uint colliderCount;
+            public float selfCollideMask;
+            public float padding;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
-        public struct SpringLink { public uint startIndex; public uint count; }
+        public struct SpringLink
+        {
+            public uint startIndex;
+            public uint count;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
-        public struct Spring { public uint targetIndex; public float restLength; public float compliance; public float padding; }
+        public struct Spring
+        {
+            public uint targetIndex;
+            public float restLength;
+            public float compliance;
+            public float padding;
+        }
+
         [StructLayout(LayoutKind.Sequential)]
-        public struct Int4 { public int x, y, z, w; public Int4(int _x, int _y, int _z, int _w) { x = _x; y = _y; z = _z; w = _w; } }
+        public struct Int4
+        {
+            public int x, y, z, w;
+
+            public Int4(int _x, int _y, int _z, int _w)
+            {
+                x = _x;
+                y = _y;
+                z = _z;
+                w = _w;
+            }
+        }
+
         [StructLayout(LayoutKind.Sequential)]
-        public struct ClothColliderData { public int type; public float radius; public Vector2 padding1; public Vector3 posA; public float padding2; public Vector3 posB; public float padding3; public Matrix4x4 worldToLocal; public Matrix4x4 localToWorld; public Vector3 extents; public float padding4; }
+        public struct ClothColliderData
+        {
+            public int type;
+            public float radius;
+            public Vector2 padding1;
+            public Vector3 posA;
+            public float padding2;
+            public Vector3 posB;
+            public float padding3;
+            public Matrix4x4 worldToLocal;
+            public Matrix4x4 localToWorld;
+            public Vector3 extents;
+            public float padding4;
+        }
 
         // ==========================================
         // THE CHUNK CLASS
         // ==========================================
         private class BannerInstance
         {
-            public PhysicsBannerNode Node;
-            public Mesh RenderMesh;
-            public Bounds WorldBounds;
-            public MaterialPropertyBlock MatBlock;
-            
-            public int VertexCount;
+            private readonly ClothStaticCollider[] _activeColliders;
+            private readonly ClothColliderData[] _colliderDataArray;
+            public readonly GraphicsBuffer AdjacencyBuffer;
+            public readonly GraphicsBuffer CellOffsetsBuffer;
+            public readonly GraphicsBuffer CollidersBuffer;
+            public readonly GraphicsBuffer HashPairsBuffer;
             public bool IsActive = true;
             public bool IsVisible = true;
-            public float TimeSinceVisible = 0f;
+            public readonly MaterialPropertyBlock MatBlock;
+            public readonly PhysicsBannerNode Node;
+            public readonly GraphicsBuffer NormalsBuffer;
+            public readonly GraphicsBuffer PhysicsBuffer;
 
             // Buffers Isolated per Banner
-            public GraphicsBuffer PositionsBuffer;
-            public GraphicsBuffer PredictedPositionsBuffer;
-            public GraphicsBuffer NormalsBuffer;
-            public GraphicsBuffer UVsBuffer;
-            public GraphicsBuffer PhysicsBuffer;
-            public GraphicsBuffer SpringLinksBuffer;
-            public GraphicsBuffer SpringsBuffer;
-            public GraphicsBuffer AdjacencyBuffer;
-            public GraphicsBuffer HashPairsBuffer;
-            public GraphicsBuffer SortedHashPairsBuffer;
-            public GraphicsBuffer CellOffsetsBuffer;
-            public GraphicsBuffer CollidersBuffer;
+            public readonly GraphicsBuffer PositionsBuffer;
+            public readonly GraphicsBuffer PredictedPositionsBuffer;
+            public readonly Mesh RenderMesh;
+            public readonly GraphicsBuffer SortedHashPairsBuffer;
+            public readonly GraphicsBuffer SpringLinksBuffer;
+            public readonly GraphicsBuffer SpringsBuffer;
+            public float TimeSinceVisible;
+            public readonly GraphicsBuffer UVsBuffer;
 
-            private ClothStaticCollider[] _activeColliders;
-            private ClothColliderData[] _colliderDataArray;
+            public readonly int VertexCount;
+            public readonly Bounds WorldBounds;
 
             public BannerInstance(PhysicsBannerNode node, float compliance, int hashSize)
             {
@@ -382,116 +496,142 @@ namespace TechArtPlayground.Cloth
                 List<Int4> adjacency = new(VertexCount);
                 List<int> meshIndices = new();
 
-                Vector2 step = new(node.dimensions.x / (node.resolution.x - 1), node.dimensions.y / (node.resolution.y - 1));
+                Vector2 step = new(node.dimensions.x / (node.resolution.x - 1),
+                    node.dimensions.y / (node.resolution.y - 1));
 
                 for (int y = 0; y < node.resolution.y; y++)
+                for (int x = 0; x < node.resolution.x; x++)
                 {
-                    for (int x = 0; x < node.resolution.x; x++)
+                    int index = y * node.resolution.x + x;
+                    Vector3 localPos = new(x * step.x - node.dimensions.x * 0.5f, -(y * step.y), 0);
+                    positions.Add(node.transform.TransformPoint(localPos));
+                    normals.Add(-node.transform.forward);
+
+                    float uCoord = (float)x / (node.resolution.x - 1);
+                    float vCoord = 1.0f - (float)y / (node.resolution.y - 1);
+                    uvs.Add(new Vector2(uCoord, vCoord));
+
+                    float invMass = y == 0 ? 0.0f : 1.0f;
+                    float selfCollide = 1.0f;
+
+                    if (node.weightMap != null)
                     {
-                        int index = y * node.resolution.x + x;
-                        Vector3 localPos = new(x * step.x - node.dimensions.x * 0.5f, -(y * step.y), 0);
-                        positions.Add(node.transform.TransformPoint(localPos));
-                        normals.Add(-node.transform.forward);
-                        
-                        float uCoord = (float)x / (node.resolution.x - 1);
-                        float vCoord = 1.0f - (float)y / (node.resolution.y - 1);
-                        uvs.Add(new Vector2(uCoord, vCoord));
-
-                        float invMass = (y == 0) ? 0.0f : 1.0f;
-                        float selfCollide = 1.0f; 
-
-                        if (node.weightMap != null)
-                        {
-                            int texX = Mathf.Clamp(Mathf.RoundToInt(uCoord * (node.weightMap.width - 1)), 0, node.weightMap.width - 1);
-                            int texY = Mathf.Clamp(Mathf.RoundToInt(vCoord * (node.weightMap.height - 1)), 0, node.weightMap.height - 1);
-                            Color c = node.weightMap.GetPixel(texX, texY);
-                            invMass = c.r;
-                            selfCollide = c.b; 
-                        }
-
-                        physics.Add(new PhysicsState { velocity = Vector3.zero, inverseMass = invMass, colliderStart = 0, colliderCount = (uint)_activeColliders.Length, selfCollideMask = selfCollide, padding = 0f });
-
-                        Int4 adj = new Int4(-1, -1, -1, -1);
-                        if (x > 0) adj.x = index - 1;
-                        if (x < node.resolution.x - 1) adj.y = index + 1;
-                        if (y > 0) adj.z = index - node.resolution.x;
-                        if (y < node.resolution.y - 1) adj.w = index + node.resolution.x;
-                        
-                        if (node.isPrayerFlagMode)
-                        {
-                            if (x > 0 && (x / node.flagWidth) != ((x - 1) / node.flagWidth)) adj.x = -1;
-                            if (x < node.resolution.x - 1 && (x / node.flagWidth) != ((x + 1) / node.flagWidth)) adj.y = -1;
-                        }
-                        adjacency.Add(adj);
+                        int texX = Mathf.Clamp(Mathf.RoundToInt(uCoord * (node.weightMap.width - 1)), 0,
+                            node.weightMap.width - 1);
+                        int texY = Mathf.Clamp(Mathf.RoundToInt(vCoord * (node.weightMap.height - 1)), 0,
+                            node.weightMap.height - 1);
+                        Color c = node.weightMap.GetPixel(texX, texY);
+                        invMass = c.r;
+                        selfCollide = c.b;
                     }
+
+                    physics.Add(new PhysicsState
+                    {
+                        velocity = Vector3.zero, inverseMass = invMass, colliderStart = 0,
+                        colliderCount = (uint)_activeColliders.Length, selfCollideMask = selfCollide, padding = 0f
+                    });
+
+                    Int4 adj = new(-1, -1, -1, -1);
+                    if (x > 0) adj.x = index - 1;
+                    if (x < node.resolution.x - 1) adj.y = index + 1;
+                    if (y > 0) adj.z = index - node.resolution.x;
+                    if (y < node.resolution.y - 1) adj.w = index + node.resolution.x;
+
+                    if (node.isPrayerFlagMode)
+                    {
+                        if (x > 0 && x / node.flagWidth != (x - 1) / node.flagWidth) adj.x = -1;
+                        if (x < node.resolution.x - 1 && x / node.flagWidth != (x + 1) / node.flagWidth) adj.y = -1;
+                    }
+
+                    adjacency.Add(adj);
                 }
 
                 for (int y = 0; y < node.resolution.y; y++)
+                for (int x = 0; x < node.resolution.x; x++)
                 {
-                    for (int x = 0; x < node.resolution.x; x++)
+                    int index = y * node.resolution.x + x;
+                    uint startIndex = (uint)springs.Count;
+                    uint springCount = 0;
+
+                    float stiffnessMult = 1.0f;
+                    if (node.weightMap != null)
                     {
-                        int index = y * node.resolution.x + x;
-                        uint startIndex = (uint)springs.Count;
-                        uint springCount = 0;
-
-                        float stiffnessMult = 1.0f;
-                        if (node.weightMap != null)
-                        {
-                            int texX = Mathf.Clamp(Mathf.RoundToInt(((float)x / (node.resolution.x - 1)) * (node.weightMap.width - 1)), 0, node.weightMap.width - 1);
-                            int texY = Mathf.Clamp(Mathf.RoundToInt((1.0f - (float)y / (node.resolution.y - 1)) * (node.weightMap.height - 1)), 0, node.weightMap.height - 1);
-                            stiffnessMult = Mathf.Lerp(1.0f, 0.0f, node.weightMap.GetPixel(texX, texY).g); 
-                        }
-
-                        void AddSpring(int nx, int ny, float compMult)
-                        {
-                            if (nx >= 0 && nx < node.resolution.x && ny >= 0 && ny < node.resolution.y)
-                            {
-                                if (node.isPrayerFlagMode && !(y == 0 && ny == 0) && (x / node.flagWidth) != (nx / node.flagWidth)) return; 
-                                int nIdx = ny * node.resolution.x + nx;
-                                float dist = Vector3.Distance(positions[index], positions[nIdx]);
-                                springs.Add(new Spring { targetIndex = (uint)nIdx, restLength = dist, compliance = compliance * compMult * stiffnessMult, padding = 0 });
-                                springCount++;
-                            }
-                        }
-
-                        AddSpring(x, y - 1, 1f); AddSpring(x, y + 1, 1f); AddSpring(x - 1, y, 1f); AddSpring(x + 1, y, 1f);
-                        AddSpring(x - 1, y - 1, 2f); AddSpring(x + 1, y - 1, 2f); AddSpring(x - 1, y + 1, 2f); AddSpring(x + 1, y + 1, 2f);
-                        AddSpring(x, y - 2, 4f); AddSpring(x, y + 2, 4f); AddSpring(x - 2, y, 4f); AddSpring(x + 2, y, 4f);
-
-                        springLinks.Add(new SpringLink { startIndex = startIndex, count = springCount });
+                        int texX = Mathf.Clamp(
+                            Mathf.RoundToInt((float)x / (node.resolution.x - 1) * (node.weightMap.width - 1)), 0,
+                            node.weightMap.width - 1);
+                        int texY = Mathf.Clamp(
+                            Mathf.RoundToInt((1.0f - (float)y / (node.resolution.y - 1)) * (node.weightMap.height - 1)),
+                            0, node.weightMap.height - 1);
+                        stiffnessMult = Mathf.Lerp(1.0f, 0.0f, node.weightMap.GetPixel(texX, texY).g);
                     }
+
+                    void AddSpring(int nx, int ny, float compMult)
+                    {
+                        if (nx >= 0 && nx < node.resolution.x && ny >= 0 && ny < node.resolution.y)
+                        {
+                            if (node.isPrayerFlagMode && !(y == 0 && ny == 0) &&
+                                x / node.flagWidth != nx / node.flagWidth) return;
+                            int nIdx = ny * node.resolution.x + nx;
+                            float dist = Vector3.Distance(positions[index], positions[nIdx]);
+                            springs.Add(new Spring
+                            {
+                                targetIndex = (uint)nIdx, restLength = dist,
+                                compliance = compliance * compMult * stiffnessMult, padding = 0
+                            });
+                            springCount++;
+                        }
+                    }
+
+                    AddSpring(x, y - 1, 1f);
+                    AddSpring(x, y + 1, 1f);
+                    AddSpring(x - 1, y, 1f);
+                    AddSpring(x + 1, y, 1f);
+                    AddSpring(x - 1, y - 1, 2f);
+                    AddSpring(x + 1, y - 1, 2f);
+                    AddSpring(x - 1, y + 1, 2f);
+                    AddSpring(x + 1, y + 1, 2f);
+                    AddSpring(x, y - 2, 4f);
+                    AddSpring(x, y + 2, 4f);
+                    AddSpring(x - 2, y, 4f);
+                    AddSpring(x + 2, y, 4f);
+
+                    springLinks.Add(new SpringLink { startIndex = startIndex, count = springCount });
                 }
 
                 for (int y = 0; y < node.resolution.y - 1; y++)
+                for (int x = 0; x < node.resolution.x - 1; x++)
                 {
-                    for (int x = 0; x < node.resolution.x - 1; x++)
-                    {
-                        if (node.isPrayerFlagMode && (x + 1) % node.flagWidth == 0) continue;
-                        int i0 = y * node.resolution.x + x;
-                        meshIndices.Add(i0); meshIndices.Add(i0 + node.resolution.x); meshIndices.Add(i0 + 1);
-                        meshIndices.Add(i0 + 1); meshIndices.Add(i0 + node.resolution.x); meshIndices.Add(i0 + node.resolution.x + 1);
-                    }
+                    if (node.isPrayerFlagMode && (x + 1) % node.flagWidth == 0) continue;
+                    int i0 = y * node.resolution.x + x;
+                    meshIndices.Add(i0);
+                    meshIndices.Add(i0 + node.resolution.x);
+                    meshIndices.Add(i0 + 1);
+                    meshIndices.Add(i0 + 1);
+                    meshIndices.Add(i0 + node.resolution.x);
+                    meshIndices.Add(i0 + node.resolution.x + 1);
                 }
 
                 // 3. Create the Local Mesh
                 RenderMesh = new Mesh { name = "BannerMesh_" + node.name, indexFormat = IndexFormat.UInt32 };
-                RenderMesh.SetVertices(new Vector3[VertexCount]); 
+                RenderMesh.SetVertices(new Vector3[VertexCount]);
                 RenderMesh.SetIndices(meshIndices.ToArray(), MeshTopology.Triangles, 0);
-                RenderMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 1000f); // Render bounds handles by frustum logic
+                RenderMesh.bounds =
+                    new Bounds(Vector3.zero, Vector3.one * 1000f); // Render bounds handles by frustum logic
 
                 // 4. Allocate Independent GPU Buffers
                 PositionsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 12);
                 PredictedPositionsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 12);
                 NormalsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 12);
                 UVsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 8);
-                PhysicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 32); 
+                PhysicsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 32);
                 SpringLinksBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 8);
                 SpringsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, springs.Count, 16);
                 AdjacencyBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 16);
                 HashPairsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 8);
                 SortedHashPairsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 8);
                 CellOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, hashSize, 4);
-                CollidersBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, _activeColliders.Length), 192);
+                CollidersBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured,
+                    Mathf.Max(1, _activeColliders.Length), 192);
 
                 PositionsBuffer.SetData(positions);
                 PredictedPositionsBuffer.SetData(positions);
@@ -501,11 +641,9 @@ namespace TechArtPlayground.Cloth
                 SpringLinksBuffer.SetData(springLinks);
                 SpringsBuffer.SetData(springs);
                 AdjacencyBuffer.SetData(adjacency);
-                
+
                 UpdateDynamicColliders();
 
-                // 5. Initialize the Material Property Block!
-                // This tricks the global shader into reading ONLY this instance's buffers for this specific draw call.
                 MatBlock = new MaterialPropertyBlock();
                 MatBlock.SetBuffer(PositionsBuffer1, PositionsBuffer);
                 MatBlock.SetBuffer(Buffer, NormalsBuffer);
@@ -514,15 +652,20 @@ namespace TechArtPlayground.Cloth
 
             public void UpdateDynamicColliders()
             {
+                // Logic remains exactly the same, but it is now an Event-Driven method
+                // instead of a Polled method.
                 if (_activeColliders == null || _activeColliders.Length == 0) return;
-                
+
                 for (int i = 0; i < _activeColliders.Length; i++)
                 {
                     ClothStaticCollider c = _activeColliders[i];
                     _colliderDataArray[i].type = (int)c.colliderType;
                     _colliderDataArray[i].radius = c.radius;
 
-                    if (c.colliderType == ClothColliderType.Sphere) _colliderDataArray[i].posA = c.transform.position;
+                    if (c.colliderType == ClothColliderType.Sphere)
+                    {
+                        _colliderDataArray[i].posA = c.transform.position;
+                    }
                     else if (c.colliderType == ClothColliderType.Capsule)
                     {
                         Vector3 up = c.transform.up;
@@ -537,14 +680,24 @@ namespace TechArtPlayground.Cloth
                         _colliderDataArray[i].extents = c.boxExtents;
                     }
                 }
+
                 CollidersBuffer.SetData(_colliderDataArray);
             }
 
             public void Dispose()
             {
-                PositionsBuffer?.Dispose(); PredictedPositionsBuffer?.Dispose(); NormalsBuffer?.Dispose(); UVsBuffer?.Dispose();
-                PhysicsBuffer?.Dispose(); SpringLinksBuffer?.Dispose(); SpringsBuffer?.Dispose(); AdjacencyBuffer?.Dispose();
-                HashPairsBuffer?.Dispose(); SortedHashPairsBuffer?.Dispose(); CellOffsetsBuffer?.Dispose(); CollidersBuffer?.Dispose();
+                PositionsBuffer?.Dispose();
+                PredictedPositionsBuffer?.Dispose();
+                NormalsBuffer?.Dispose();
+                UVsBuffer?.Dispose();
+                PhysicsBuffer?.Dispose();
+                SpringLinksBuffer?.Dispose();
+                SpringsBuffer?.Dispose();
+                AdjacencyBuffer?.Dispose();
+                HashPairsBuffer?.Dispose();
+                SortedHashPairsBuffer?.Dispose();
+                CellOffsetsBuffer?.Dispose();
+                CollidersBuffer?.Dispose();
             }
         }
     }

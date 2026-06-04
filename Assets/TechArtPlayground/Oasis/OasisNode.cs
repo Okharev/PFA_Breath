@@ -19,7 +19,7 @@
     
         public float CurrentWaveRadius { get; private set; } = 0f;
 
-        void OnEnable()
+        private void OnEnable()
         {
             if (OasisManager.Instance != null) OasisManager.Instance.RegisterOasis(this);
 
@@ -34,12 +34,12 @@
             }
         }
 
-        void OnDisable()
+        private void OnDisable()
         {
             if (OasisManager.Instance != null) OasisManager.Instance.DeregisterOasis(this);
         }
 
-        void Update()
+        private void Update()
         {
             if (isExpanding && CurrentWaveRadius < deadZoneRadius)
             {

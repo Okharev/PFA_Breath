@@ -8,11 +8,12 @@ public class NewEmptyCSharpScript: MonoBehaviour
     public VisualEffect VFXGraph;
     public float refreshRate;
 
-   void Start()
+    private void Start()
     {
         StartCoroutine (UpdateVFXGraph());
     }
-    IEnumerator UpdateVFXGraph()
+
+    private IEnumerator UpdateVFXGraph()
     { 
         while (gameObject.activeSelf)
         {

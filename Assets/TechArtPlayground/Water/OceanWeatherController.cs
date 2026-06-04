@@ -1,9 +1,9 @@
 ﻿using TechArtPlayground.Wind;
 using UnityEngine;
+using R3;
 
 namespace TechArtPlayground.Water
 {
-    // Preset struct remains the same...
     [System.Serializable]
     public struct OceanWeatherPreset
     {
@@ -33,43 +33,55 @@ namespace TechArtPlayground.Water
         private static readonly int FoamBias = Shader.PropertyToID("_FoamBias");
         private static readonly int FoamPower = Shader.PropertyToID("_FoamPower");
 
+        // R3 Bridge
+        private readonly ReactiveProperty<float> _weatherBlendRx = new(0f);
+        private DisposableBag _disposables;
+
         private void Reset() => fftBinder = GetComponent<OceanFFTBinder>();
 
         private void OnEnable()
         {
-            // OBSERVER: Subscribe to the global weather changes
+            _disposables = new DisposableBag();
+
+            // 1. Subscribe to R3 stream with a Distinct filter
+            _weatherBlendRx
+                .DistinctUntilChanged()
+                .Subscribe(ApplyWeatherBlend)
+                .AddTo(ref _disposables);
+
+            // 2. Bridge standard C# Event to R3
             if (GlobalWeatherManager.Instance != null)
             {
-                GlobalWeatherManager.Instance.OnWeatherBlendChanged += ApplyWeatherBlend;
-                
-                // Initialize to current state
-                ApplyWeatherBlend(GlobalWeatherManager.Instance.currentBlend);
+                GlobalWeatherManager.Instance.OnWeatherBlendChanged += OnGlobalWeatherChanged;
+                _weatherBlendRx.Value = GlobalWeatherManager.Instance.currentBlend;
             }
         }
 
-        private void OnDisable()
-        {
-            // CRITICAL: Always unsubscribe to prevent memory leaks
-            if (GlobalWeatherManager.Instance != null)
-            {
-                GlobalWeatherManager.Instance.OnWeatherBlendChanged -= ApplyWeatherBlend;
-            }
-        }
+        // Intercepts traditional C# event and pushes to reactive stream
+        private void OnGlobalWeatherChanged(float blend) => _weatherBlendRx.Value = blend;
 
         private void ApplyWeatherBlend(float blend)
         {
             if (fftBinder == null || oceanMaterial == null) return;
 
-            // 1. Lerp FFT Compute Parameters
-            fftBinder.windSpeed = Mathf.Lerp(calmPreset.windSpeed, tempestPreset.windSpeed, blend);
-            fftBinder.phillipsAmplitude = Mathf.Lerp(calmPreset.phillipsAmplitude, tempestPreset.phillipsAmplitude, blend);
-            fftBinder.choppiness = Mathf.Lerp(calmPreset.choppiness, tempestPreset.choppiness, blend);
+            // Push to FFT Binder's R3 streams
+            fftBinder.SetWindSpeed(Mathf.Lerp(calmPreset.windSpeed, tempestPreset.windSpeed, blend));
+            fftBinder.SetPhillipsAmplitude(Mathf.Lerp(calmPreset.phillipsAmplitude, tempestPreset.phillipsAmplitude, blend));
+            fftBinder.SetChoppiness(Mathf.Lerp(calmPreset.choppiness, tempestPreset.choppiness, blend));
 
-            // 2. Lerp URP Material Parameters
+            // Push to Material
             oceanMaterial.SetColor(ShallowColor, Color.Lerp(calmPreset.shallowColor, tempestPreset.shallowColor, blend));
             oceanMaterial.SetColor(DeepColor, Color.Lerp(calmPreset.deepColor, tempestPreset.deepColor, blend));
             oceanMaterial.SetFloat(FoamBias, Mathf.Lerp(calmPreset.foamBias, tempestPreset.foamBias, blend));
             oceanMaterial.SetFloat(FoamPower, Mathf.Lerp(calmPreset.foamPower, tempestPreset.foamPower, blend));
+        }
+
+        private void OnDisable()
+        {
+            if (GlobalWeatherManager.Instance != null)
+                GlobalWeatherManager.Instance.OnWeatherBlendChanged -= OnGlobalWeatherChanged;
+
+            _disposables.Dispose();
         }
     }
 }

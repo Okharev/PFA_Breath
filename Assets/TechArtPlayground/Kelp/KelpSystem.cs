@@ -44,7 +44,7 @@ namespace TechArtPlayground.Kelp
 
         // --- DATA STRUCTS (16-byte aligned for HLSL) ---
         [StructLayout(LayoutKind.Sequential)]
-        struct KelpTypeData {
+        private struct KelpTypeData {
             public Vector4 colorBase;
             public Vector4 colorTip;
             public float windStrength;
@@ -56,7 +56,7 @@ namespace TechArtPlayground.Kelp
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct StalkNodeData {
+        private struct StalkNodeData {
             public Vector3 position;
             public Vector3 prevPosition;
             public Vector3 normal;
@@ -66,7 +66,7 @@ namespace TechArtPlayground.Kelp
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct LeafObjectData {
+        private struct LeafObjectData {
             public int stalkNodeIndex;
             public int leafNodeStartIndex;
             public int typeIndex;
@@ -77,7 +77,7 @@ namespace TechArtPlayground.Kelp
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct LeafNodeData {
+        private struct LeafNodeData {
             public Vector3 position;
             public Vector3 prevPosition;
             public Vector2 padding; // Exactly 32 bytes
@@ -93,7 +93,7 @@ namespace TechArtPlayground.Kelp
         private int kernelUpdateStalks;
         private int kernelUpdateLeaves;
 
-        void Start()
+        private void Start()
         {
             leafMesh = KelpGenerator.GenerateLeafMesh();
             kernelUpdateStalks = kelpCompute.FindKernel("UpdateStalks");
@@ -102,7 +102,7 @@ namespace TechArtPlayground.Kelp
             InitializeBuffers();
         }
 
-void InitializeBuffers()
+        private void InitializeBuffers()
     {
         // 1. Initialize Type Buffer
         KelpTypeData[] typeDataArray = new KelpTypeData[kelpTypes.Length];
@@ -224,7 +224,8 @@ void InitializeBuffers()
 
         BindBuffers();
     }
-        void BindBuffers()
+
+        private void BindBuffers()
         {
             // Compute Shader Bindings
             kelpCompute.SetBuffer(kernelUpdateStalks, "_KelpTypes", typeBuffer);
@@ -240,7 +241,7 @@ void InitializeBuffers()
             instancedKelpMaterial.SetBuffer("_LeafNodes", leafNodeBuffer);
         }
 
-        void Update()
+        private void Update()
         {
             if (stalkNodeBuffer == null) return; // Safety check
 
@@ -276,7 +277,7 @@ void InitializeBuffers()
             Graphics.DrawMeshInstancedIndirect(stalkMesh, 0, instancedStalkMaterial, bounds, argsBufferStalks);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             // Prevent memory leaks
             typeBuffer?.Release();

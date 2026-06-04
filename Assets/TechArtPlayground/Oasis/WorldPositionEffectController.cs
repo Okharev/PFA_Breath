@@ -21,7 +21,7 @@ public class ZoneTriggerController : MonoBehaviour
 
     private Coroutine zoneCoroutine;
 
-    void Update()
+    private void Update()
     {
         // 1. Constantly update the center of the effect
         Shader.SetGlobalVector(GlobalCenterID, transform.position);

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace TechArtPlayground.Water
 {
@@ -7,105 +6,125 @@ namespace TechArtPlayground.Water
     public class OceanQuadtree : MonoBehaviour
     {
         [Header("Quadtree Settings")]
+        [Tooltip("The main camera used for frustum culling.")]
+        public Camera mainCamera; 
         public Transform viewer;
         public Material oceanMaterial;
-    
-        [Tooltip("Total size of the ocean (e.g., 8192 meters)")]
         public float oceanSize = 8192f;
-    
-        [Tooltip("How many times the root can subdivide")]
         public int maxDepth = 6;
-    
-        [Tooltip("Distance multiplier for LOD transitions. Higher = higher detail further away.")]
         public float lodMultiplier = 2.5f;
 
+        [Header("Optimization Settings")]
+        [Tooltip("How often the Quadtree recalculates LODs (in seconds). 0.2 = 5 times a second.")]
+        public float evaluationInterval = 0.2f;
+        
+        [Tooltip("Padding for the bounding box. Set this to your maximum wave height to prevent meshes popping out at the edges of the screen.")]
+        public float maxWaveHeight = 15f; 
+
         [Header("Patch Settings")]
-        [Tooltip("Vertices per side of the instanced patch (e.g., 16, 32, 64)")]
         public int patchResolution = 32;
-        [Tooltip("How far down the edge skirts pull to hide T-Junction gaps")]
-        public float skirtDepth = 2.0f;
 
         private Mesh patchMesh;
-        private QuadTreeNode rootNode;
-        private List<Matrix4x4> instancedMatrices = new List<Matrix4x4>(1023);
+        private Matrix4x4[] instancedMatrices = new Matrix4x4[4096];
+        private int currentInstanceCount = 0;
+        private RenderParams renderParams;
 
-        // Bounding box for frustum culling
-        private Bounds bounds;
+        private float _timeSinceLastEvaluation;
+        
+        // Pre-allocated array for Zero-GC frustum extraction
+        private Plane[] _frustumPlanes = new Plane[6];
 
-        void OnEnable()
+        private void OnEnable()
         {
-            GeneratePatchMesh();
-            bounds = new Bounds(Vector3.zero, new Vector3(oceanSize, 100f, oceanSize));
+            if (mainCamera == null) mainCamera = Camera.main;
+
+            GeneratePatchMesh(); 
+            
+            renderParams = new RenderParams(oceanMaterial);
+            renderParams.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderParams.receiveShadows = true;
+
+            _timeSinceLastEvaluation = evaluationInterval; 
         }
 
-        void Update()
+        private void Update()
         {
-            if (viewer == null || oceanMaterial == null || patchMesh == null) return;
+            if (viewer == null || oceanMaterial == null || patchMesh == null || mainCamera == null) return;
 
-            instancedMatrices.Clear();
-
-            // 1. Evaluate the Quadtree
-            rootNode = new QuadTreeNode(
-                new Vector2(transform.position.x, transform.position.z), 
-                oceanSize, 
-                0
-            );
-            EvaluateNode(rootNode);
-
-            // 2. Render all patches in chunks of 1000
-            if (instancedMatrices.Count > 0)
+            // 1. TIME-SLICED DATA EVALUATION
+            _timeSinceLastEvaluation += Time.deltaTime;
+            
+            if (_timeSinceLastEvaluation >= evaluationInterval)
             {
-                int maxInstances = 1000;
-                for (int i = 0; i < instancedMatrices.Count; i += maxInstances)
-                {
-                    // Calculate how many matrices are left to draw in this chunk
-                    int count = Mathf.Min(maxInstances, instancedMatrices.Count - i);
-                
-                    // Extract the chunk
-                    List<Matrix4x4> chunk = instancedMatrices.GetRange(i, count);
+                _timeSinceLastEvaluation = 0f;
+                currentInstanceCount = 0;
 
-                    // Dispatch the draw call safely
-                    Graphics.DrawMeshInstanced(
-                        patchMesh, 
-                        0, 
-                        oceanMaterial, 
-                        chunk.ToArray(), 
-                        count, 
-                        null, 
-                        UnityEngine.Rendering.ShadowCastingMode.Off, 
-                        true
+                // Extract frustum planes into our pre-allocated array (Zero GC)
+                GeometryUtility.CalculateFrustumPlanes(mainCamera, _frustumPlanes);
+
+                // Re-evaluate the tree
+                EvaluateNodeFast(new Vector2(transform.position.x, transform.position.z), oceanSize, 0);
+            }
+
+            // 2. PER-FRAME RENDERING SUBMISSION
+            if (currentInstanceCount > 0)
+            {
+                Graphics.RenderMeshInstanced(
+                    renderParams, 
+                    patchMesh, 
+                    0, 
+                    instancedMatrices, 
+                    currentInstanceCount
+                );
+            }
+        }
+
+        // --- Optimized Quadtree Recursive Evaluation ---
+        private void EvaluateNodeFast(Vector2 center, float size, int depth)
+        {
+            Vector3 nodeCenter3D = new Vector3(center.x, transform.position.y, center.y);
+            
+            // 1. FRUSTUM CULLING
+            // Create a stack-allocated bounding box for this specific node
+            Bounds nodeBounds = new Bounds(nodeCenter3D, new Vector3(size, maxWaveHeight * 2f, size));
+            
+            // If the bounding box is completely outside the camera's view, stop processing this branch entirely.
+            if (!GeometryUtility.TestPlanesAABB(_frustumPlanes, nodeBounds))
+            {
+                return; 
+            }
+
+            // 2. LOD DISTANCE CHECK
+            Vector3 offset = viewer.position - nodeCenter3D;
+            float sqrDistance = offset.sqrMagnitude;
+            float lodThreshold = size * lodMultiplier;
+
+            if (depth < maxDepth && sqrDistance < (lodThreshold * lodThreshold))
+            {
+                // Subdivide
+                float quarterSize = size / 4f;
+                float halfSize = size / 2f;
+                int nextDepth = depth + 1;
+
+                EvaluateNodeFast(center + new Vector2(-quarterSize, quarterSize), halfSize, nextDepth);
+                EvaluateNodeFast(center + new Vector2(quarterSize, quarterSize), halfSize, nextDepth);
+                EvaluateNodeFast(center + new Vector2(-quarterSize, -quarterSize), halfSize, nextDepth);
+                EvaluateNodeFast(center + new Vector2(quarterSize, -quarterSize), halfSize, nextDepth);
+            }
+            else
+            {
+                // 3. ADD TO RENDER LIST
+                if (currentInstanceCount < instancedMatrices.Length)
+                {
+                    instancedMatrices[currentInstanceCount++] = Matrix4x4.TRS(
+                        nodeCenter3D, 
+                        Quaternion.identity, 
+                        new Vector3(size, 1f, size)
                     );
                 }
             }
         }
-        // --- Quadtree Recursive Evaluation ---
-        private void EvaluateNode(QuadTreeNode node)
-        {
-            // Distance from camera to the center of this node
-            Vector3 nodeCenter3D = new Vector3(node.center.x, transform.position.y, node.center.y);
-            float distanceToViewer = Vector3.Distance(viewer.position, nodeCenter3D);
 
-            // Subdivide if we are close enough, AND not at max depth
-            // Condition: Distance is less than the node's size * our LOD multiplier
-            if (node.depth < maxDepth && distanceToViewer < (node.size * lodMultiplier))
-            {
-                node.Subdivide();
-                EvaluateNode(node.topLeft);
-                EvaluateNode(node.topRight);
-                EvaluateNode(node.bottomLeft);
-                EvaluateNode(node.bottomRight);
-            }
-            else
-            {
-                // It's a leaf node. Add it to the render list.
-                Matrix4x4 matrix = Matrix4x4.TRS(
-                    nodeCenter3D, 
-                    Quaternion.identity, 
-                    new Vector3(node.size, 1f, node.size) // Scale the 1x1 patch to node size
-                );
-                instancedMatrices.Add(matrix);
-            }
-        }
 
         // --- Base Patch Generation (with Skirts) ---
         private void GeneratePatchMesh()
@@ -161,35 +180,9 @@ namespace TechArtPlayground.Water
         
             // Massive bounds prevent frustum culling issues when vertices are displaced by FFT
             patchMesh.bounds = new Bounds(Vector3.zero, new Vector3(100f, 100f, 100f));
+            
         }
 
-        // --- Quadtree Node Structure ---
-        private class QuadTreeNode
-        {
-            public Vector2 center;
-            public float size;
-            public int depth;
-
-            public QuadTreeNode topLeft, topRight, bottomLeft, bottomRight;
-
-            public QuadTreeNode(Vector2 center, float size, int depth)
-            {
-                this.center = center;
-                this.size = size;
-                this.depth = depth;
-            }
-
-            public void Subdivide()
-            {
-                float quarterSize = size / 4f;
-                float halfSize = size / 2f;
-                int nextDepth = depth + 1;
-
-                topLeft = new QuadTreeNode(center + new Vector2(-quarterSize, quarterSize), halfSize, nextDepth);
-                topRight = new QuadTreeNode(center + new Vector2(quarterSize, quarterSize), halfSize, nextDepth);
-                bottomLeft = new QuadTreeNode(center + new Vector2(-quarterSize, -quarterSize), halfSize, nextDepth);
-                bottomRight = new QuadTreeNode(center + new Vector2(quarterSize, -quarterSize), halfSize, nextDepth);
-            }
-        }
     }
 }
+
