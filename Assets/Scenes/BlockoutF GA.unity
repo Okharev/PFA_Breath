@@ -52122,6 +52122,7 @@ Transform:
   - {fileID: 330964058}
   - {fileID: 949551088}
   - {fileID: 576940610}
+  - {fileID: 1338327144}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &155664102
@@ -62107,7 +62108,7 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 1
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
@@ -85980,6 +85981,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1153864991}
+  - {fileID: 816527449}
   m_Father: {fileID: 1717923131}
   m_LocalEulerAnglesHint: {x: -14.8, y: -179.619, z: 0}
 --- !u!114 &393129386
@@ -94290,6 +94292,43 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!84 &473233966
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &474797708
 GameObject:
   m_ObjectHideFlags: 0
@@ -178743,6 +178782,54 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!1 &816527448
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 816527449}
+  - component: {fileID: 816527450}
+  m_Layer: 0
+  m_Name: GameObject (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &816527449
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 816527448}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7876103, y: -2.3283062e-10, z: -2.9103827e-11, w: 0.6161736}
+  m_LocalPosition: {x: 0.085, y: -3.74, z: -0.996}
+  m_LocalScale: {x: 1.4412327, y: 5.1195016, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 393129385}
+  m_LocalEulerAnglesHint: {x: 103.925995, y: 0, z: 0}
+--- !u!114 &816527450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 816527448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c3cd4bd46f2931499e27cb15685f1f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.ClothStaticCollider
+  colliderType: 2
+  radius: 0.5
+  height: 2
+  boxExtents: {x: 0.94, y: 0.18, z: 0.5}
 --- !u!43 &817242939
 Mesh:
   m_ObjectHideFlags: 0
@@ -178972,7 +179059,7 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 2
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
@@ -241844,13 +241931,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1153864990}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.037445262, y: 0.00000004400499, z: 0.000000105035724, w: 0.9992987}
-  m_LocalPosition: {x: 0.105, y: -2.307, z: -0.718}
+  m_LocalRotation: {x: 0.019355353, y: 0.0152212, z: -0.0105894795, w: 0.99964076}
+  m_LocalPosition: {x: 0.107, y: -1.145, z: -0.645}
   m_LocalScale: {x: 1.4412327, y: 5.1195016, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 393129385}
-  m_LocalEulerAnglesHint: {x: 4.292, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 2.236, y: 1.722, z: -1.18}
 --- !u!114 &1153864992
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -260568,7 +260655,7 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 2
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
@@ -274213,6 +274300,66 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!1 &1338327143
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1338327144}
+  - component: {fileID: 1338327145}
+  m_Layer: 0
+  m_Name: RainManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &1338327144
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1338327143}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 152156535}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1338327145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1338327143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 777f448740c5457ca0a71741a5b498a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Rain.RainManager
+  rainCompute: {fileID: 7200000, guid: 7bae5192903943a496b81f4b5624b2d7, type: 3}
+  rainMaterial: {fileID: 2100000, guid: b88ee8c30334dc146aa260d73a896b95, type: 2}
+  mainCamera: {fileID: 1370422068}
+  rainOcclusionLayer:
+    serializedVersion: 2
+    m_Bits: 192
+  occlusionCameraHeight: 50
+  maxParticleCount: 9500
+  maxFallSpeed: 12
+  minFallSpeed: 6
+  cameraVelocityCompensation: 0.169
+  currentActiveParticles: 0
+  _gridSize: 35
+  splashCompute: {fileID: 7200000, guid: ca6cb29428094d57bb1ba1bc4e0fa68d, type: 3}
+  splashMaterial: {fileID: 2100000, guid: d0f6058a4c17f174ebb43b63aa4ef70d, type: 2}
+  maxSplashes: 20000
 --- !u!1 &1339553130
 GameObject:
   m_ObjectHideFlags: 0
@@ -299392,7 +299539,7 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 1
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
@@ -318586,6 +318733,43 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!84 &1619726957
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1619915663
 GameObject:
   m_ObjectHideFlags: 0
@@ -320706,12 +320890,12 @@ MonoBehaviour:
   resolution: 512
   timeScale: 1
   oceanSize: 64
-  windSpeed: 5
-  windDirection: {x: -0.19611616, y: -0.9805807}
-  phillipsAmplitude: 0.0002
-  choppiness: 1.03
-  displacementMap: {fileID: 1989772368}
-  derivativeMap: {fileID: 1698116037}
+  windSpeed: 12
+  windDirection: {x: -2.5018513, y: -12.509257}
+  phillipsAmplitude: 0.002
+  choppiness: 0.94
+  displacementMap: {fileID: 473233966}
+  derivativeMap: {fileID: 1619726957}
 --- !u!43 &1667392703
 Mesh:
   m_ObjectHideFlags: 0
@@ -328886,43 +329070,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!84 &1698116037
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &1698444900
 Mesh:
   m_ObjectHideFlags: 0
@@ -361865,7 +362012,7 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 2
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
@@ -367031,43 +367178,6 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
---- !u!84 &1989772368
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &1999448947
 Mesh:
   m_ObjectHideFlags: 0
@@ -404621,7 +404731,7 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 1
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25

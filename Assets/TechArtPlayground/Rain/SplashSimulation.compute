@@ -1,0 +1,88 @@
+﻿#pragma kernel ProcessSplashRequests
+#pragma kernel UpdateSplashes
+
+struct SplashRequest
+{
+    float4 posAndPad;
+    float4 normalAndPad;
+};
+
+// ALIGNED STRUCT
+struct Splash
+{
+    float4 posAndLife;       // xyz = position, w = life
+    float4 normalAndMaxLife; // xyz = normal, w = maxLife
+    float4 typeAndPadding;   // x = type, yzw = padding
+};
+
+RWStructuredBuffer<Splash> _SplashPool;
+StructuredBuffer<SplashRequest> _SplashRequests;
+RWStructuredBuffer<uint> _PoolIndex;
+
+uint _RequestCount;
+uint _MaxSplashes;
+float _DeltaTime;
+
+[numthreads(64, 1, 1)]
+void ProcessSplashRequests(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _RequestCount) return;
+
+    SplashRequest req = _SplashRequests[index];
+
+    uint slot;
+    InterlockedAdd(_PoolIndex[0], 1, slot);
+    slot = slot % _MaxSplashes;
+
+    Splash s;
+    s.posAndLife = float4(req.posAndPad.xyz, 1.0);
+    
+    float3 normal = req.normalAndPad.xyz;
+    float maxLife = 0.15 + (frac(req.posAndPad.x * 12.34) * 0.15); 
+    float type = 0.0;
+    
+    // Check if sloped. y < 0.85 is roughly a 30-degree slope or steeper
+    if (normal.y < 0.85)
+    {
+        type = 1.0; 
+        maxLife *= 3.0; // Drips live longer
+    }
+
+    s.normalAndMaxLife = float4(normal, maxLife);
+    s.typeAndPadding = float4(type, 0, 0, 0);
+
+    _SplashPool[slot] = s;
+}
+
+[numthreads(128, 1, 1)]
+void UpdateSplashes(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _MaxSplashes) return;
+
+    Splash s = _SplashPool[index];
+    float life = s.posAndLife.w;
+    
+    if (life > 0.0)
+    {
+        float maxLife = s.normalAndMaxLife.w;
+        float type = s.typeAndPadding.x;
+        float3 pos = s.posAndLife.xyz;
+        float3 normal = s.normalAndMaxLife.xyz;
+
+        life -= _DeltaTime / maxLife;
+
+        if (type > 0.5) // Move the Drip
+        {
+            float3 gravity = float3(0, -9.8, 0);
+            float3 slideDir = gravity - dot(gravity, normal) * normal;
+            pos += slideDir * _DeltaTime * 0.5; // Fast enough to see it streak down
+        }
+
+        if (life <= 0.0) life = 0.0;
+        
+        s.posAndLife = float4(pos, life);
+        _SplashPool[index] = s;
+    }
+}
