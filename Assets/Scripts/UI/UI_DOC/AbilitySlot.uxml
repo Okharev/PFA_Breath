@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <ui:VisualElement name="slot-root" class="ability-slot">
+        
+        <ui:Label name="hotkey-label" text="1" class="hotkey-text" />
+        <ui:Label name="ability-name" text="Ability" class="ability-text" />
+        <ui:Label name="cooldown-overlay" text="" class="cooldown-text" style="display: none;" />
+        
+        <ui:ProgressBar name="channel-bar" class="channel-progress" style="display: none;" />
+        
+    </ui:VisualElement>
+</ui:UXML>
