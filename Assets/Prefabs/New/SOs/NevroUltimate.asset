@@ -19,6 +19,7 @@ MonoBehaviour:
   conditions: []
   effects:
   - rid: 996992785912430667
+  - rid: 3664169899590942721
   references:
     version: 2
     RefIds:
@@ -27,3 +28,8 @@ MonoBehaviour:
       data:
         name: Recall Projectiles
         timeToReturn: 1
+    - rid: 3664169899590942721
+      type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Consume Oxygen
+        oxygenCost: 10

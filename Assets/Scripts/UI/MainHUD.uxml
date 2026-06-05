@@ -1,17 +1,33 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/UI/ActionBarStyles.uss?fileID=7433441132597879392&amp;guid=88f6a3a7cdc4c764fb08bac86ece0bb8&amp;type=3#ActionBarStyles"/>
     <ui:VisualElement name="screen-root" class="screen-container" style="-unity-material: url(&quot;project://database/Assets/Scripts/UI/Yeetor.mat?fileID=2100000&amp;guid=90ca91803829393478814ed7f5cf37fe&amp;type=2#Yeetor&quot;);">
-        
+        <ui:Image name="Border_Portrait" source="project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Character_frame.png?fileID=2800000&amp;guid=1f94ad27a629ddf4785c477384378805&amp;type=3#Character_frame" style="position: absolute; top: -7px; left: -126px; height: 186px; width: 401px; right: auto;">
+            <ui:Image name="Character_Portrait" source="project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Character_Inframe_Blue.png?fileID=2800000&amp;guid=76ed801c586411345b1d5b9e25cd770a&amp;type=3#Character_Inframe_Blue" style="width: 100px; height: 94px; position: absolute; top: 36px; left: 153px;"/>
+        </ui:Image>
         <ui:VisualElement class="player-stats-container">
-            <ui:VisualElement class="stat-bar-bg">
-                <ui:VisualElement name="health-bar-fill" class="stat-bar-fill health-color" />
-            </ui:VisualElement>
-            
-            <ui:VisualElement class="stat-bar-bg">
-                <ui:VisualElement name="oxygen-bar-fill" class="stat-bar-fill oxygen-color" />
-            </ui:VisualElement>
+            <ui:Image name="Health_Bar" source="project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Health_Oxygen_bar.png?fileID=2800000&amp;guid=590c5a39bd68ce349a18dd331232b4f8&amp;type=3#Health_Oxygen_bar" style="height: 144px; width: 335px; position: absolute; top: -27px; left: 62px;">
+                <ui:VisualElement class="stat-bar-bg" style="width: 145px; align-items: auto; justify-content: flex-start; align-self: auto; align-content: flex-start; position: absolute; top: 37px; left: 62px; height: 20px; display: flex; visibility: visible;">
+                    <ui:VisualElement name="health-bar-fill" class="stat-bar-fill health-color" style="background-color: rgb(30, 255, 0);"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="stat-bar-bg" style="position: absolute; height: 20px; width: 145px; top: 99px; left: 62px;">
+                    <ui:VisualElement name="oxygen-bar-fill" class="stat-bar-fill oxygen-color"/>
+                </ui:VisualElement>
+            </ui:Image>
         </ui:VisualElement>
-
-        <Ability.NewAbilitySystem.UI.ArcHudPanel radius="276" neural-material="" style="-unity-material: url(&quot;&quot;); top: 4px; left: 3px;"/>
+        <Ability.NewAbilitySystem.UI.ArcHudPanel radius="250" neural-material="" name="ArcHudPanel" angular-padding="8" corner="BottomLeft" style="-unity-material: url(&quot;&quot;); top: auto; left: 2689px; position: absolute; flex-wrap: nowrap; align-self: auto; bottom: 0; right: auto; flex-direction: column; width: 1240px; background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Skill_Icon/Secondary_Icon.png?fileID=2800000&amp;guid=346f5fc7233fc5843b3c689005b7d737&amp;type=3#Secondary_Icon&quot;); height: 1070px;"/>
+        <ui:Image source="project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Skill%20wheel_V2.png?fileID=2800000&amp;guid=d90370ec85f0f214bbdd20c8b02842f3&amp;type=3#Skill wheel_V2" name="Support_Ammo_Skills" style="position: absolute; bottom: 0; left: -9px; height: 280px; width: 296px; overflow: visible; visibility: visible; display: flex; opacity: 1; justify-content: flex-start; -unity-material: url(&quot;&quot;); transform-origin: left bottom;">
+            <ui:Image name="Primary" style="bottom: 187px; top: auto; left: 20px; background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Skill_Icon/Primary_Icon.png?fileID=2800000&amp;guid=addad644ff6dd0e4aa1a9272624f9779&amp;type=3#Primary_Icon&quot;); position: absolute; height: 75px; width: 75px;"/>
+            <ui:Image name="Dodge" style="background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Skill_Icon/Dodge_Icon.png?fileID=2800000&amp;guid=2907ce16e37ede64babaec143079092a&amp;type=3#Dodge_Icon&quot;); bottom: 91px; left: 168px; position: absolute; height: 75px; width: 75px;"/>
+            <ui:Image name="Ultimate" style="position: absolute; left: 198px; bottom: 8px; background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Skill_Icon/Ultimate_IconV2.png?fileID=2800000&amp;guid=6dfddeb2d878c24449a3532840acd744&amp;type=3#Ultimate_IconV2&quot;); height: 75px; width: 75px;"/>
+            <ui:Image name="Secondary" style="position: absolute; left: 110px; bottom: 159px; background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Skill_Icon/Secondary_Icon.png?fileID=2800000&amp;guid=346f5fc7233fc5843b3c689005b7d737&amp;type=3#Secondary_Icon&quot;); height: 75px; width: 75px;"/>
+            <ui:Image name="Skip_Turn" style="background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Hourglass_Icon.png?fileID=2800000&amp;guid=e479036632f3ae346b7d4c77e33fc7c7&amp;type=3#Hourglass_Icon&quot;); width: 28px; height: 33px; position: absolute; bottom: 36px; left: 82px;"/>
+            <ui:Image name="Ammo_Icon" style="bottom: 91px; left: 73px; position: absolute; background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Ammo_Icon.png?fileID=2800000&amp;guid=1550711822a150a48980b44c01d920a0&amp;type=3#Ammo_Icon&quot;); width: 30px; height: 45px;">
+                <ui:Label text="16/16" name="Nmb_Ammo" style="height: 27px; width: 43px; position: absolute; top: auto; left: -53px; bottom: -28px;"/>
+            </ui:Image>
+        </ui:Image>
+        <ui:Image name="Support_Door" style="background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/RoomNEnemy_frame.png?fileID=2800000&amp;guid=bd5c6c1ce5c372d4aa729a23f6c34bc6&amp;type=3#RoomNEnemy_frame&quot;); right: -9px; top: -1px; height: 80px; width: 170px; position: absolute;">
+            <ui:Label text="1/9" name="Nmb_Door" style="height: 25px; width: 25px; top: 34px; right: 117px; position: absolute; align-self: center; align-content: flex-end; align-items: stretch; aspect-ratio: auto; -unity-font-definition: url(&quot;project://database/Library/unity%20default%20resources?fileID=10102&amp;guid=0000000000000000e000000000000000&amp;type=0#LegacyRuntime&quot;); -unity-text-align: middle-center;"/>
+            <ui:Image name="Icon_Door" style="background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Flower_Icon.png?fileID=2800000&amp;guid=dacb728e3b15f7147be261e5ba560277&amp;type=3#Flower_Icon&quot;); right: 49px; top: 17px; position: absolute; height: 45px; width: 45px;"/>
+        </ui:Image>
     </ui:VisualElement>
 </ui:UXML>
