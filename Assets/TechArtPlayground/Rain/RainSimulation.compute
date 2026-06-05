@@ -6,7 +6,6 @@ struct RainDrop
     float randomSeed;
 };
 
-// ALIGNED STRUCT
 struct SplashRequest
 {
     float4 posAndPad;
@@ -61,8 +60,8 @@ void UpdateRain(uint3 id : SV_DispatchThreadID)
 
     float2 occUV;
     occUV.x = (drop.position.x - (_OcclusionCenter.x - _OcclusionOrthoSize)) / (_OcclusionOrthoSize * 2.0);
-    occUV.y = (drop.position.z - (_OcclusionCenter.z - _OcclusionOrthoSize)) / (_OcclusionOrthoSize * 2.0); 
-    
+    occUV.y = (drop.position.z - (_OcclusionCenter.z - _OcclusionOrthoSize)) / (_OcclusionOrthoSize * 2.0);
+
     if (occUV.x >= 0.0 && occUV.x <= 1.0 && occUV.y >= 0.0 && occUV.y <= 1.0)
     {
         float rawDepth = _OcclusionMap.SampleLevel(sampler_OcclusionMap, occUV, 0);
@@ -72,30 +71,49 @@ void UpdateRain(uint3 id : SV_DispatchThreadID)
         if (drop.position.y < roofHeight && linearDepth < 0.99)
         {
             shouldRespawn = true;
-            
-            // WIDENED SAMPLE DISTANCE: A 6-pixel gap ensures droplets hitting *near* a wall correctly detect the slope.
+    
             float2 texel = 6.0 / 512.0; 
-            
+    
             float hL = GetWorldHeight(occUV + float2(-texel.x, 0));
             float hR = GetWorldHeight(occUV + float2(texel.x, 0));
             float hD = GetWorldHeight(occUV + float2(0, -texel.y));
             float hU = GetWorldHeight(occUV + float2(0, texel.y));
+    
+            float edgeThreshold = 1.5; 
+            bool isEdge = abs(hL - hR) > edgeThreshold || abs(hU - hD) > edgeThreshold;
 
             float worldDelta = (_OcclusionOrthoSize * 2.0) * texel.x;
-            
+    
             float3 normal;
             normal.x = -(hR - hL) / (2.0 * worldDelta);
             normal.y = 1.0;
             normal.z = -(hU - hD) / (2.0 * worldDelta);
             normal = normalize(normal);
 
+            // [THE FIX]: Determine if we are hitting a steep surface
+            bool isWall = normal.y < 0.85;
+
+            // If we hit a flat surface, snap to the roof/ground. 
+            // If we hit a wall, the drop's current Y position is the exact impact point!
+            float spawnY = isWall ? drop.position.y : roofHeight;
+
+            // Because the drop moved slightly *inside* the wall's X/Z footprint to trigger this,
+            // we must push the spawn position backward along the normal so it renders on the outside of the bricks.
+            float3 spawnPos = float3(drop.position.x, spawnY, drop.position.z);
+            if (isWall) 
+            {
+                spawnPos += normal * 0.2; // Push out by 20cm
+            }
+
             SplashRequest req;
-            req.posAndPad = float4(drop.position.x, roofHeight, drop.position.z, 0);
-            req.normalAndPad = float4(normal, 0);
+            // Apply the newly calculated physical position
+            req.posAndPad = float4(spawnPos, 0);
+            req.normalAndPad = float4(normal, isEdge ? 1.0 : 0.0);
             _SplashRequests.Append(req);
         }
     }
 
+    // Grid Wrap logic...
     if (drop.position.x < _CameraPos.x - halfGrid) drop.position.x += _GridSize;
     if (drop.position.x > _CameraPos.x + halfGrid) drop.position.x -= _GridSize;
     if (drop.position.z < _CameraPos.z - halfGrid) drop.position.z += _GridSize;
@@ -118,7 +136,6 @@ void UpdateRain(uint3 id : SV_DispatchThreadID)
         drop.position.x = _CameraPos.x + (randX - 0.5) * _GridSize;
         drop.position.z = _CameraPos.z + (randZ - 0.5) * _GridSize;
         drop.position.y = _CameraPos.y + (halfGrid * 0.98);
-        
         drop.randomSeed = lerp(0.8, 1.2, frac(drop.randomSeed * 93.213 + _Time));
     }
 

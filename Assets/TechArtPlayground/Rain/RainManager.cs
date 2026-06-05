@@ -5,6 +5,7 @@ using UnityEngine.Rendering.Universal;
 namespace TechArtPlayground.Rain
 {
     // STRICT ALIGNMENT: 48 bytes total
+    // Types: 0.0 = Floor Splash, 1.0 = Wall Shatter, 2.0 = Edge Drip
     public struct Splash
     {
         public Vector4 posAndLife;       // xyz = position, w = life
@@ -97,11 +98,9 @@ namespace TechArtPlayground.Rain
             splashProcessKernel = splashCompute.FindKernel("ProcessSplashRequests");
             splashUpdateKernel = splashCompute.FindKernel("UpdateSplashes");
 
-            // FIX: 32 bytes (Two strictly aligned Vector4s: posAndPad, normalAndPad)
             splashRequestsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, maxParticleCount, 32); 
             splashRequestsBuffer.SetCounterValue(0);
 
-            // FIX: 48 bytes (Three strictly aligned Vector4s)
             splashPoolBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, maxSplashes, 48); 
             splashPoolBuffer.SetData(new Splash[maxSplashes]);
 
@@ -146,7 +145,7 @@ namespace TechArtPlayground.Rain
 
         private void SetupOcclusionCamera()
         {
-            occlusionTexture = new RenderTexture(512, 512, 16, RenderTextureFormat.Depth);
+            occlusionTexture = new RenderTexture(512*2, 512*2, 16, RenderTextureFormat.Depth);
             occlusionTexture.name = "RainOcclusionDepthMap";
             occlusionTexture.filterMode = FilterMode.Point; 
             occlusionTexture.wrapMode = TextureWrapMode.Clamp; 

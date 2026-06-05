@@ -7,7 +7,6 @@ struct SplashRequest
     float4 normalAndPad;
 };
 
-// ALIGNED STRUCT
 struct Splash
 {
     float4 posAndLife;       // xyz = position, w = life
@@ -39,15 +38,17 @@ void ProcessSplashRequests(uint3 id : SV_DispatchThreadID)
     s.posAndLife = float4(req.posAndPad.xyz, 1.0);
     
     float3 normal = req.normalAndPad.xyz;
+    float isEdge = req.normalAndPad.w; // [NEW] Read Edge detection flag
     float maxLife = 0.15 + (frac(req.posAndPad.x * 12.34) * 0.15); 
-    float type = 0.0;
-    
-    // Check if sloped. y < 0.85 is roughly a 30-degree slope or steeper
-    if (normal.y < 0.85)
+    float type = 0.0; // Default: Floor Splash
+
+    // [UPDATED] Routing logic for new types
+    if (isEdge > 0.5)
     {
-        type = 1.0; 
-        maxLife *= 3.0; // Drips live longer
+        type = 2.0;       // Edge Drip
+        maxLife = 1.0;    // Give it a long enough life to fall physically
     }
+
 
     s.normalAndMaxLife = float4(normal, maxLife);
     s.typeAndPadding = float4(type, 0, 0, 0);
@@ -63,7 +64,7 @@ void UpdateSplashes(uint3 id : SV_DispatchThreadID)
 
     Splash s = _SplashPool[index];
     float life = s.posAndLife.w;
-    
+
     if (life > 0.0)
     {
         float maxLife = s.normalAndMaxLife.w;
@@ -73,15 +74,16 @@ void UpdateSplashes(uint3 id : SV_DispatchThreadID)
 
         life -= _DeltaTime / maxLife;
 
-        if (type > 0.5) // Move the Drip
+        // [UPDATED] Type 1 (Wall Burst) is static. Only Type 2 (Edge Drip) falls.
+        if (type > 1.5) // EDGE DRIP
         {
-            float3 gravity = float3(0, -9.8, 0);
-            float3 slideDir = gravity - dot(gravity, normal) * normal;
-            pos += slideDir * _DeltaTime * 0.5; // Fast enough to see it streak down
+            float3 gravity = float3(0, -12.0, 0);
+            pos += gravity * _DeltaTime;
         }
 
+
         if (life <= 0.0) life = 0.0;
-        
+
         s.posAndLife = float4(pos, life);
         _SplashPool[index] = s;
     }

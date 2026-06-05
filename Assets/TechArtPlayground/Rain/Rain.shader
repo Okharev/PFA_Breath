@@ -72,7 +72,7 @@
                 float2 _DropSize;
                 float3 _RainVelocity;
                 float _DepthFade;
-                float _GridSize; // Pushed from C#
+                float _GridSize; // Pushed from C# RainManager
             CBUFFER_END
 
             Varyings vert(Attributes input)
@@ -83,8 +83,7 @@
                 // 1. VELOCITY-BASED MOTION STRETCH
                 float speed = length(_RainVelocity);
                 // Stretch multiplier: base size + (speed * factor)
-                float stretch = max(1.0, speed * 0.05); 
-                
+                float stretch = max(1.0, speed * 0.05);
                 float sizeNoise = drop.randomSeed;
                 float2 individualizedSize = _DropSize * float2(
                     lerp(0.6, 1.2, frac(sizeNoise * 15.43)), 
@@ -98,6 +97,7 @@
                 float3 forward = cross(right, fallDir);
 
                 float3 localPos = input.positionOS.xyz;
+                // Rotate the quad to face the fall direction
                 float3 rotatedPos = (localPos.x * right * individualizedSize.x) +
                                     (localPos.y * fallDir * individualizedSize.y) +
                                     (localPos.z * forward * individualizedSize.x);
@@ -105,7 +105,7 @@
                 float3 worldPos = drop.position + rotatedPos;
                 output.positionCS = TransformWorldToHClip(worldPos);
                 output.uv = input.uv;
-                
+
                 // 3. FOG AND DEPTH PREP
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 output.screenPos = ComputeScreenPos(output.positionCS);
@@ -129,7 +129,7 @@
                     float sceneDepth = SampleSceneDepth(screenUV);
                     float linearSceneDepth = LinearEyeDepth(sceneDepth, _ZBufferParams);
                     float linearParticleDepth = LinearEyeDepth(input.positionCS.z, _ZBufferParams);
-                    
+
                     // Smoothly fade the alpha based on distance to intersecting object
                     float depthFade = saturate((linearSceneDepth - linearParticleDepth) / _DepthFade);
                     finalColor.a *= depthFade;
@@ -138,7 +138,7 @@
                 // Apply distance edge-fading
                 finalColor.a *= input.distanceAlpha;
 
-                // Discard completely empty pixels early
+                // Discard completely empty pixels early to save fill rate
                 if (finalColor.a < 0.01) discard;
 
                 // 6. URP FOG BLENDING
