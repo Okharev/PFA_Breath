@@ -1,0 +1,90 @@
+﻿#pragma kernel ProcessSplashRequests
+#pragma kernel UpdateSplashes
+
+struct SplashRequest
+{
+    float4 posAndPad;
+    float4 normalAndPad;
+};
+
+struct Splash
+{
+    float4 posAndLife;       // xyz = position, w = life
+    float4 normalAndMaxLife; // xyz = normal, w = maxLife
+    float4 typeAndPadding;   // x = type, yzw = padding
+};
+
+RWStructuredBuffer<Splash> _SplashPool;
+StructuredBuffer<SplashRequest> _SplashRequests;
+RWStructuredBuffer<uint> _PoolIndex;
+
+uint _RequestCount;
+uint _MaxSplashes;
+float _DeltaTime;
+
+[numthreads(64, 1, 1)]
+void ProcessSplashRequests(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _RequestCount) return;
+
+    SplashRequest req = _SplashRequests[index];
+
+    uint slot;
+    InterlockedAdd(_PoolIndex[0], 1, slot);
+    slot = slot % _MaxSplashes;
+
+    Splash s;
+    s.posAndLife = float4(req.posAndPad.xyz, 1.0);
+    
+    float3 normal = req.normalAndPad.xyz;
+    float isEdge = req.normalAndPad.w; // [NEW] Read Edge detection flag
+    float maxLife = 0.15 + (frac(req.posAndPad.x * 12.34) * 0.15); 
+    float type = 0.0; // Default: Floor Splash
+
+    // [UPDATED] Routing logic for new types
+    if (isEdge > 0.5)
+    {
+        type = 2.0;       // Edge Drip
+        maxLife = 1.0;    // Give it a long enough life to fall physically
+    }
+
+
+    s.normalAndMaxLife = float4(normal, maxLife);
+    s.typeAndPadding = float4(type, 0, 0, 0);
+
+    _SplashPool[slot] = s;
+}
+
+[numthreads(128, 1, 1)]
+void UpdateSplashes(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= _MaxSplashes) return;
+
+    Splash s = _SplashPool[index];
+    float life = s.posAndLife.w;
+
+    if (life > 0.0)
+    {
+        float maxLife = s.normalAndMaxLife.w;
+        float type = s.typeAndPadding.x;
+        float3 pos = s.posAndLife.xyz;
+        float3 normal = s.normalAndMaxLife.xyz;
+
+        life -= _DeltaTime / maxLife;
+
+        // [UPDATED] Type 1 (Wall Burst) is static. Only Type 2 (Edge Drip) falls.
+        if (type > 1.5) // EDGE DRIP
+        {
+            float3 gravity = float3(0, -12.0, 0);
+            pos += gravity * _DeltaTime;
+        }
+
+
+        if (life <= 0.0) life = 0.0;
+
+        s.posAndLife = float4(pos, life);
+        _SplashPool[index] = s;
+    }
+}

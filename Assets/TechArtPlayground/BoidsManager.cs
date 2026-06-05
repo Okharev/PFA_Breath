@@ -519,7 +519,7 @@ namespace TechArtPlayground
             public float width; // Optional: allows the current to widen or narrow
         }
 
-        struct Boid 
+        private struct Boid 
         { 
             public Vector3 position; 
             public float randomSeed; 

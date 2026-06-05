@@ -44,7 +44,7 @@ namespace TechArtPlayground.Oasis
         private static readonly int ActiveOasisCountID = Shader.PropertyToID("_ActiveOasisCount");
         
         private static readonly int DesaturationID = Shader.PropertyToID("_DesaturationAmount"); 
-        private static readonly int EdgeEmissionID = Shader.PropertyToID("_EdgeEmission");
+        private static readonly int EdgeEmissionID = Shader.PropertyToID("_EdgeColor");
         private static readonly int EdgeWidthID = Shader.PropertyToID("_EdgeWidth");
 
         private void OnEnable()
@@ -65,7 +65,7 @@ namespace TechArtPlayground.Oasis
                 activeOases.Remove(node);
         }
 
-        void Update()
+        private void Update()
         {
             // Fail-safe: don't push empty arrays if there are no oases
             if (activeOases.Count == 0)

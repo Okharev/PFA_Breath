@@ -19,7 +19,7 @@ namespace ChimeTest
 
         private Vector2 _currentPanOffset;
 
-        void Update()
+        private void Update()
         {
             // Normalize direction to ensure predictable panning
             Vector3 normDir = windDirection.normalized;

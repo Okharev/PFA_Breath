@@ -1,6 +1,6 @@
 ﻿Shader "Custom/URP/WorldPositionEffect"
 {
-    Properties
+Properties
     {
         [Header(Base Appearance (Outside))]
         _BaseMap ("Base Texture", 2D) = "white" {}
@@ -13,18 +13,14 @@
         [Header(World Position Mask Settings)]
         [Toggle(_DISSOLVE_MODE)] _DissolveMode ("Dissolve Instead of Swap", Float) = 0
         [Toggle(_INVERT_EFFECT)] _InvertEffect ("Invert Mask", Float) = 0
-        _GlobalEffectCenter ("Effect Center (Fallback/Inspector)", Vector) = (0, 0, 0, 0)
-        _EffectRadius ("Effect Radius", Float) = 5.0
         _EffectFeather ("Transition Feather/Softness", Range(0.001, 5.0)) = 1.0
         
-        [Header(Edge Distortion (Noise))]
+
         _NoiseMap ("Noise Map", 2D) = "gray" {}
         _NoiseScale ("Noise Scale (World Space)", Float) = 0.5
         _NoiseStrength ("Noise Strength", Float) = 1.0
-
-        [Header(Edge Emission Glowing Border)]
-        [HDR] _EdgeColor ("Edge Glow Color", Color) = (0, 2, 4, 1)
-        _EdgeWidth ("Edge Glow Width", Range(0.0, 2.0)) = 0.2
+        // ADD THIS: Controls the X and Y (world space XZ) scrolling speed
+        _NoiseSpeed ("Noise Scroll Speed", Vector) = (0.2, 0.2, 0, 0)
 
         [Header(PBR Core)]
         _Metallic ("Metallic", Range(0, 1)) = 0.0
@@ -43,56 +39,71 @@
 
         // HLSLINCLUDE block ensures functions and uniform definitions are correctly shared 
         // across Forward, Shadow, and Depth passes without duplicating code.
-        HLSLINCLUDE
+HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+        // 1. THIS MUST STRICTLY MATCH THE PROPERTIES BLOCK ABOVE
         CBUFFER_START(UnityPerMaterial)
             float4 _BaseColor;
             float4 _AltColor;
             float4 _BaseMap_ST;
             float4 _AltMap_ST;
-            // ---> I removed float _EffectRadius from here! <---
             float _EffectFeather;
             float _NoiseScale;
             float _NoiseStrength;
-            float4 _EdgeColor;
-            float _EdgeWidth;
             float _Metallic;
             float _Smoothness;
+            float4 _NoiseSpeed;
         CBUFFER_END
 
-        // Declared outside CBUFFER to allow easy global override via Shader.SetGlobal...
-        float4 _GlobalEffectCenter;
-        float _EffectRadius; // ---> I moved it down here! <---
+        // 2. GLOBAL VARIABLES (Driven exclusively by OasisManager.cs)
+        #define MAX_OASES 20
+        float4 _OasisData[MAX_OASES]; 
+        int _ActiveOasisCount;        
+        
+        float4 _EdgeColor;            
+        float _EdgeWidth;             
+        float _DesaturationAmount; // <-- Added to catch your C# script's broadcast!
 
         TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
         TEXTURE2D(_AltMap);  SAMPLER(sampler_AltMap);
         TEXTURE2D(_NoiseMap); SAMPLER(sampler_NoiseMap);
 
-        // Core Mask Logic: Returns x = Mask (0 to 1), y = Edge Glow Emission
+        // Core Mask Logic
+// Core Mask Logic
         float2 CalculateEffect(float3 positionWS)
         {
-            float2 noiseUV = positionWS.xz * _NoiseScale;
+            // Apply _Time.y to animate the UVs over time
+            float2 noiseUV = (positionWS.xz * _NoiseScale) + (_Time.y * _NoiseSpeed.xy);
             float noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, noiseUV).r;
+            float noiseOffset = (noise - 0.5) * _NoiseStrength;
             
-            // Perturb distance via noise to create a stylized organic transition edge
-            float dist = distance(positionWS, _GlobalEffectCenter.xyz) + (noise - 0.5) * _NoiseStrength;
-            
-            // Calculate the 0-1 mask
-            float mask = saturate((dist - _EffectRadius) / max(0.001, _EffectFeather));
-            
+            float finalMask = 1.0; 
+            float finalEdgeGlow = 0.0;
+
+            for (int i = 0; i < _ActiveOasisCount; i++)
+            {
+                float3 center = _OasisData[i].xyz;
+                float currentRadius = _OasisData[i].w;
+
+                float dist = distance(positionWS, center) + noiseOffset;
+                float localMask = saturate((dist - currentRadius) / max(0.001, _EffectFeather));
+                
+                finalMask = min(finalMask, localMask);
+                
+                float edgeDist = abs(dist - currentRadius);
+                float localEdgeGlow = smoothstep(_EdgeWidth, 0.0, edgeDist);
+                
+                finalEdgeGlow = max(finalEdgeGlow, localEdgeGlow);
+            }
+
             #ifdef _INVERT_EFFECT
-                mask = 1.0 - mask;
+                finalMask = 1.0 - finalMask;
             #endif
             
-            // Edge calculation based strictly on the boundary
-            float edgeDist = abs(dist - _EffectRadius);
-            float edgeGlow = smoothstep(_EdgeWidth, 0.0, edgeDist); // Peaks precisely at the boundary
-            
-            return float2(mask, edgeGlow);
+            return float2(finalMask, finalEdgeGlow);
         }
         ENDHLSL
-
         // ------------------------------------------------------------------
         // PASS 1: Forward Lit (Standard URP rendering)
         // ------------------------------------------------------------------
@@ -159,8 +170,13 @@
                 #endif
 
                 // Sample Textures
+// Sample Textures
                 float2 uvBase = input.uv * _BaseMap_ST.xy + _BaseMap_ST.zw;
                 half3 colorOutside = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvBase).rgb * _BaseColor.rgb;
+                
+                // NEW: Apply your C# Manager's Desaturation to the unhealed area!
+                half3 grayscale = dot(colorOutside, half3(0.299, 0.587, 0.114));
+                colorOutside = lerp(colorOutside, grayscale, _DesaturationAmount);
                 
                 float2 uvAlt = input.uv * _AltMap_ST.xy + _AltMap_ST.zw;
                 half3 colorInside = SAMPLE_TEXTURE2D(_AltMap, sampler_AltMap, uvAlt).rgb * _AltColor.rgb;

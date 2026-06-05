@@ -8007,67 +8007,6 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
---- !u!1001 &76028103
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -35.72
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 2.017
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 1.15
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.25882143
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.9659252
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -150
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -4117419569823165724, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: cfa5a7fed4701c240abe65bd9de353ba, type: 2}
-    - target: {fileID: 919132149155446097, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
-      propertyPath: m_Name
-      value: SM_MainCharacterResize_LP
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: c20dad01ead48ff42b045003fc22fc75, type: 3}
 --- !u!43 &77611805
 Mesh:
   m_ObjectHideFlags: 0
@@ -52183,6 +52122,7 @@ Transform:
   - {fileID: 330964058}
   - {fileID: 949551088}
   - {fileID: 576940610}
+  - {fileID: 1338327144}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &155664102
@@ -62156,12 +62096,11 @@ MonoBehaviour:
   followSpline: 1
   maxAttractors: 16
   maxPredators: 16
+  maxObstacles: 32
   splineContainer: {fileID: 222800987}
   splineResolution: 100
   tubeRadius: 1
   speed: 5
-  maxObstacles: 32
-  sortFrequency: 4
   sightRadius: 2.5
   separationWeight: 1
   alignmentWeight: 1
@@ -62169,12 +62108,13 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 1
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
   arrivalMinSpeed: 0.5
   singularitySoften: 1
+  sortFrequency: 4
   cellSize: 3
   gridSize: 64
 --- !u!114 &222800987
@@ -78028,43 +77968,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 161457991}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!84 &339807883
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &346552352
 Mesh:
   m_ObjectHideFlags: 0
@@ -86078,6 +85981,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1153864991}
+  - {fileID: 816527449}
   m_Father: {fileID: 1717923131}
   m_LocalEulerAnglesHint: {x: -14.8, y: -179.619, z: 0}
 --- !u!114 &393129386
@@ -94388,6 +94292,43 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!84 &473233966
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &474797708
 GameObject:
   m_ObjectHideFlags: 0
@@ -102743,7 +102684,7 @@ MonoBehaviour:
     windDirection: {x: -0.2, y: 0.2, z: -1}
     windIntensity: 13
     windGusts: 1.88
-  currentBlend: 0
+  currentBlend: 1
 --- !u!43 &577273536
 Mesh:
   m_ObjectHideFlags: 0
@@ -112631,7 +112572,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7832dd6e662846909d9d7f8377fae165, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.SwarmManager
-  boidsCompute: {fileID: 7200000, guid: cceb64b1de6972d41b4d389cac87bddb, type: 3}
+  baseBoidsCompute: {fileID: 7200000, guid: cceb64b1de6972d41b4d389cac87bddb, type: 3}
   radixSortCompute: {fileID: 7200000, guid: 4955c5a0314047ae91660686d2986f71, type: 3}
 --- !u!1 &638092248
 GameObject:
@@ -178841,6 +178782,54 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!1 &816527448
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 816527449}
+  - component: {fileID: 816527450}
+  m_Layer: 0
+  m_Name: GameObject (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &816527449
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 816527448}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7876103, y: -2.3283062e-10, z: -2.9103827e-11, w: 0.6161736}
+  m_LocalPosition: {x: 0.085, y: -3.74, z: -0.996}
+  m_LocalScale: {x: 1.4412327, y: 5.1195016, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 393129385}
+  m_LocalEulerAnglesHint: {x: 103.925995, y: 0, z: 0}
+--- !u!114 &816527450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 816527448}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c3cd4bd46f2931499e27cb15685f1f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Wind.Cloth.ClothStaticCollider
+  colliderType: 2
+  radius: 0.5
+  height: 2
+  boxExtents: {x: 0.94, y: 0.18, z: 0.5}
 --- !u!43 &817242939
 Mesh:
   m_ObjectHideFlags: 0
@@ -179058,12 +179047,11 @@ MonoBehaviour:
   followSpline: 1
   maxAttractors: 16
   maxPredators: 16
+  maxObstacles: 32
   splineContainer: {fileID: 819074608}
   splineResolution: 100
   tubeRadius: 2
   speed: 4
-  maxObstacles: 32
-  sortFrequency: 4
   sightRadius: 2.5
   separationWeight: 1.5
   alignmentWeight: 1
@@ -179071,12 +179059,13 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 2
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
   arrivalMinSpeed: 0.5
   singularitySoften: 1
+  sortFrequency: 4
   cellSize: 3
   gridSize: 64
 --- !u!114 &819074608
@@ -241942,13 +241931,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1153864990}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.037445262, y: 0.00000004400499, z: 0.000000105035724, w: 0.9992987}
-  m_LocalPosition: {x: 0.105, y: -2.307, z: -0.718}
+  m_LocalRotation: {x: 0.019355353, y: 0.0152212, z: -0.0105894795, w: 0.99964076}
+  m_LocalPosition: {x: 0.107, y: -1.145, z: -0.645}
   m_LocalScale: {x: 1.4412327, y: 5.1195016, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 393129385}
-  m_LocalEulerAnglesHint: {x: 4.292, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 2.236, y: 1.722, z: -1.18}
 --- !u!114 &1153864992
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -251567,13 +251556,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c7940d2e449425fb0ed2ce71ae78afa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Water.OceanQuadtree
+  mainCamera: {fileID: 1370422068}
   viewer: {fileID: 1370422069}
   oceanMaterial: {fileID: 2100000, guid: 98f3b7ab3a66a5448b73b2c717d8bce2, type: 2}
   oceanSize: 200
   maxDepth: 3
   lodMultiplier: 1.4
+  evaluationInterval: 0.2
+  maxWaveHeight: 15
   patchResolution: 32
-  skirtDepth: 2
 --- !u!1 &1203607257
 GameObject:
   m_ObjectHideFlags: 0
@@ -260652,12 +260643,11 @@ MonoBehaviour:
   followSpline: 1
   maxAttractors: 16
   maxPredators: 16
+  maxObstacles: 32
   splineContainer: {fileID: 1257021313}
   splineResolution: 100
   tubeRadius: 2
   speed: 4
-  maxObstacles: 32
-  sortFrequency: 4
   sightRadius: 2.5
   separationWeight: 1.5
   alignmentWeight: 1
@@ -260665,12 +260655,13 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 2
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
   arrivalMinSpeed: 0.5
   singularitySoften: 1
+  sortFrequency: 4
   cellSize: 3
   gridSize: 64
 --- !u!114 &1257021313
@@ -274309,6 +274300,66 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!1 &1338327143
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1338327144}
+  - component: {fileID: 1338327145}
+  m_Layer: 0
+  m_Name: RainManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!4 &1338327144
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1338327143}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 152156535}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1338327145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1338327143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 777f448740c5457ca0a71741a5b498a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Rain.RainManager
+  rainCompute: {fileID: 7200000, guid: 7bae5192903943a496b81f4b5624b2d7, type: 3}
+  rainMaterial: {fileID: 2100000, guid: b88ee8c30334dc146aa260d73a896b95, type: 2}
+  mainCamera: {fileID: 1370422068}
+  rainOcclusionLayer:
+    serializedVersion: 2
+    m_Bits: 192
+  occlusionCameraHeight: 50
+  maxParticleCount: 9500
+  maxFallSpeed: 12
+  minFallSpeed: 6
+  cameraVelocityCompensation: 0.169
+  currentActiveParticles: 0
+  _gridSize: 35
+  splashCompute: {fileID: 7200000, guid: ca6cb29428094d57bb1ba1bc4e0fa68d, type: 3}
+  splashMaterial: {fileID: 2100000, guid: d0f6058a4c17f174ebb43b63aa4ef70d, type: 2}
+  maxSplashes: 20000
 --- !u!1 &1339553130
 GameObject:
   m_ObjectHideFlags: 0
@@ -299469,19 +299520,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.BoidSwarm
   swarmMesh: {fileID: -8808676599306047484, guid: f3fbda1c604cadc4a92828731ae58f88, type: 3}
   swarmMaterial: {fileID: 2100000, guid: 985f487a62a35c241b474f70faeeadf4, type: 2}
-  boidCount: 100
+  boidCount: 256
   swarmBounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 50, y: 50, z: 50}
   followSpline: 1
   maxAttractors: 16
   maxPredators: 16
+  maxObstacles: 32
   splineContainer: {fileID: 1471299477}
   splineResolution: 250
   tubeRadius: 0.5
   speed: 5
-  maxObstacles: 32
-  sortFrequency: 4
   sightRadius: 2.5
   separationWeight: 0.6
   alignmentWeight: 0.5
@@ -299489,12 +299539,13 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 1
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
   arrivalMinSpeed: 0.5
   singularitySoften: 1
+  sortFrequency: 8
   cellSize: 3
   gridSize: 64
 --- !u!114 &1471299477
@@ -318682,6 +318733,43 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!84 &1619726957
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1619915663
 GameObject:
   m_ObjectHideFlags: 0
@@ -320731,7 +320819,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1666047715}
-  - component: {fileID: 1666047717}
   - component: {fileID: 1666047718}
   - component: {fileID: 1666047716}
   m_Layer: 0
@@ -320786,21 +320873,6 @@ MonoBehaviour:
     deepColor: {r: 0.01, g: 0.05, b: 0.1, a: 1}
     foamBias: 0.4
     foamPower: 1.94
---- !u!114 &1666047717
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1666047714}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b2845a26c867466cafc02c411e4d0dae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Water.OceanGridFollower
-  targetCamera: {fileID: 1370422069}
-  oceanSimulation: {fileID: 1666047718}
-  oceanYHeight: -20.2499
 --- !u!114 &1666047718
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -320818,12 +320890,12 @@ MonoBehaviour:
   resolution: 512
   timeScale: 1
   oceanSize: 64
-  windSpeed: 5
-  windDirection: {x: -0.19611616, y: -0.9805807}
-  phillipsAmplitude: 0.0002
-  choppiness: 1.03
-  displacementMap: {fileID: 339807883}
-  derivativeMap: {fileID: 1698890908}
+  windSpeed: 12
+  windDirection: {x: -2.5018513, y: -12.509257}
+  phillipsAmplitude: 0.002
+  choppiness: 0.94
+  displacementMap: {fileID: 473233966}
+  derivativeMap: {fileID: 1619726957}
 --- !u!43 &1667392703
 Mesh:
   m_ObjectHideFlags: 0
@@ -329565,43 +329637,6 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
---- !u!84 &1698890908
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1701512229
 GameObject:
   m_ObjectHideFlags: 0
@@ -361965,12 +362000,11 @@ MonoBehaviour:
   followSpline: 1
   maxAttractors: 16
   maxPredators: 16
+  maxObstacles: 32
   splineContainer: {fileID: 1938585093}
   splineResolution: 100
   tubeRadius: 2
   speed: 4
-  maxObstacles: 32
-  sortFrequency: 4
   sightRadius: 2.5
   separationWeight: 1.5
   alignmentWeight: 1
@@ -361978,12 +362012,13 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 2
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
   arrivalMinSpeed: 0.5
   singularitySoften: 1
+  sortFrequency: 4
   cellSize: 3
   gridSize: 64
 --- !u!114 &1938585093
@@ -404684,12 +404719,11 @@ MonoBehaviour:
   followSpline: 0
   maxAttractors: 16
   maxPredators: 16
+  maxObstacles: 32
   splineContainer: {fileID: 2058721691}
   splineResolution: 100
   tubeRadius: 0.5
   speed: 5
-  maxObstacles: 32
-  sortFrequency: 4
   sightRadius: 2.5
   separationWeight: 0.6
   alignmentWeight: 0.5
@@ -404697,12 +404731,13 @@ MonoBehaviour:
   floorY: -10
   avoidanceMargin: 1
   predatorFleeWeight: 5
-  defaultWaypoint: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   targetWeight: 1
   swirlStrength: 2
   arrivalRadiusSq: 25
   arrivalMinSpeed: 0.5
   singularitySoften: 1
+  sortFrequency: 8
   cellSize: 3
   gridSize: 64
 --- !u!1 &2059317420
@@ -418906,4 +418941,3 @@ SceneRoots:
   - {fileID: 728859659}
   - {fileID: 2096725848}
   - {fileID: 875698613}
-  - {fileID: 76028103}

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace TechArtPlayground.Cloth
+namespace TechArtPlayground.Wind.Cloth
 {
     public class PhysicsBannerNode : MonoBehaviour
     {

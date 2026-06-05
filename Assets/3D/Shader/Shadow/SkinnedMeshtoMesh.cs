@@ -9,11 +9,12 @@ public class SkinnedMeshtoMesh : MonoBehaviour
     public float refreshRate;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Start()
     {
         StartCoroutine (UpdateVFXGraph());
     }
-    IEnumerator UpdateVFXGraph()
+
+    private IEnumerator UpdateVFXGraph()
     {
         while(gameObject.activeSelf)
         {
@@ -28,7 +29,7 @@ public class SkinnedMeshtoMesh : MonoBehaviour
         }
     }
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         
     }

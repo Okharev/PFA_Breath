@@ -4,8 +4,8 @@ using UnityEngine;
 public class LanthernPlatformManager : MonoBehaviour
 {
     public Collider inactiveCollider;
-    
-    void Start()
+
+    private void Start()
     {
         //make the platform invisible
         GetComponent<MeshRenderer>().enabled = false;
