@@ -12,10 +12,10 @@ namespace Ability.NewAbilitySystem
         public int channelTurns;
 
         // Apply both attributes to unlock the dropdown in the inspector
-        [SerializeReference]
+        [SerializeReference, SubclassSelector]
         public List<IAbilityCondition> conditions = new();
 
-        [SerializeReference]
+        [SerializeReference, SubclassSelector]
         public List<IAbilityEffect> effects = new();
 
         public bool TryCast(AbilityContext context)
