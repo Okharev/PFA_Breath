@@ -32,6 +32,7 @@ MonoBehaviour:
         fireSimultaneously: 1
         onShotEffects:
         - rid: 996992785912430666
+        - rid: 3664169899590942720
         leftBarrelName: LeftBarrel
         rightBarrelName: RightBarrel
         fallbackSideAngle: 25
@@ -43,3 +44,8 @@ MonoBehaviour:
       data:
         name: Consume Ammo effect
         ammoCost: 1
+    - rid: 3664169899590942720
+      type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Consume Oxygen
+        oxygenCost: 6

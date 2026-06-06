@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 438860641566245527}
   - component: {fileID: -3544340877443086976}
   - component: {fileID: -412171636730483573}
-  m_Layer: 8
+  m_Layer: 9
   m_Name: HazardLAserShot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -128,10 +128,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.HazardVolume
   Source: {fileID: 0}
   triggerOnPhysicsEnter: 1
-  effects: []
+  effects:
+  - rid: 3664169899590942791
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 3664169899590942791
+      type: {class: DamageEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Damage Effect
+        damageAmount: 28
 --- !u!114 &-412171636730483573
 MonoBehaviour:
   m_ObjectHideFlags: 0
