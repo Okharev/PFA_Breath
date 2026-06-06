@@ -11,7 +11,7 @@ public class HealthComponent : MonoBehaviour
     [Tooltip("The maximum health capacity of the entity.")]
     public float maxHealth = 100f;
 
-    // --- NEW: Invincibility Flag ---
+    // --- Invincibility Flag ---
     /// <summary>
     ///     When true, the entity ignores all incoming damage. Used for phasing, dashing, or i-frames.
     /// </summary>

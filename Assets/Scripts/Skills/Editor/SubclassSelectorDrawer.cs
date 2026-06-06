@@ -7,31 +7,41 @@ using UnityEngine;
 namespace Skills.Editor
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class SubclassSelectorAttribute : PropertyAttribute
-    {
-    }
+    public class SubclassSelectorAttribute : PropertyAttribute { }
 
     [CustomPropertyDrawer(typeof(SubclassSelectorAttribute))]
     public class SubclassSelectorDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            // 1. Safety Check: Ensure this is used on a [SerializeReference] field
+            if (property.propertyType != SerializedPropertyType.ManagedReference)
+            {
+                EditorGUI.HelpBox(position, "[SubclassSelector] requires a [SerializeReference] field.", MessageType.Error);
+                return;
+            }
+
             EditorGUI.BeginProperty(position, label, property);
 
-            // 1. Calculate Rects for the layout
-            Rect headerRect = new(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
-            Rect foldoutRect = new(position.x, position.y, EditorGUIUtility.labelWidth,
-                EditorGUIUtility.singleLineHeight);
-            Rect buttonRect = new(position.x + EditorGUIUtility.labelWidth, position.y,
-                position.width - EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
+            // 2. Calculate Rects with respect to indentation
+            Rect indentedRect = EditorGUI.IndentedRect(position);
+            Rect foldoutRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
+            
+            // Adjust button to fit remaining width, respecting label width
+            float buttonX = position.x + EditorGUIUtility.labelWidth;
+            Rect buttonRect = new Rect(buttonX, position.y, position.width - EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
 
-            // 2. Draw the Dropdown Button
+            // 3. Draw the Dropdown Button
             string typeName = property.managedReferenceValue == null
                 ? "Null (Select Type)"
                 : property.managedReferenceValue.GetType().Name;
-            if (GUI.Button(buttonRect, new GUIContent(typeName), EditorStyles.popup)) ShowDropdown(property);
 
-            // 3. Draw the Foldout and Children
+            if (GUI.Button(buttonRect, new GUIContent(typeName), EditorStyles.popup))
+            {
+                ShowDropdown(property);
+            }
+
+            // 4. Draw the Foldout and Children, 
             property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, label, true);
 
             if (property.isExpanded && property.managedReferenceValue != null)
@@ -40,23 +50,19 @@ namespace Skills.Editor
 
                 SerializedProperty iterator = property.Copy();
                 bool enterChildren = true;
-
-                // Offset the Y position for the first child
-                float currentY = position.y + EditorGUIUtility.singleLineHeight +
-                                 EditorGUIUtility.standardVerticalSpacing;
+                float currentY = position.y + EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
                 while (iterator.NextVisible(enterChildren))
                 {
-                    // Stop if we exit the current property
                     if (SerializedProperty.EqualContents(iterator, property.GetEndProperty())) break;
 
                     float childHeight = EditorGUI.GetPropertyHeight(iterator, true);
-                    Rect childRect = new(position.x, currentY, position.width, childHeight);
+                    Rect childRect = new Rect(position.x, currentY, position.width, childHeight);
 
                     EditorGUI.PropertyField(childRect, iterator, true);
 
                     currentY += childHeight + EditorGUIUtility.standardVerticalSpacing;
-                    enterChildren = false; // Only iterate direct children
+                    enterChildren = false; 
                 }
 
                 EditorGUI.indentLevel--;
@@ -67,6 +73,11 @@ namespace Skills.Editor
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            if (property.propertyType != SerializedPropertyType.ManagedReference)
+            {
+                return EditorGUIUtility.singleLineHeight; // Height for the HelpBox
+            }
+
             float totalHeight = EditorGUIUtility.singleLineHeight;
 
             if (property.isExpanded && property.managedReferenceValue != null)
@@ -77,8 +88,8 @@ namespace Skills.Editor
                 while (iterator.NextVisible(enterChildren))
                 {
                     if (SerializedProperty.EqualContents(iterator, property.GetEndProperty())) break;
-                    totalHeight += EditorGUI.GetPropertyHeight(iterator, true) +
-                                   EditorGUIUtility.standardVerticalSpacing;
+                    
+                    totalHeight += EditorGUI.GetPropertyHeight(iterator, true) + EditorGUIUtility.standardVerticalSpacing;
                     enterChildren = false;
                 }
             }
@@ -88,23 +99,25 @@ namespace Skills.Editor
 
         private static void ShowDropdown(SerializedProperty property)
         {
-            GenericMenu menu = new();
+            GenericMenu menu = new GenericMenu();
 
-            // Option to clear the reference
-            menu.AddItem(new GUIContent("Null"), property.managedReferenceValue == null,
-                () => AssignType(property, null));
+            menu.AddItem(new GUIContent("Null"), property.managedReferenceValue == null, () => AssignType(property, null));
+            menu.AddSeparator("");
 
-            // Find the base type (Interface or Abstract Class)
             Type baseType = GetBaseType(property);
             if (baseType != null)
             {
-                // Fetch all derived, non-abstract classes
-                IEnumerable<Type> derivedTypes =
-                    TypeCache.GetTypesDerivedFrom(baseType).Where(t => !t.IsAbstract && !t.IsInterface);
+                // Fetch derived types and filter out abstract/interface and types without parameterless constructors
+                IEnumerable<Type> derivedTypes = TypeCache.GetTypesDerivedFrom(baseType)
+                    .Where(t => !t.IsAbstract && !t.IsInterface && t.GetConstructor(Type.EmptyTypes) != null);
 
                 foreach (Type type in derivedTypes)
-                    menu.AddItem(new GUIContent(type.Name), property.managedReferenceValue?.GetType() == type,
-                        () => AssignType(property, type));
+                {
+                    // Use FullName and replace '.' with '/' to create nested menus based on Namespaces
+                    string menuPath = type.FullName != null ? type.FullName.Replace('.', '/') : type.Name;
+                    
+                    menu.AddItem(new GUIContent(menuPath), property.managedReferenceValue?.GetType() == type, () => AssignType(property, type));
+                }
             }
 
             menu.ShowAsContext();
@@ -113,7 +126,17 @@ namespace Skills.Editor
         private static void AssignType(SerializedProperty property, Type type)
         {
             property.serializedObject.Update();
-            property.managedReferenceValue = type == null ? null : Activator.CreateInstance(type);
+            
+            try
+            {
+                property.managedReferenceValue = type == null ? null : Activator.CreateInstance(type);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[SubclassSelector] Failed to instantiate type {type?.Name}: {e.Message}");
+                property.managedReferenceValue = null;
+            }
+            
             property.serializedObject.ApplyModifiedProperties();
         }
 
@@ -123,7 +146,10 @@ namespace Skills.Editor
             if (string.IsNullOrEmpty(typeName)) return null;
 
             string[] parts = typeName.Split(' ');
-            if (parts.Length == 2) return Type.GetType($"{parts[1]}, {parts[0]}");
+            if (parts.Length == 2) 
+            {
+                return Type.GetType($"{parts[1]}, {parts[0]}");
+            }
             return null;
         }
     }

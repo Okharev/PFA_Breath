@@ -5,9 +5,7 @@ using UnityEditor;
 using UnityEngine;
 
 [AttributeUsage(AttributeTargets.Field)]
-public class SubclassSelectorAttribute : PropertyAttribute
-{
-}
+public class SubclassSelectorAttribute : PropertyAttribute {}
 
 [CustomPropertyDrawer(typeof(SubclassSelectorAttribute))]
 public class SubclassSelectorDrawer : PropertyDrawer

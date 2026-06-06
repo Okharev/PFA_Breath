@@ -44,7 +44,7 @@ public class DoorController : MonoBehaviour
         while (elapsed < transitionDuration)
         {
             // Use unscaled time so the animation plays even if timeScale is 0
-            elapsed += Time.unscaledDeltaTime; 
+            elapsed += Time.unscaledDeltaTime;
             
             float t = Mathf.Clamp01(elapsed / transitionDuration);
             
