@@ -12,6 +12,9 @@ namespace Dialogues.Editor
         private readonly Label _textPreviewLabel;
         public List<Port> ChoicePorts = new();
         public Port DefaultOutputPort;
+
+        // --- Hold a reference to the listener ---
+        public DialogueEdgeListener EdgeListener;
         public string GUID;
 
         public Port InputPort;
@@ -20,12 +23,13 @@ namespace Dialogues.Editor
         // Callback to alert the window that this node was clicked
         public Action<DialogueNodeView> OnSelectedCallback;
 
-        public DialogueNodeView(DialogueNode nodeData)
+        public DialogueNodeView(DialogueNode nodeData, DialogueEdgeListener edgeListener)
         {
             NodeData = nodeData;
+            EdgeListener = edgeListener; // Save it!
             GUID = Guid.NewGuid().ToString();
 
-            // --- NEW: Setup Text Preview Label ---
+            // --- Setup Text Preview Label ---
             _textPreviewLabel = new Label();
             _textPreviewLabel.style.whiteSpace = WhiteSpace.Normal; // Allow text to wrap
             _textPreviewLabel.style.maxWidth = 250; // Prevent the node from stretching infinitely
@@ -36,10 +40,20 @@ namespace Dialogues.Editor
             // Add the label to the main container, right below the ports
             mainContainer.Add(_textPreviewLabel);
 
+            // 1. Build the Input and Default Next ports
             GeneratePorts();
+
+            // ==========================================
+            // --- THE FIX: Build Choice Ports on Load ---
+            // ==========================================
+            if (NodeData.choices != null)
+                foreach (DialogueChoice choice in NodeData.choices)
+                    AddChoicePort(choice);
+
+            // 2. Now that Choice ports exist, this logic will correctly hide the default port!
             UpdateDefaultPortVisibility();
 
-            // --- NEW: Apply Colors and Text on creation ---
+            // --- Apply Colors and Text on creation ---
             RefreshVisuals();
 
             RefreshExpandedState();
@@ -67,35 +81,62 @@ namespace Dialogues.Editor
             _textPreviewLabel.text = preview;
         }
 
-        // Add this inside DialogueNodeView.cs
         public void SyncChoicePorts(GraphView graphView)
         {
-            foreach (Port port in ChoicePorts)
+            // 1. Remember existing connections before we wipe the ports
+            Dictionary<int, DialogueNodeView> savedConnections = new();
+
+            for (int i = 0; i < ChoicePorts.Count; i++)
             {
-                if (port.connected) graphView.DeleteElements(port.connections);
+                Port port = ChoicePorts[i];
+                if (port.connected)
+                {
+                    // Look at what this port is currently wired to and save it
+                    foreach (Edge edge in port.connections)
+                        if (edge.input.node is DialogueNodeView targetNode)
+                        {
+                            savedConnections[i] = targetNode;
+                            break;
+                        }
+
+                    // Safely delete the old visual wire
+                    graphView.DeleteElements(port.connections);
+                }
+
                 outputContainer.Remove(port);
             }
 
             ChoicePorts.Clear();
 
-            foreach (DialogueChoice choice in NodeData.choices) AddChoicePort(choice);
+            // 2. Rebuild the ports from the updated data
+            for (int i = 0; i < NodeData.choices.Count; i++)
+            {
+                DialogueChoice choice = NodeData.choices[i];
+                AddChoicePort(choice);
 
-            // --- NEW: Toggle the default port on or off based on the new choices ---
+                // 3. Restore the visual wires if they existed!
+                if (savedConnections.TryGetValue(i, out DialogueNodeView targetNode))
+                    // Cast the graph to our custom graph so we can access LinkPorts
+                    if (graphView is DialogueGraphView dialogueGraph)
+                        dialogueGraph.LinkPorts(ChoicePorts[i], targetNode.InputPort);
+            }
+
             UpdateDefaultPortVisibility(graphView);
 
             RefreshExpandedState();
             RefreshPorts();
         }
 
+
         public void AddChoicePort(DialogueChoice choice)
         {
-            Port choicePort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single,
+            // Replace InstantiatePort with Port.Create<Edge>
+            Port choicePort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single,
                 typeof(float));
             choicePort.portName = string.IsNullOrEmpty(choice.choiceText) ? "New Choice" : choice.choiceText;
-
-            // --- NEW: The Magic Bridge ---
-            // Store the exact C# memory reference of the choice inside the visual port
             choicePort.userData = choice;
+
+            choicePort.AddManipulator(new EdgeConnector<Edge>(EdgeListener)); // <-- The Magic Hook
 
             ChoicePorts.Add(choicePort);
             outputContainer.Add(choicePort);
@@ -124,6 +165,7 @@ namespace Dialogues.Editor
             }
         }
 
+
         // --- NEW: Trigger selection event ---
         public override void OnSelected()
         {
@@ -142,13 +184,16 @@ namespace Dialogues.Editor
 
         private void GeneratePorts()
         {
-            InputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(float));
+            // Replace InstantiatePort with Port.Create<Edge> and add our custom manipulator
+            InputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Input, Port.Capacity.Multi, typeof(float));
             InputPort.portName = "Input";
+            InputPort.AddManipulator(new EdgeConnector<Edge>(EdgeListener)); // <-- The Magic Hook
             inputContainer.Add(InputPort);
 
-            DefaultOutputPort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Single,
+            DefaultOutputPort = Port.Create<Edge>(Orientation.Horizontal, Direction.Output, Port.Capacity.Single,
                 typeof(float));
             DefaultOutputPort.portName = "Next Node";
+            DefaultOutputPort.AddManipulator(new EdgeConnector<Edge>(EdgeListener)); // <-- The Magic Hook
             outputContainer.Add(DefaultOutputPort);
         }
     }

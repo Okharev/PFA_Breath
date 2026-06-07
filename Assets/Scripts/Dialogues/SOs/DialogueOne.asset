@@ -1,0 +1,240 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8125061978649550496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
+  nextNode: {fileID: -7766395334477247457}
+  position: {x: 350.4, y: 160}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-7766395334477247457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
+  nextNode: {fileID: 7230074648593141015}
+  position: {x: 700, y: 160}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-7189770314788902399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
+  nextNode: {fileID: -221593598531952535}
+  position: {x: 350.4, y: 320}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-2865612445419964773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
+  nextNode: {fileID: 6062544571918634021}
+  position: {x: 1400, y: 160}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-2598883083557803810
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: 
+  nextNode: {fileID: 0}
+  position: {x: 0, y: 0}
+  choices:
+  - choiceText: aaaaaaa
+    nextNode: {fileID: 7230074648593141015}
+    conditions: []
+    choiceEffects: []
+  - choiceText: eeeee
+    nextNode: {fileID: -8125061978649550496}
+    conditions: []
+    choiceEffects: []
+  - choiceText: ffff
+    nextNode: {fileID: -7189770314788902399}
+    conditions: []
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-221593598531952535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: I am <b>fine</b>, but the <i>ground</i> is <color=#ff0000><tremble>shaking
+    violently!</tremble></color>
+  nextNode: {fileID: 0}
+  position: {x: 2101.6, y: 320}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 221ded2a86284bd8af3d68ba095cedeb, type: 3}
+  m_Name: DialogueOne
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.Conversation
+  conversationTitle: DialogueOne
+  startingNode: {fileID: -2598883083557803810}
+--- !u!114 &6062544571918634021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: Enter dialogue here...
+  nextNode: {fileID: -221593598531952535}
+  position: {x: 1750.4, y: 0}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &7230074648593141015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: Enter dialogue here...
+  nextNode: {fileID: 0}
+  position: {x: 1050.4, y: 0}
+  choices:
+  - choiceText: i grant 4 blue points
+    nextNode: {fileID: 8992933567841023472}
+    conditions: []
+    choiceEffects:
+    - rid: 6047565912557748293
+  - choiceText: 
+    nextNode: {fileID: 8992933567841023472}
+    conditions: []
+    choiceEffects: []
+  - choiceText: 
+    nextNode: {fileID: -2865612445419964773}
+    conditions: []
+    choiceEffects: []
+  - choiceText: 
+    nextNode: {fileID: -2865612445419964773}
+    conditions: []
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 6047565912557748293
+      type: {class: GrantEmotionPointsEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        emotionType: 2
+        amount: 4
+--- !u!114 &8992933567841023472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
+  nextNode: {fileID: 6062544571918634021}
+  position: {x: 1400, y: 0}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []

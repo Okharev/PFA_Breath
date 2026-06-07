@@ -18,12 +18,6 @@ namespace Dialogues
     /// </summary>
     public class DialogueContext
     {
-        public Blackboard GlobalBlackboard { get; private set; }
-        public Blackboard LocalBlackboard { get; private set; }
-        
-        public Speaker CurrentSpeaker { get; private set; }
-        public GameObject Instigator { get; private set; }
-
         public DialogueContext(Blackboard global, Blackboard local, Speaker speaker, GameObject instigator)
         {
             GlobalBlackboard = global;
@@ -31,6 +25,12 @@ namespace Dialogues
             CurrentSpeaker = speaker;
             Instigator = instigator;
         }
+
+        public Blackboard GlobalBlackboard { get; private set; }
+        public Blackboard LocalBlackboard { get; private set; }
+
+        public Speaker CurrentSpeaker { get; private set; }
+        public GameObject Instigator { get; private set; }
     }
 
     public interface IDialogueCondition
@@ -43,39 +43,6 @@ namespace Dialogues
     {
         /// <summary> Executes game logic (state changes, events, animations). </summary>
         void Execute(DialogueContext context);
-    }
-
-    [CreateAssetMenu(fileName = "NewSpeaker", menuName = "Dialogue/Speaker")]
-    public class Speaker : ScriptableObject
-    {
-        public string speakerName;
-        public Color speakerColor = Color.white;
-        public Sprite portrait;
-    }
-
-    [CreateAssetMenu(fileName = "NewConversation", menuName = "Dialogue/Conversation")]
-    public class Conversation : ScriptableObject
-    {
-        public string conversationTitle;
-        public DialogueNode startingNode;
-    }
-
-    [CreateAssetMenu(fileName = "NewDialogueNode", menuName = "Dialogue/Node")]
-    public class DialogueNode : ScriptableObject
-    {
-        [Header("Node Data")] public Speaker speaker;
-
-        [TextArea(3, 5)] public string text;
-
-        [Header("Flow")] [Tooltip("Leave null if the dialogue ends here or branches into choices.")]
-        public DialogueNode nextNode;
-
-        [HideInInspector] public Vector2 position;
-
-        public List<DialogueChoice> choices = new();
-
-        [Header("Node Entry Effects")] [SerializeReference] [SubclassSelector]
-        public List<IDialogueEffect> enterEffects = new();
     }
 
     [Serializable]

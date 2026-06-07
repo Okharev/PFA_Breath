@@ -88,7 +88,6 @@ namespace Dialogues.Editor
         {
             Toolbar toolbar = new();
 
-            // --- NEW: Add an Object Field to select the Conversation asset ---
             ObjectField conversationField = new("Active Conversation")
             {
                 objectType = typeof(Conversation),
@@ -96,53 +95,132 @@ namespace Dialogues.Editor
                 value = _currentConversation
             };
 
-            conversationField.RegisterValueChangedCallback(evt => 
+            conversationField.RegisterValueChangedCallback(evt =>
             {
                 _currentConversation = evt.newValue as Conversation;
-                LoadData(); // <--- Auto-load when a new conversation is selected!
+                LoadData();
             });
 
             toolbar.Add(conversationField);
 
-            // Update the Save Button
+            // --- NEW: Add the Auto-Layout Button ---
+            Button layoutButton = new(() => _graphView.AutoLayoutNodes())
+            {
+                text = "Auto Layout (Magic)"
+            };
+            toolbar.Add(layoutButton);
+
+            // The Save Button
             Button saveButton = new(() => SaveData()) { text = "Save Data" };
             toolbar.Add(saveButton);
 
             rootVisualElement.Insert(0, toolbar);
         }
 
+
         private void SaveData()
         {
             if (_currentConversation == null) return;
 
-            List<DialogueNodeView> nodeViews = _graphView.nodes.ToList().Cast<DialogueNodeView>().ToList();
+            // --- SAFETY 1: Inspector Release ---
+            // Force the side panel to unbind. This prevents the active SerializedObject 
+            // from accidentally overwriting our C# connection logic with stale cached data.
+            UpdateSidePanel(null);
 
+            List<DialogueNodeView> nodeViews = _graphView.nodes.ToList().Cast<DialogueNodeView>().ToList();
+            List<DialogueNode> nodesToKeep = new();
+
+            // ==========================================
+            // PASS 1: REGISTRATION
+            // ==========================================
+            bool requiresFlush = false;
             foreach (DialogueNodeView nodeView in nodeViews)
             {
-                // --- NEW: Record the visual position to the ScriptableObject ---
                 nodeView.NodeData.position = nodeView.GetPosition().position;
 
+                // --- SAFETY 2: Anti-Collision Naming ---
+                // Give the sub-asset a distinct internal name to prevent identifier confusion
+                nodeView.NodeData.name = string.IsNullOrEmpty(nodeView.title) ? nodeView.GUID : nodeView.title;
+
                 if (!AssetDatabase.Contains(nodeView.NodeData))
+                {
                     AssetDatabase.AddObjectToAsset(nodeView.NodeData, _currentConversation);
+                    requiresFlush = true; // We added new files to the asset
+                }
+
+                nodesToKeep.Add(nodeView.NodeData);
             }
 
-            // 3. Automatically determine the Starting Node
-            // The starting node is usually the one that has NO wires connected to its Input port
-            DialogueNodeView rootNode = nodeViews.FirstOrDefault(n => !n.InputPort.connected);
-            if (rootNode != null)
+            // --- SAFETY 3: The Mid-Way Disk Flush ---
+            // If we registered new nodes, we MUST force Unity to save them to the hard drive now.
+            // This guarantees every node is assigned a permanent, valid File ID before we try to link them.
+            if (requiresFlush) AssetDatabase.SaveAssets();
+
+            // ==========================================
+            // PASS 2: WIRING
+            // ==========================================
+            foreach (DialogueNodeView nodeView in nodeViews)
             {
-                _currentConversation.startingNode = rootNode.NodeData;
-                EditorUtility.SetDirty(_currentConversation); // Mark the conversation as changed
+                // 1. Sync Default Output Port
+                if (nodeView.DefaultOutputPort.connected)
+                {
+                    DialogueNodeView targetView =
+                        nodeView.DefaultOutputPort.connections.First().input.node as DialogueNodeView;
+                    nodeView.NodeData.nextNode = targetView.NodeData;
+                }
+                else
+                {
+                    nodeView.NodeData.nextNode = null;
+                }
+
+                // 2. Sync Choice Ports
+                for (int i = 0; i < nodeView.ChoicePorts.Count; i++)
+                    if (i < nodeView.NodeData.choices.Count) // Safety bounds check
+                    {
+                        Port choicePort = nodeView.ChoicePorts[i];
+                        if (choicePort.connected)
+                        {
+                            DialogueNodeView targetView = choicePort.connections.First().input.node as DialogueNodeView;
+                            nodeView.NodeData.choices[i].nextNode = targetView.NodeData;
+                        }
+                        else
+                        {
+                            nodeView.NodeData.choices[i].nextNode = null;
+                        }
+                    }
+
+                // MARK DIRTY: Tell Unity this exact sub-asset was modified
+                EditorUtility.SetDirty(nodeView.NodeData);
             }
 
-            // 4. Force Unity to write the data to disk
+            // ==========================================
+            // PASS 3: GARBAGE COLLECTION
+            // ==========================================
+            string assetPath = AssetDatabase.GetAssetPath(_currentConversation);
+            DialogueNode[] allSavedNodes =
+                AssetDatabase.LoadAllAssetsAtPath(assetPath).OfType<DialogueNode>().ToArray();
+
+            foreach (DialogueNode savedNode in allSavedNodes)
+                if (!nodesToKeep.Contains(savedNode))
+                {
+                    AssetDatabase.RemoveObjectFromAsset(savedNode);
+                    DestroyImmediate(savedNode, true);
+                }
+
+            // ==========================================
+            // PASS 4: FINALIZE
+            // ==========================================
+            DialogueNodeView rootNode = nodeViews.FirstOrDefault(n => !n.InputPort.connected);
+            if (rootNode != null) _currentConversation.startingNode = rootNode.NodeData;
+
+            EditorUtility.SetDirty(_currentConversation);
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             Debug.Log(
-                $"<color=green>Successfully saved {nodeViews.Count} nodes to {_currentConversation.name}!</color>");
+                $"<color=green>Successfully saved {nodeViews.Count} nodes and cleaned up connections for {_currentConversation.name}!</color>");
         }
-
 
 
         private void LoadData()
@@ -168,7 +246,7 @@ namespace Dialogues.Editor
             // 2. SPAWN NODES: Create the visual elements and place them at their saved positions
             foreach (DialogueNode nodeData in savedNodes)
             {
-                DialogueNodeView nodeView = new(nodeData);
+                DialogueNodeView nodeView = new(nodeData, _graphView.EdgeListener);
 
                 // Restore the exact position the designer left it in
                 nodeView.SetPosition(new Rect(nodeData.position, Vector2.zero));
@@ -184,24 +262,22 @@ namespace Dialogues.Editor
                 // A. Reconnect the Default Next Node
                 if (nodeView.NodeData.nextNode != null && nodeDictionary.TryGetValue(nodeView.NodeData.nextNode,
                         out DialogueNodeView targetNodeView))
-                    LinkPorts(nodeView.DefaultOutputPort, targetNodeView.InputPort);
+                    _graphView.LinkPorts(nodeView.DefaultOutputPort, targetNodeView.InputPort);
 
                 // B. Reconnect Choices
                 for (int i = 0; i < nodeView.NodeData.choices.Count; i++)
                 {
                     DialogueChoice choice = nodeView.NodeData.choices[i];
 
-                    // If the choice has a destination, and we successfully loaded that destination
                     if (choice.nextNode != null &&
                         nodeDictionary.TryGetValue(choice.nextNode, out DialogueNodeView choiceTargetView))
-                        // Ensure the visual port exists (it should, as the NodeView constructor calls SyncChoicePorts)
                         if (i < nodeView.ChoicePorts.Count)
-                            LinkPorts(nodeView.ChoicePorts[i], choiceTargetView.InputPort);
+                            _graphView.LinkPorts(nodeView.ChoicePorts[i], choiceTargetView.InputPort);
                 }
             }
         }
 
-// Helper: Safely deletes all existing visual elements
+        // Helper: Safely deletes all existing visual elements
         private void ClearGraph()
         {
             UpdateSidePanel(null); // Clear the inspector
@@ -211,7 +287,7 @@ namespace Dialogues.Editor
             _graphView.DeleteElements(_graphView.nodes.ToList());
         }
 
-// Helper: Physically draws a wire between two ports
+        // Helper: Physically draws a wire between two ports
         private void LinkPorts(Port outputPort, Port inputPort)
         {
             Edge edge = new()

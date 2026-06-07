@@ -28,7 +28,6 @@ namespace Dialogues
 
             // Initialize the persistent Global state
             _globalBlackboard = new Blackboard();
-            _globalBlackboard.RegisterModule(new DialogueMemory());
         }
 
         // ==========================================
@@ -61,7 +60,7 @@ namespace Dialogues
 
             // 1. Setup Local state for this specific conversation
             _localBlackboard = new Blackboard();
-            _localBlackboard.RegisterModule(new DialogueMemory());
+            _localBlackboard.RegisterModule(new ChoiceHistoryModule());
 
             // 2. Create the context
             _currentContext = new DialogueContext(_globalBlackboard, _localBlackboard,
@@ -80,7 +79,7 @@ namespace Dialogues
             if (_currentNode == null) return;
 
             // Block continuing if the player is supposed to make a choice
-            if (_currentNode.choices != null && _currentNode.choices.Count > 0)
+            if (_currentNode.choices is { Count: > 0 })
             {
                 Debug.LogWarning("Cannot blindly continue; a choice must be made.");
                 return;
@@ -133,7 +132,7 @@ namespace Dialogues
         private void EvaluateNextSteps(DialogueNode node)
         {
             // If the node has choices, evaluate which ones the player is allowed to see
-            if (node.choices != null && node.choices.Count > 0)
+            if (node.choices is { Count: > 0 })
             {
                 List<DialogueChoice> validChoices = new();
 

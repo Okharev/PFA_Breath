@@ -50,6 +50,12 @@ namespace TechArtPlayground.Rain
         public float maxFallSpeed = 35f;
         public float minFallSpeed = 10f;
         [Range(0f, 1f)] public float cameraVelocityCompensation = 0.5f;
+        
+        [Tooltip("Shifts the grid forward to concentrate particles in the camera frustum.")]
+        [Range(0f, 0.45f)] public float forwardBias = 0.25f; 
+
+        [Tooltip("Shifts the grid vertically. Lower/Negative values bring the spawn roof closer to the camera.")]
+        [Range(-0.4f, 0.4f)] public float verticalBias = 0.0f; // Original code was essentially hardcoded to 0.1f
 
         [Header("System State (Read Only)")]
         [SerializeField] private int currentActiveParticles;
@@ -257,7 +263,28 @@ namespace TechArtPlayground.Rain
             smoothedCameraVelocity = Vector3.Lerp(smoothedCameraVelocity, rawCameraVelocity, Time.deltaTime * 10f);
             lastCameraPos = cameraPos;
 
-            Vector3 simulationCenter = cameraPos + (Vector3.up * (_gridSize * 0.1f));
+            // 1. Get camera forward, flattened to the XZ horizontal plane
+            Vector3 camForwardXZ = new Vector3(mainCamera.transform.forward.x, 0, mainCamera.transform.forward.z);
+            
+            // 2. Safe normalization (handles the edge case of looking perfectly straight down/up)
+            if (camForwardXZ.sqrMagnitude > 0.001f)
+            {
+                camForwardXZ.Normalize();
+            }
+            else
+            {
+                // Fallback: If looking straight down, use the camera's UP vector projected to XZ
+                camForwardXZ = new Vector3(mainCamera.transform.up.x, 0, mainCamera.transform.up.z).normalized;
+            }
+
+            // 3. Apply the forward bias (XZ axis)
+            Vector3 forwardOffset = camForwardXZ * (_gridSize * forwardBias);
+            
+            // 4. Apply the vertical bias (Y axis)
+            Vector3 verticalOffset = Vector3.up * (_gridSize * verticalBias);
+            
+            // 5. Calculate the final biased center
+            Vector3 simulationCenter = cameraPos + verticalOffset + forwardOffset;
 
             occlusionCamera.transform.position = new Vector3(simulationCenter.x, simulationCenter.y + occlusionCameraHeight, simulationCenter.z);
             occlusionCamera.transform.rotation = Quaternion.Euler(90, 0, 0);

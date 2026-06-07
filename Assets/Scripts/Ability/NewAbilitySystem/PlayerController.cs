@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Dialogues.UI;
 using Skills;
 using UnityEngine;
 using UnityEngine.AI;
@@ -26,7 +27,7 @@ namespace Ability.NewAbilitySystem
         [Header("Default Innate Abilities")] [Tooltip("The foundational movement ability triggered on Left-Click.")]
         public AbilityData BasicMoveAbility;
 
-        // --- NEW: DEFAULT LOADOUT FIELDS ---
+        // --- DEFAULT LOADOUT FIELDS ---
         public AbilityData DefaultPrimary;
         public AbilityData DefaultSecondary;
         public AbilityData DefaultDash;
@@ -171,7 +172,8 @@ namespace Ability.NewAbilitySystem
         private void HandleInput()
         {
             // If the UI is open, instantly drop out of this function to prevent bleeding.
-            if (Skills.UI.SkillTreeUIController.IsOpen) return;
+            if (Skills.UI.SkillTreeUIController.IsOpen || DialogueUIController.IsDialogueOpen) 
+                return;
 
             if (Keyboard.current == null || Mouse.current == null) return;
             if (!TryGetMousePosition(out Vector3 targetPos)) return;

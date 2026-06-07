@@ -1,69 +1,97 @@
 ﻿using System.Collections.Generic;
+using Skills;
+using UnityEngine;
 
 namespace Dialogues
 {
     /// <summary>
-    /// A robust memory module for the Blackboard, handling conversation or global state.
-    /// Acts as a centralized Data Store using Hash Tables for optimal performance.
+    ///     Tracks choices made within a specific context (Local or Global).
+    ///     Space Complexity: O(N) where N is the number of choices made.
     /// </summary>
-    public class DialogueMemory : IDialogueModule
+    public class ChoiceHistoryModule : IDialogueModule
     {
-        // Internal state storage using Dictionaries (Hash Tables)
-        private readonly Dictionary<string, bool> _boolState = new Dictionary<string, bool>();
-        private readonly Dictionary<string, int> _intState = new Dictionary<string, int>();
+        private readonly HashSet<string> _madeChoices = new();
 
-        /// <summary>
-        /// Writes or updates a boolean flag.
-        /// Time Complexity: O(1) average case.
-        /// </summary>
-        public void SetBool(string key, bool value)
+        /// <summary> Time Complexity: O(1) </summary>
+        public void RecordChoice(string choiceId)
         {
-            _boolState[key] = value;
+            _madeChoices.Add(choiceId);
         }
 
-        /// <summary>
-        /// Reads a boolean flag. Returns the fallback if the key does not exist.
-        /// Time Complexity: O(1) average case.
-        /// </summary>
-        public bool GetBool(string key, bool fallback = false)
+        /// <summary> Time Complexity: O(1) </summary>
+        public bool HasMadeChoice(string choiceId)
         {
-            return _boolState.GetValueOrDefault(key, fallback);
+            return _madeChoices.Contains(choiceId);
         }
+    }
 
-        /// <summary>
-        /// Writes or updates an integer value.
-        /// Time Complexity: O(1) average case.
-        /// </summary>
-        public void SetInt(string key, int value)
+    /// <summary>
+    ///     Executes game logic to record that a choice was selected.
+    /// </summary>
+    public class RecordLocalChoiceEffect : IDialogueEffect
+    {
+        [Tooltip("A unique ID for this choice within the current conversation.")]
+        public string choiceId;
+
+        public void Execute(DialogueContext context)
         {
-            _intState[key] = value;
+            // Retrieve our module from the Local Blackboard
+            ChoiceHistoryModule history = context.LocalBlackboard.GetModule<ChoiceHistoryModule>();
+            history?.RecordChoice(choiceId);
         }
+    }
+    
+    
+    /// <summary>
+    ///     Executes game logic to grant the player a specific amount of Emotion Points.
+    ///     O(1) Time Complexity.
+    /// </summary>
+    [System.Serializable]
+    public class GrantEmotionPointsEffect : IDialogueEffect
+    {
+        [Tooltip("The type of emotion points to grant the player.")]
+        public EmotionType emotionType;
 
-        /// <summary>
-        /// Reads an integer value. Returns the fallback if the key does not exist.
-        /// Time Complexity: O(1) average case.
-        /// </summary>
-        public int GetInt(string key, int fallback = 0)
+        [Tooltip("The quantity of points to grant. Can be negative to remove points.")]
+        public int amount;
+
+        public void Execute(DialogueContext context)
         {
-            return _intState.GetValueOrDefault(key, fallback);
+            // Safety check to ensure the Singleton exists before attempting to modify it
+            if (SkillTreeManager.Instance != null)
+            {
+                SkillTreeManager.Instance.AddEmotionPoints(emotionType, amount);
+                Debug.Log($"[Dialogue Effect] Granted {amount} {emotionType} points to the player.");
+            }
+            else
+            {
+                Debug.LogError("[Dialogue Effect] Failed to grant points. SkillTreeManager.Instance is null! Ensure it exists in the scene.");
+            }
         }
+    }
 
-        /// <summary>
-        /// Modifies an existing integer by a specific amount. Useful for spending/gaining resources.
-        /// </summary>
-        public void AddToInt(string key, int amount)
-        {
-            int currentValue = GetInt(key, 0);
-            _intState[key] = currentValue + amount;
-        }
+    /// <summary>
+    ///     Evaluates to true if the specified choice was previously made.
+    /// </summary>
+    public class RequirePreviousChoiceCondition : IDialogueCondition
+    {
+        [Tooltip("The ID of the choice that must have been made.")]
+        public string requiredChoiceId;
 
-        /// <summary>
-        /// Wipes the memory clean. Highly useful for object pooling or resetting Local Blackboards.
-        /// </summary>
-        public void Clear()
+        [Tooltip("If true, the condition passes ONLY if the player DID NOT make this choice.")]
+        public bool invertCheck = false;
+
+        public bool Evaluate(DialogueContext context)
         {
-            _boolState.Clear();
-            _intState.Clear();
+            ChoiceHistoryModule history = context.LocalBlackboard.GetModule<ChoiceHistoryModule>();
+
+            // Failsafe if the module is missing
+            if (history == null) return false;
+
+            bool hasMadeChoice = history.HasMadeChoice(requiredChoiceId);
+
+            // Return inverted logic if requested, otherwise standard logic
+            return invertCheck ? !hasMadeChoice : hasMadeChoice;
         }
     }
 }

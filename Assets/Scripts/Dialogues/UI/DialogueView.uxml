@@ -1,0 +1,12 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/Dialogues/UI/DialogueStyles.uss?fileID=7433441132597879392&amp;guid=671d6913c9f158b459093b5a57a2cdeb&amp;type=3#DialogueStyles"/>
+    <ui:VisualElement name="RootContainer" class="root-container">
+        <ui:VisualElement name="SpeakersContainer" class="speakers-container"/>
+        <ui:VisualElement name="DialogueBox" class="dialogue-box">
+            <ui:Label name="SpeakerName" text="Speaker Name" class="speaker-name"/>
+            <ui:VisualElement name="DialogueText" class="dialogue-text-container"/>
+            <ui:Button name="NextButton" text="Next ▶" class="next-button"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="ChoicesBox" class="choices-box" style="display: none;"/>
+    </ui:VisualElement>
+</ui:UXML>

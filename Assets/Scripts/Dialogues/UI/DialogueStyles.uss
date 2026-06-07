@@ -1,0 +1,130 @@
+.root-container {
+    flex-grow: 1;
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 50px;
+}
+
+/* Speaker Header Area */
+.speakers-container {
+    flex-direction: row;
+    justify-content: center;
+
+    /* Anchors the portraits to the bottom of this container */
+    align-items: flex-end;
+
+    /* Increased height significantly to accommodate large emotions */
+    height: 300px;
+
+    /* CRITICAL: A negative bottom margin pulls the Dialogue Box UP, 
+       causing it to overlap and cover the bottom of the portraits. */
+    margin-bottom: -40px;
+}
+
+.speaker-portrait {
+    width: 250px;
+    height: 250px;
+    margin: 0 -20px;
+    border-radius: 15px;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-background-scale-mode: scale-to-fit;
+
+    /* ADDED translate to the transition properties */
+    transition-property: scale, opacity, translate;
+
+    /* Slightly longer duration for the translation feels more elegant */
+    transition-duration: 0.3s, 0.3s, 0.5s;
+
+    /* ease-out-back gives the slide a tiny, satisfying "bounce" at the end */
+    transition-timing-function: ease-in-out, ease-in-out, ease-out-back;
+}
+
+.speaker-hidden {
+    scale: 0.5 0.5;
+    opacity: 0;
+    /* Pushed 80 pixels to the left. It will slide to 0 when activated. */
+    translate: -80px 0;
+}
+
+.speaker-active {
+    scale: 1.15 1.15;
+    opacity: 1;
+    translate: 0 0; /* Rests at origin */
+}
+
+.speaker-inactive {
+    scale: 0.85 0.85;
+    opacity: 0.4;
+    translate: 0 0; /* Rests at origin */
+}
+
+/* Dialogue Box */
+.dialogue-box, .choices-box {
+    width: 70%;
+    max-width: 900px;
+    background-color: rgba(15, 15, 15, 0.95);
+    border-radius: 12px;
+    padding: 25px;
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.speaker-name {
+    font-size: 24px;
+    -unity-font-style: bold;
+    color: rgb(230, 180, 80);
+    margin-bottom: 10px;
+}
+
+.dialogue-text-container {
+    flex-direction: row;
+    flex-wrap: wrap; /* Acts like word-wrap */
+    margin-bottom: 20px;
+}
+
+.dialogue-word {
+    font-size: 20px;
+    color: rgb(240, 240, 240);
+    /* Add a tiny bit of right margin for spaces between words */
+    margin-right: 6px;
+    margin-bottom: 4px;
+}
+
+.next-button {
+    align-self: flex-end;
+    width: 120px;
+    padding: 12px;
+    background-color: rgb(40, 40, 40);
+    color: white;
+    font-size: 16px;
+    border-radius: 6px;
+    border-width: 0;
+    transition-duration: 0.1s;
+}
+
+.next-button:hover {
+    background-color: rgb(70, 70, 70);
+}
+
+/* Choices View */
+.choices-box {
+    flex-direction: column;
+    justify-content: center;
+}
+
+.choice-button {
+    margin-top: 8px;
+    padding: 15px;
+    background-color: rgb(35, 35, 35);
+    color: white;
+    font-size: 18px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.2);
+    white-space: normal;
+}
+
+.choice-button:hover {
+    background-color: rgb(60, 60, 60);
+    border-color: rgba(255, 255, 255, 0.5);
+}
