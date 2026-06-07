@@ -22,6 +22,7 @@ namespace Skills.Editor
         private bool isPreviewMode;
         private SkillTreeCanvas previewCanvas;
         private VisualElement previewContainer;
+        private Texture2D previewBackgroundTexture;
 
         private void OnEnable()
         {
@@ -57,14 +58,22 @@ namespace Skills.Editor
             // --- 2. PREVIEW MODE CONTAINER (Runtime UI Canvas) ---
             previewContainer = new VisualElement();
             previewContainer.style.flexGrow = 1;
-            previewContainer.style.display = DisplayStyle.None; // Hidden by default
-            previewContainer.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 1f); // Dark BG for contrast
+            previewContainer.style.display = DisplayStyle.None; 
+            previewContainer.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 1f); 
+    
+            // CRITICAL: Hide the portion of the map that extends beyond the editor window
+            previewContainer.style.overflow = Overflow.Hidden;
 
-            // Enable panning/zooming in the preview just like the game
             previewCanvas = new SkillTreeCanvas();
-            previewCanvas.style.flexGrow = 1;
+    
+            // CRITICAL: Ensure the map zooms exactly from the center
+            previewCanvas.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+    
             previewContainer.Add(previewCanvas);
-            previewContainer.AddManipulator(new PanAndZoomManipulator(previewCanvas));
+
+            // CRITICAL FIX: Pass 'previewContainer' as the viewport, NOT 'graphView'. 
+            // graphView has a width of 0 when preview mode is active!
+            previewContainer.AddManipulator(new PanAndZoomManipulator(previewCanvas, previewContainer));
 
             // --- 3. ASSEMBLE ROOT ---
             rootVisualElement.Add(editContainer);
@@ -82,6 +91,32 @@ namespace Skills.Editor
                 value = activeTreeAsset
             };
             treeSelector.RegisterValueChangedCallback(evt => { activeTreeAsset = evt.newValue as SkillTreeGraph; });
+            
+            // --- NEW: MAP BACKGROUND SELECTOR ---
+            ObjectField bgSelector = new("Preview Map")
+            {
+                objectType = typeof(Texture2D),
+                allowSceneObjects = false,
+                style = { width = 200, marginLeft = 10 }
+            };
+
+            bgSelector.RegisterValueChangedCallback(evt => 
+            { 
+                previewBackgroundTexture = evt.newValue as Texture2D;
+    
+                // --- NEW: Update the node editor canvas instantly! ---
+                if (graphView != null) 
+                {
+                    graphView.SetMapBackground(previewBackgroundTexture);
+                }
+    
+                // Keep your existing logic for the runtime preview mode
+                if (isPreviewMode) 
+                {
+                    ApplyPreviewBackground();
+                }
+            });
+
 
             Button btnCreateGeneric = new(() => { CreateNewNode(typeof(GenericNodeData), "New Generic Skill"); })
                 { text = "Create Generic Node" };
@@ -116,6 +151,7 @@ namespace Skills.Editor
             };
 
             toolbar.Add(treeSelector);
+            toolbar.Add(bgSelector);
             toolbar.Add(btnCreateGeneric);
             toolbar.Add(btnCreateEmotion);
             toolbar.Add(new VisualElement { style = { flexGrow = 1 } }); // Spacer
@@ -124,6 +160,27 @@ namespace Skills.Editor
             toolbar.Add(loadButton);
 
             rootVisualElement.Add(toolbar);
+        }
+        
+        private void ApplyPreviewBackground()
+        {
+            if (previewBackgroundTexture != null)
+            {
+                previewCanvas.style.backgroundImage = new StyleBackground(previewBackgroundTexture);
+        
+                // Lock 1:1 Resolution to perfectly align nodes with drawn map features
+                previewCanvas.style.width = previewBackgroundTexture.width;
+                previewCanvas.style.height = previewBackgroundTexture.height;
+                previewCanvas.style.flexGrow = 0; // Disable flex stretching
+            }
+            else
+            {
+                // Fallback to responsive scaling if no map is assigned
+                previewCanvas.style.backgroundImage = null;
+                previewCanvas.style.width = StyleKeyword.Auto;
+                previewCanvas.style.height = StyleKeyword.Auto;
+                previewCanvas.style.flexGrow = 1; 
+            }
         }
 
         private void TogglePreviewMode()
@@ -138,14 +195,15 @@ namespace Skills.Editor
 
             if (isPreviewMode)
             {
-                // Ensure latest node positions are saved before previewing
                 GraphSaveUtility.GetInstance(graphView, activeTreeAsset).SaveGraph();
 
                 editContainer.style.display = DisplayStyle.None;
                 previewContainer.style.display = DisplayStyle.Flex;
 
-                // Populate the runtime canvas (isEditor = true disables runtime logic)
                 previewCanvas.Populate(activeTreeAsset, true);
+        
+                // NEW: Apply the texture layout boundaries!
+                ApplyPreviewBackground(); 
             }
             else
             {
@@ -227,6 +285,32 @@ namespace Skills.Editor
             maxLevelField.RegisterValueChangedCallback(evt => data.MaxLevel = evt.newValue);
             inspectorPanel.Add(maxLevelField);
 
+            Slider rotationSlider = new Slider("Orbit Rotation", 0, 360) { value = data.OrbitRotation };
+            rotationSlider.RegisterValueChangedCallback(evt => 
+            {
+                data.OrbitRotation = evt.newValue;
+        
+                // 1. Update the Graph View node visuals if needed (optional)
+                node.RefreshVisuals(); 
+        
+                // 2. Trigger the refresh on the active Preview Canvas
+                RefreshPreviewNode(data.GUID); 
+            });
+            inspectorPanel.Add(rotationSlider);
+
+            Slider spanSlider = new Slider("Orbit Span", 0, 180) { value = data.OrbitSpan };
+            spanSlider.RegisterValueChangedCallback(evt => 
+            {
+                data.OrbitSpan = evt.newValue;
+        
+                // 1. Update the Graph View node visuals
+                node.RefreshVisuals();
+        
+                // 2. Trigger the refresh on the active Preview Canvas
+                RefreshPreviewNode(data.GUID);
+            });
+            inspectorPanel.Add(spanSlider);
+            
             Toggle abilityToggle = new("Unlocks Ability?") { value = data.UnlocksAbility };
             abilityToggle.RegisterValueChangedCallback(evt => data.UnlocksAbility = evt.newValue);
             inspectorPanel.Add(abilityToggle);
@@ -247,6 +331,23 @@ namespace Skills.Editor
             inspectorPanel.Add(intendedSlotField);
         }
 
+        private void RefreshPreviewNode(string nodeGuid)
+        {
+            // If we aren't in preview mode, don't worry about updating the visuals
+            if (previewCanvas == null) return;
+
+            // Search through the children of the canvas to find the matching node
+            foreach (var element in previewCanvas.Children())
+            {
+                if (element is EmotionSkillNodeView emotionNode && emotionNode.NodeData.GUID == nodeGuid)
+                {
+                    // This is the specific method you need to call
+                    emotionNode.GenerateOrbitalIndicators(); 
+                    return;
+                }
+            }
+        }
+        
         // Separated Stats Drawing to pass the specific stat list directly
         private void DrawStatsSection(List<StatModifierData> statList)
         {

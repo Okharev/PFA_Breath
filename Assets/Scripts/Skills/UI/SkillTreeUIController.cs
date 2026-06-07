@@ -15,12 +15,15 @@ namespace Skills.UI
 
         private bool isMenuOpen;
 
-        // REFERENCE TO OUR NEW HUD OVERLAY BAR
+        // REFERENCE HUD OVERLAY BAR
         private SkillPointsBar pointsBar;
         private SkillTreeCanvas treeCanvas;
 
         private UIDocument uiDocument;
         private VisualElement viewport;
+        
+        [Header("Visuals")]
+        [SerializeField] private Texture2D backgroundTexture;
 
         public static bool IsOpen { get; private set; }
 
@@ -29,36 +32,63 @@ namespace Skills.UI
             uiDocument = GetComponent<UIDocument>();
             uiDocument.rootVisualElement.pickingMode = PickingMode.Ignore;
 
-            viewport = new VisualElement();
-            viewport.style.width = Length.Percent(100);
-            viewport.style.height = Length.Percent(100);
-            viewport.style.backgroundColor =
-                new StyleColor(new Color(0.1f, 0.1f, 0.1f, 1f)); // Fully opaque background fix
-            viewport.style.overflow = Overflow.Hidden;
-            viewport.style.display = DisplayStyle.None;
-            viewport.pickingMode = PickingMode.Position;
+            // 1. Create the Viewport (The static window/camera)
+            viewport = new VisualElement
+            {
+                style =
+                {
+                    width = Length.Percent(100),
+                    height = Length.Percent(100),
+                    overflow = Overflow.Hidden,
+                    display = DisplayStyle.None
+                },
+                pickingMode = PickingMode.Position
+            };
 
-            // 2. Create the Canvas
-            treeCanvas = new SkillTreeCanvas();
-            treeCanvas.style.flexGrow = 1;
-            treeCanvas.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
-            treeCanvas.pickingMode = PickingMode.Position;
+            // 2. Create the Canvas (The movable world space)
+            treeCanvas = new SkillTreeCanvas
+            {
+                style =
+                {
+                    // Center the transform origin so zooming scales from the center
+                    transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50))
+                },
+                pickingMode = PickingMode.Position
+            };
+
+            // --- THE FIX: APPLY BACKGROUND TO THE CANVAS ---
+            if (backgroundTexture != null)
+            {
+                treeCanvas.style.backgroundImage = new StyleBackground(backgroundTexture);
+        
+                // CRITICAL: Lock the canvas size strictly to the texture resolution.
+                // This guarantees O(1) exact alignment. A node saved at (500, 500) 
+                // will ALWAYS rest exactly on pixel (500, 500) of your map art.
+                treeCanvas.style.width = backgroundTexture.width;
+                treeCanvas.style.height = backgroundTexture.height;
+            }
+            else
+            {
+                // Fallback scaling if no map is provided
+                treeCanvas.style.flexGrow = 1; 
+            }
+            // -----------------------------------------------
 
             // 3. Assemble and Bind Elements
             viewport.Add(treeCanvas);
-
 
             // Add HUD Currency Bar
             pointsBar = new SkillPointsBar();
             viewport.Add(pointsBar);
 
-            // NEW ARCHITECTURAL ELEMENT: Spawning the master tooltip container onto the overlay screen stack
+            // Spawning the master tooltip container onto the overlay screen stack
             SkillTooltip masterTooltip = new();
             viewport.Add(masterTooltip);
 
             uiDocument.rootVisualElement.Add(viewport);
 
-            viewport.AddManipulator(new PanAndZoomManipulator(treeCanvas));
+            // Attach the Manipulator to the viewport, but tell it to move the canvas
+            viewport.AddManipulator(new PanAndZoomManipulator(treeCanvas, viewport));
 
             if (targetGraph != null) treeCanvas.Populate(targetGraph);
         }

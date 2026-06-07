@@ -1,4 +1,5 @@
-﻿using Skills.Skills;
+﻿using System;
+using Skills.Skills;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,111 +12,138 @@ namespace Skills.UI
         public SkillTreeCanvas()
         {
             generateVisualContent += OnGenerateVisualContent;
-
-            // Register event listeners to repaint paths on currency/state changes
             RegisterCallback<AttachToPanelEvent>(OnAttach);
             RegisterCallback<DetachFromPanelEvent>(OnDetach);
         }
 
-        private void OnAttach(AttachToPanelEvent evt)
-        {
-            SkillTreeManager.OnSkillTreeUpdated += MarkDirtyRepaint;
-        }
-
-        private void OnOriginalDetach()
-        {
-            SkillTreeManager.OnSkillTreeUpdated -= MarkDirtyRepaint;
-        }
-
-        private void OnDetach(DetachFromPanelEvent evt)
-        {
-            OnOriginalDetach();
-        }
+        private void OnAttach(AttachToPanelEvent evt) => SkillTreeManager.OnSkillTreeUpdated += MarkDirtyRepaint;
+        private void OnDetach(DetachFromPanelEvent evt) => SkillTreeManager.OnSkillTreeUpdated -= MarkDirtyRepaint;
 
         public void Populate(SkillTreeGraph graph, bool isEditor = false)
         {
             graphData = graph;
             graphData.InitializeRuntimeLookup();
             Clear();
-
             foreach (BaseNodeData node in graphData.AllNodes)
             {
-                SkillNodeView nodeView = new(node, isEditor);
-                Add(nodeView);
+                VisualElement nodeView = SkillNodeFactory.CreateNodeView(node, isEditor);
+                if (nodeView != null) Add(nodeView);
             }
-
             MarkDirtyRepaint();
         }
 
+        
         private void OnGenerateVisualContent(MeshGenerationContext context)
         {
             if (graphData is null) return;
 
             Painter2D paint2D = context.painter2D;
-            paint2D.lineWidth = 4f;
             paint2D.lineCap = LineCap.Round;
             paint2D.lineJoin = LineJoin.Round;
 
-            Color lockedColor = new(0.3f, 0.3f, 0.3f, 0.5f);
-            Color unlockedPathColor = new(0f, 0.85f, 1f, 1f); 
-
-            // Determine if we are in Editor Preview mode (not playing)
             bool isEditorPreview = !Application.isPlaying;
 
             foreach (BaseNodeData node in graphData.AllNodes)
             {
-                Vector2 targetPos = GetCenterPosition(node);
+                Vector2 centerA = GetCenterPosition(node);
+                float radiusA = GetNodeDiameter(node) * 0.5f;
         
-                // If in editor preview, simulate it as unlocked so we can see the pretty colored lines
                 bool isTargetUnlocked = isEditorPreview || (SkillTreeManager.Instance != null && SkillTreeManager.Instance.GetNodeLevel(node.GUID) > 0);
 
                 foreach (string reqGuid in node.PrerequisiteGUIDs)
                 {
                     BaseNodeData sourceNode = graphData.GetNodeByGUID(reqGuid);
-                    if (sourceNode != null)
-                    {
-                        Vector2 sourcePos = GetCenterPosition(sourceNode);
-                        bool isSourceUnlocked = isEditorPreview || (SkillTreeManager.Instance != null && SkillTreeManager.Instance.GetNodeLevel(sourceNode.GUID) > 0);
+                    if (sourceNode == null) continue;
 
-                        // Draw Logic
-                        paint2D.strokeColor = isTargetUnlocked && isSourceUnlocked ? unlockedPathColor : lockedColor;
+                    Vector2 centerB = GetCenterPosition(sourceNode); // Note: Swapping to match direction logic
+                    float radiusB = GetNodeDiameter(sourceNode) * 0.5f;
 
-                        paint2D.BeginPath();
-                        paint2D.MoveTo(sourcePos);
+                    // 1. Calculate Edge-to-Edge Points
+                    Vector2 direction = (centerA - centerB).normalized; 
+                    Vector2 startPoint = centerB + (direction * radiusB);
+                    Vector2 endPoint = centerA - (direction * radiusA);
 
-                        float distanceX = Mathf.Abs(targetPos.x - sourcePos.x);
-                        float distanceY = Mathf.Abs(targetPos.y - sourcePos.y);
+                    bool isSourceUnlocked = isEditorPreview || (SkillTreeManager.Instance != null && SkillTreeManager.Instance.GetNodeLevel(sourceNode.GUID) > 0);
+                    bool fullyUnlocked = isTargetUnlocked && isSourceUnlocked;
 
-                        Vector2 cp1, cp2;
-                        if (distanceY > distanceX)
-                        {
-                            // Vertical flow
-                            cp1 = new Vector2(sourcePos.x, sourcePos.y + (targetPos.y - sourcePos.y) * 0.5f);
-                            cp2 = new Vector2(targetPos.x, sourcePos.y + (targetPos.y - sourcePos.y) * 0.5f);
-                        }
-                        else
-                        {
-                            // Horizontal flow
-                            cp1 = new Vector2(sourcePos.x + (targetPos.x - sourcePos.x) * 0.5f, sourcePos.y);
-                            cp2 = new Vector2(sourcePos.x + (targetPos.x - sourcePos.x) * 0.5f, targetPos.y);
-                        }
-
-                        paint2D.BezierCurveTo(cp1, cp2, targetPos);
-                        paint2D.Stroke();
-                    }
+                    // 2. Draw using these precise boundary coordinates
+                    DrawConnection(paint2D, startPoint, endPoint, sourceNode, node, fullyUnlocked);
                 }
             }
         }
 
+        private void DrawConnection(Painter2D paint2D, Vector2 start, Vector2 end, BaseNodeData sourceNode, BaseNodeData targetNode, bool unlocked)
+        {
+            // 1. Determine Thickness
+            bool isSourceEmotion = sourceNode is EmotionNodeData;
+            bool isTargetEmotion = targetNode is EmotionNodeData;
+            float thickness = (isSourceEmotion && isTargetEmotion) ? 16f : 4f;
+
+            // 2. Determine Colors
+            Color startColor = GetNodeColor(sourceNode);
+            Color endColor = GetNodeColor(targetNode);
+
+            // If locked, dim the colors
+            if (!unlocked)
+            {
+                startColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
+                endColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
+            }
+
+            // 3. Create the Gradient properly
+            Gradient gradient = new Gradient();
+            gradient.colorKeys = new GradientColorKey[] 
+            { 
+                new GradientColorKey(startColor, 0.0f), 
+                new GradientColorKey(endColor, 1.0f) 
+            };
+            gradient.alphaKeys = new GradientAlphaKey[] 
+            { 
+                new GradientAlphaKey(startColor.a, 0.0f), 
+                new GradientAlphaKey(endColor.a, 1.0f) 
+            };
+
+            // 4. Draw Line
+            paint2D.lineWidth = thickness;
+            paint2D.strokeGradient = gradient; // Correctly assigns the UnityEngine.Gradient
+    
+            paint2D.BeginPath();
+            paint2D.MoveTo(start);
+            paint2D.LineTo(end);
+            paint2D.Stroke();
+        }
+
+        private Color GetNodeColor(BaseNodeData node)
+        {
+            if (node is EmotionNodeData eNode)
+            {
+                return eNode.RequiredEmotion switch
+                {
+                    EmotionType.Red => new Color(0.8f, 0.2f, 0.2f),
+                    EmotionType.Green => new Color(0.2f, 0.8f, 0.2f),
+                    EmotionType.Blue => new Color(0.1f, 0.6f, 1f),
+                    EmotionType.Yellow => new Color(0.8f, 0.8f, 0.2f),
+                    EmotionType.White => Color.white,
+                    _ => Color.gray
+                };
+            }
+            // Default color for Generic nodes
+            return new Color(0.88f, 0.88f, 0.88f, 1f);
+        }
+
+        private static float GetNodeDiameter(BaseNodeData node)
+        {
+
+            return node is EmotionNodeData ? 100f : 70f;
+        }
+
         private static Vector2 GetCenterPosition(BaseNodeData node)
         {
-            float x = node.Position.x;
-            float y = node.Position.y;
-
-            // ALIGNMENT MATRIX CORRECTION: Matches the updated UI dimensions perfectly
-            if (node is EmotionNodeData) return new Vector2(x + 75f, y + 75f); // Half of 150x150 boundary canvas plane
-
-            return new Vector2(x + 50f, y + 50f); // Half of 100x100 boundary canvas plane
+            // The offset must ALWAYS be exactly half of the diameter above!
+            // Reduced from 75f (half of 150) to 50f (half of 100)
+            // Reduced from 50f (half of 100) to 35f (half of 70)
+            float offset = (node is EmotionNodeData) ? 50f : 35f;
+            return new Vector2(node.Position.x + offset, node.Position.y + offset);
         }
     }
 }

@@ -185,6 +185,10 @@ namespace Skills
             public int BaseEmotionCost; // Cost for Level 1
             public int MaxLevel = 4; // How many times it can be upgraded
 
+            [Header("Orbit Visuals")]
+            public float OrbitRotation = 135f; // The starting angle of the first dot
+            public float OrbitSpan = 90f;
+            
             public bool UnlocksAbility;
             
             // REFACTORED: We drop the string and directly reference the SO
