@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _CausticsTexture:
-        m_Texture: {fileID: 2800000, guid: a4710b5831180a245b1e1a903da7f92a, type: 3}
+        m_Texture: {fileID: 2800000, guid: ac4146ca71ff91349b2a383e76d9755d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DerivTex:
@@ -49,13 +49,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _CausticsScale: -0.57
+    - _CausticsScale: 0.14
     - _CausticsSpeed: 0.39
-    - _CausticsStrength: 1.639
+    - _CausticsStrength: 0.467
     - _Choppiness: 1.03
     - _CrestGlowPower: 4.07
     - _CrestGlowStrength: 1.99
-    - _DepthAbsorption: 0.121
+    - _DepthAbsorption: 0.05
     - _DepthMultiplier: 0.04
     - _DetailScale: 0.1
     - _FFTScale: 0.015625
@@ -74,7 +74,7 @@ Material:
     - _NormalScale: 0.23
     - _NormalStrength: 0.267
     - _ReflectionStrength: 0.8
-    - _RefractionStrength: 0.0083
+    - _RefractionStrength: 0.0375
     - _SSSEmission: 3
     - _SSSPower: 9.01
     - _SSSSpread: 0.306
