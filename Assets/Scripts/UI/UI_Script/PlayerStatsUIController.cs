@@ -7,18 +7,17 @@ using UnityEngine.UIElements;
 namespace UI
 {
     /// <summary>
-    /// Controller for the Player's top-left HUD stats.
-    /// Utilizes the Observer pattern to react dynamically to stat changes.
+    ///     Controller for the Player's top-left HUD stats.
+    ///     Utilizes the Observer pattern to react dynamically to stat changes.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public class PlayerStatsUIController : MonoBehaviour
     {
-        [Header("Data Models")]
-        [Tooltip("Reference to the player's health component.")]
-        [SerializeField] private HealthComponent playerHealth;
-    
-        [Tooltip("Reference to the player's oxygen component.")]
-        [SerializeField] private OxygenComponent playerOxygen;
+        [Header("Data Models")] [Tooltip("Reference to the player's health component.")] [SerializeField]
+        private HealthComponent playerHealth;
+
+        [Tooltip("Reference to the player's oxygen component.")] [SerializeField]
+        private OxygenComponent playerOxygen;
 
         // View Elements
         private VisualElement healthBarFill;
@@ -50,38 +49,32 @@ namespace UI
         private void OnDisable()
         {
             // Always decouple events to prevent memory leaks when the UI is disabled
-            if (playerHealth != null)
-            {
-                playerHealth.OnHealthChanged.RemoveListener(UpdateHealthUI);
-            }
+            if (playerHealth != null) playerHealth.OnHealthChanged.RemoveListener(UpdateHealthUI);
 
-            if (playerOxygen != null)
-            {
-                playerOxygen.OnOxygenChanged -= UpdateOxygenUI;
-            }
+            if (playerOxygen != null) playerOxygen.OnOxygenChanged -= UpdateOxygenUI;
         }
 
         /// <summary>
-        /// Converts current health into a UI percentage width.
-        /// Time Complexity: O(1)
+        ///     Converts current health into a UI percentage width.
+        ///     Time Complexity: O(1)
         /// </summary>
         private void UpdateHealthUI(float currentHealth, float maxHealth)
         {
             if (healthBarFill == null || maxHealth <= 0) return;
 
-            float percentage = (currentHealth / maxHealth) * 100f;
+            float percentage = currentHealth / maxHealth * 100f;
             healthBarFill.style.width = Length.Percent(percentage);
         }
 
         /// <summary>
-        /// Converts current oxygen into a UI percentage width.
-        /// Time Complexity: O(1)
+        ///     Converts current oxygen into a UI percentage width.
+        ///     Time Complexity: O(1)
         /// </summary>
         private void UpdateOxygenUI(float currentOxygen, float maxOxygen)
         {
             if (oxygenBarFill == null || maxOxygen <= 0) return;
 
-            float percentage = (currentOxygen / maxOxygen) * 100f;
+            float percentage = currentOxygen / maxOxygen * 100f;
             oxygenBarFill.style.width = Length.Percent(percentage);
         }
     }

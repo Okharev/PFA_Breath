@@ -4,6 +4,11 @@ using UnityEngine.InputSystem;
 
 namespace Ability.NewAbilitySystem
 {
+    public interface IInteractable
+    {
+        void Interact(GameObject instigator);
+    }
+    
     /// <summary>
     ///     Defines the high-level states of the game loop.
     /// </summary>

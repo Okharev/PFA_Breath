@@ -85726,6 +85726,10 @@ PrefabInstance:
       propertyPath: m_Speed
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 365923815057689362, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
+      propertyPath: DefaultDash
+      value: 
+      objectReference: {fileID: 11400000, guid: 514ab73a710a2214c97a3a7c120554ac, type: 2}
     - target: {fileID: 3029938191028018037, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: m_Name
       value: Player
@@ -90562,7 +90566,7 @@ MonoBehaviour:
   m_Center: {x: 0, y: 2, z: 0}
   m_LayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 64
   m_UseGeometry: 0
   m_DefaultArea: 0
   m_GenerateLinks: 0
@@ -102861,7 +102865,7 @@ MonoBehaviour:
     windDirection: {x: -0.2, y: 0.2, z: -1}
     windIntensity: 13
     windGusts: 1.88
-  currentBlend: 1
+  currentBlend: 0.932
 --- !u!43 &577273536
 Mesh:
   m_ObjectHideFlags: 0
@@ -187083,6 +187087,43 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!84 &878220095
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!43 &879885172
 Mesh:
   m_ObjectHideFlags: 0
@@ -229699,21 +229740,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Skills.UI.SkillTreeUIController
   targetGraph: {fileID: 11400000, guid: 0051d1035bb0f7843b3b6c559e591d9d, type: 2}
-  toggleMenuAction:
-    m_Name: ToggleSkillTree
+  closeMenuAction:
+    m_Name: CloseSkillTree
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: 45259101-a778-4786-ada1-8b968d2d89c6
+    m_Id: a3a4cdf0-1ccb-41c7-8770-4310b230e1b4
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 
-      m_Id: d917faff-9675-4598-b076-8bcc59832948
-      m_Path: <Keyboard>/k
+      m_Id: 75ec32ea-5995-428d-a1d9-4ee4e32accce
+      m_Path: <Keyboard>/escape
       m_Interactions: 
       m_Processors: 
       m_Groups: 
-      m_Action: ToggleSkillTree
+      m_Action: CloseSkillTree
       m_Flags: 0
     m_Flags: 0
   backgroundTexture: {fileID: 2800000, guid: 5797ea57913d6a9428ed4eae816380b0, type: 3}
@@ -286675,6 +286716,43 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!84 &1396738631
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1397875306
 GameObject:
   m_ObjectHideFlags: 0
@@ -321531,7 +321609,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Water.OceanWeatherController
   fftBinder: {fileID: 1666047718}
-  oceanMaterial: {fileID: 2100000, guid: 98f3b7ab3a66a5448b73b2c717d8bce2, type: 2}
+  oceanMaterial: {fileID: 2100000, guid: d815d4ff178c584419b34a542c926846, type: 2}
   calmPreset:
     windSpeed: 5
     phillipsAmplitude: 0.0002
@@ -321542,12 +321620,12 @@ MonoBehaviour:
     foamPower: 2.47
   tempestPreset:
     windSpeed: 12
-    phillipsAmplitude: 0.002
+    phillipsAmplitude: -0.08
     choppiness: 0.94
     shallowColor: {r: 0.1, g: 0.3, b: 0.35, a: 1}
     deepColor: {r: 0.01, g: 0.05, b: 0.1, a: 1}
-    foamBias: 0.4
-    foamPower: 1.94
+    foamBias: -0.278
+    foamPower: 3.34
 --- !u!114 &1666047718
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -321561,16 +321639,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.Water.OceanFFTBinder
   fftCompute: {fileID: 7200000, guid: b9a135a7d88d4a84b62f4d6b8003a7e2, type: 3}
-  oceanMaterial: {fileID: 2100000, guid: 98f3b7ab3a66a5448b73b2c717d8bce2, type: 2}
+  oceanMaterial: {fileID: 2100000, guid: d815d4ff178c584419b34a542c926846, type: 2}
   resolution: 512
   timeScale: 1
   oceanSize: 64
-  windSpeed: 12
-  windDirection: {x: -2.5018513, y: -12.509257}
-  phillipsAmplitude: 0.002
-  choppiness: 0.94
-  displacementMap: {fileID: 2132485996}
-  derivativeMap: {fileID: 1781480657}
+  windSpeed: 11.524
+  windDirection: {x: -2.4001737, y: -12.000868}
+  phillipsAmplitude: -0.0745464
+  choppiness: 0.94612
+  displacementMap: {fileID: 1396738631}
+  derivativeMap: {fileID: 878220095}
 --- !u!43 &1667392703
 Mesh:
   m_ObjectHideFlags: 0
@@ -335134,6 +335212,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.TurnManager
   secondsPerTurn: 1
+  rampUpPercentage: 0.25
+  rampDownPercentage: 0.25
 --- !u!1 &1743132430
 GameObject:
   m_ObjectHideFlags: 0
@@ -344725,43 +344805,6 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
---- !u!84 &1781480657
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &1784792758
 Mesh:
   m_ObjectHideFlags: 0
@@ -419167,43 +419210,6 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
---- !u!84 &2132485996
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &2132790650
 GameObject:
   m_ObjectHideFlags: 0

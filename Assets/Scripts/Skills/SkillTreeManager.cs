@@ -8,27 +8,25 @@ namespace Skills
 {
     public class SkillTreeManager : MonoBehaviour
     {
-        [Header("Player Currencies")] 
-        public int genericPoints;
+        [Header("Player Currencies")] public int genericPoints;
+
         public readonly Dictionary<EmotionType, int> emotionPoints = new();
         private readonly Dictionary<AbilitySlot, string> equippedNodes = new();
         private readonly Dictionary<string, int> nodeLevels = new();
 
         public static SkillTreeManager Instance { get; private set; }
 
-        // --- NEW: EVENT-DRIVEN DECOUPLING ---
-        public static event Action OnSkillTreeUpdated;
-        
-        // Broadcasts the newly equipped AbilityData, its slot, and its current level
-        public static event Action<AbilityData, AbilitySlot, int> OnAbilityEquipped;
-        
-        // Broadcasts which slot was just emptied
-        public static event Action<AbilitySlot> OnAbilityUnequipped;
-
         private void Awake()
         {
-            if (!Instance) Instance = this;
-            else { Destroy(gameObject); return; }
+            if (!Instance)
+            {
+                Instance = this;
+            }
+            else
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             foreach (EmotionType emotion in Enum.GetValues(typeof(EmotionType))) emotionPoints[emotion] = 0;
 
@@ -37,6 +35,15 @@ namespace Skills
             AddEmotionPoints(EmotionType.White, 5);
             AddGenericPoints(8);
         }
+
+        // --- NEW: EVENT-DRIVEN DECOUPLING ---
+        public static event Action OnSkillTreeUpdated;
+
+        // Broadcasts the newly equipped AbilityData, its slot, and its current level
+        public static event Action<AbilityData, AbilitySlot, int> OnAbilityEquipped;
+
+        // Broadcasts which slot was just emptied
+        public static event Action<AbilitySlot> OnAbilityUnequipped;
 
 
         public bool MeetsPrerequisites(BaseNodeData node)
@@ -47,13 +54,9 @@ namespace Skills
 
             // 2. The "AND" Gate Validation
             foreach (string reqGuid in node.PrerequisiteGUIDs)
-            {
                 // If ANY required node has a level of 0 (locked), the validation fails
-                if (GetNodeLevel(reqGuid) <= 0) 
-                {
-                    return false; 
-                }
-            }
+                if (GetNodeLevel(reqGuid) <= 0)
+                    return false;
 
             // 3. If we survived the loop, all prerequisites are met!
             return true;
@@ -82,7 +85,7 @@ namespace Skills
             if (isCurrentlyEquipped)
             {
                 equippedNodes.Remove(node.IntendedSlot);
-                
+
                 // Broadcast Unequip
                 OnAbilityUnequipped?.Invoke(node.IntendedSlot);
                 Debug.Log($"[SkillTreeManager] Unequipped {node.GrantedAbility.abilityName}.");
@@ -90,10 +93,11 @@ namespace Skills
             else
             {
                 equippedNodes[node.IntendedSlot] = node.GUID;
-                
+
                 // Broadcast Equip
                 OnAbilityEquipped?.Invoke(node.GrantedAbility, node.IntendedSlot, GetNodeLevel(node.GUID));
-                Debug.Log($"[SkillTreeManager] Equipped {node.GrantedAbility.abilityName} to {node.IntendedSlot} slot.");
+                Debug.Log(
+                    $"[SkillTreeManager] Equipped {node.GrantedAbility.abilityName} to {node.IntendedSlot} slot.");
             }
 
             OnSkillTreeUpdated?.Invoke();
@@ -133,14 +137,14 @@ namespace Skills
         public int GetNodeCost(BaseNodeData node)
         {
             int currentLevel = GetNodeLevel(node.GUID);
-            
+
             return node switch
             {
                 GenericNodeData genericNode => genericNode.GenericCost,
-                
+
                 // Linear scaling: Level 1 = BaseCost, Level 2 = BaseCost * 2, etc.
-                EmotionNodeData emotionNode => emotionNode.BaseEmotionCost + (currentLevel * emotionNode.BaseEmotionCost),
-                
+                EmotionNodeData emotionNode => emotionNode.BaseEmotionCost + currentLevel * emotionNode.BaseEmotionCost,
+
                 _ => int.MaxValue // Failsafe: Prevent purchasing unknown node types
             };
         }
@@ -151,19 +155,18 @@ namespace Skills
 
             // 1. Max Level bounds validation
             if (node is GenericNodeData && currentLevel >= 1) return false;
-    
+
             // Explicitly check levels for Emotion nodes
             if (node is EmotionNodeData emotionNode && currentLevel >= emotionNode.MaxLevel) return false;
 
             // 2. Check Prerequisites (Prerequisites require at least level 1)
             foreach (string reqGuid in node.PrerequisiteGUIDs)
-            {
-                if (GetNodeLevel(reqGuid) == 0) return false;
-            }
+                if (GetNodeLevel(reqGuid) == 0)
+                    return false;
 
             // 3. Dynamic Cost Validation
             int requiredCost = GetNodeCost(node);
-    
+
             // Safety: ensure cost is actually required
             if (requiredCost <= 0) return false;
 
@@ -195,19 +198,18 @@ namespace Skills
 
             PlayerStats playerStats = FindAnyObjectByType<PlayerStats>();
             if (playerStats is not null && statsToApply != null)
-            {
                 foreach (StatModifierData mod in statsToApply)
                 {
                     StatModifierData initializedMod = mod;
                     initializedMod.Source = node;
                     playerStats.GetStat(mod.Stat).AddModifier(initializedMod);
                 }
-            }
 
             nodeLevels.TryAdd(node.GUID, 0);
             nodeLevels[node.GUID]++;
 
-            Debug.Log($"[SkillTreeManager] Upgraded Node: {node.NodeName} to Level {nodeLevels[node.GUID]} (Cost: {costToDeduct})");
+            Debug.Log(
+                $"[SkillTreeManager] Upgraded Node: {node.NodeName} to Level {nodeLevels[node.GUID]} (Cost: {costToDeduct})");
             OnSkillTreeUpdated?.Invoke();
 
             return true;

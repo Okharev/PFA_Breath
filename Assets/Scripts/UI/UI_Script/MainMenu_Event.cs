@@ -1,16 +1,15 @@
-using Mono.Cecil.Cil;
-using Unity.VectorGraphics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 public class MainMenu_Event : MonoBehaviour
 {
-    private UIDocument UIMain_Menu;
-    private Button ButtonStart;
-    private Button ButtonZoo;
     private Button ButtonCredit;
     private Button ButtonQuit;
+    private Button ButtonStart;
+    private Button ButtonZoo;
+    private UIDocument UIMain_Menu;
+
     private void Awake()
     {
         UIMain_Menu = GetComponent<UIDocument>();
@@ -27,6 +26,15 @@ public class MainMenu_Event : MonoBehaviour
         ButtonQuit = UIMain_Menu.rootVisualElement.Q("B_Quit") as Button;
         ButtonQuit.RegisterCallback<ClickEvent>(QuitClick);
     }
+
+
+    private void OnDisable()
+    {
+        ButtonStart.UnregisterCallback<ClickEvent>(OnPlayGameClick);
+        ButtonZoo.UnregisterCallback<ClickEvent>(OnPlayZooClick);
+        ButtonCredit.UnregisterCallback<ClickEvent>(OnPlayCreditClick);
+    }
+
     private void OnPlayGameClick(ClickEvent evt)
     {
         Debug.Log("Bienvenue a XAR SAROTH !!!");
@@ -38,23 +46,16 @@ public class MainMenu_Event : MonoBehaviour
         Debug.Log(" LES ZOO ZOO");
         SceneManager.LoadScene("Scene_Zoo");
     }
+
     private void OnPlayCreditClick(ClickEvent evt)
     {
         Debug.Log("The End M*therfucker");
         SceneManager.LoadScene("04_CreditMenu");
     }
+
     private void QuitClick(ClickEvent evt)
     {
         Debug.Log("Tmort Tmort AAAAAAH");
         Application.Quit();
     }
-
-
-    private void OnDisable()
-    {
-        ButtonStart.UnregisterCallback<ClickEvent>(OnPlayGameClick);
-        ButtonZoo.UnregisterCallback<ClickEvent>(OnPlayZooClick);
-        ButtonCredit.UnregisterCallback<ClickEvent>(OnPlayCreditClick);
-    }
-
 }

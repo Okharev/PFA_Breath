@@ -14,12 +14,11 @@ public class ChangeCameraTrigger : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(other.gameObject.CompareTag("Player"))
+        if (other.gameObject.CompareTag("Player"))
         {
             mainCamera.GetComponent<IsometricCameraFollow>().distance = distanceCamera;
             mainCamera.GetComponent<IsometricCameraFollow>().pitch = pitchCamera;
             mainCamera.GetComponent<IsometricCameraFollow>().yaw = yawCamera;
-
         }
     }
 }

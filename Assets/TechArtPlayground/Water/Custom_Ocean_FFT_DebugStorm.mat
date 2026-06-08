@@ -52,19 +52,19 @@ Material:
     - _CausticsScale: 0.14
     - _CausticsSpeed: 0.21
     - _CausticsStrength: 0
-    - _Choppiness: 0.569
+    - _Choppiness: 0.94612
     - _CrestGlowPower: 4.07
     - _CrestGlowStrength: 1.99
     - _DepthAbsorption: 0.203
     - _DepthMultiplier: 0.04
     - _DetailScale: 0.1
-    - _FFTScale: 0.0078125
-    - _FoamBias: -0.101
+    - _FFTScale: 0.015625
+    - _FoamBias: -0.24277599
     - _FoamBlurLod: 0
     - _FoamCutoff: 0.228
     - _FoamDistance: 1.43
     - _FoamNoiseScale: 14.7
-    - _FoamPower: 1.57
+    - _FoamPower: 3.28084
     - _FoamScale: 1.05
     - _FoamSpeed: 5.9
     - _FresnelPower: 1
@@ -85,15 +85,15 @@ Material:
     - _SpecularStrength: 0.002
     - _WaveNormalScale: 25
     m_Colors:
-    - _DeepColor: {r: 0.02, g: 0.1, b: 0.2, a: 1}
+    - _DeepColor: {r: 0.01068, g: 0.053400002, b: 0.106800005, a: 1}
     - _DetailSpeed: {r: -0.1, g: -0.1, b: 0, a: 0}
     - _FoamColor: {r: 1, g: 1, b: 1, a: 1}
     - _FoamNoiseSpeed: {r: 0, g: 0, b: 0, a: 0}
     - _NormalSpeed: {r: 0.1, g: 0.25, b: 0, a: 0}
     - _SSSColor: {r: 3.5509233, g: 0.064382106, b: 0, a: 1}
-    - _ShallowColor: {r: 0.2, g: 0.6, b: 0.7, a: 1}
+    - _ShallowColor: {r: 0.106800005, g: 0.32040003, b: 0.3738, a: 1}
     - _WaterColor: {r: 0.049999982, g: 0.19999996, b: 0.39999998, a: 1}
-    - _WindDirection1: {r: 0.17677669, g: 0.17677669, b: 0, a: 0}
+    - _WindDirection1: {r: -0.11300212, g: -0.5650106, b: 0, a: 0}
     - _WindDirection2: {r: -0.05, g: 0.15, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
