@@ -168,10 +168,17 @@ namespace Skills.Editor
             {
                 previewCanvas.style.backgroundImage = new StyleBackground(previewBackgroundTexture);
         
-                // Lock 1:1 Resolution to perfectly align nodes with drawn map features
+                // --- SYNC WITH RUNTIME LOGIC ---
+                // 1. Explicitly prevent Flexbox from squishing the canvas in small editor windows
+                previewCanvas.style.flexShrink = 0; 
+                previewCanvas.style.flexGrow = 0;
+        
+                // 2. Lock the exact texture proportions
+                previewCanvas.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+
+                // 3. Lock 1:1 Resolution to perfectly align nodes with drawn map features
                 previewCanvas.style.width = previewBackgroundTexture.width;
                 previewCanvas.style.height = previewBackgroundTexture.height;
-                previewCanvas.style.flexGrow = 0; // Disable flex stretching
             }
             else
             {
@@ -179,6 +186,9 @@ namespace Skills.Editor
                 previewCanvas.style.backgroundImage = null;
                 previewCanvas.style.width = StyleKeyword.Auto;
                 previewCanvas.style.height = StyleKeyword.Auto;
+        
+                // Reset Flexbox states
+                previewCanvas.style.flexShrink = 1; 
                 previewCanvas.style.flexGrow = 1; 
             }
         }

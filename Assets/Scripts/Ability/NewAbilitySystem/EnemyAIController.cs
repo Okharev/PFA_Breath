@@ -1,30 +1,149 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.AI;
 
 namespace Ability.NewAbilitySystem
 {
-    public interface IEnemyState
+    /// <summary>
+    ///     Bridges the generic HSM with the turn-based AI Controller.
+    /// </summary>
+    public abstract class EnemyBaseState : IState
     {
-        void Enter(EnemyAIController enemy);
+        protected readonly EnemyAIController Enemy;
+
+        protected EnemyBaseState(EnemyAIController enemy)
+        {
+            Enemy = enemy;
+        }
+
+        public virtual void OnEnter()
+        {
+        }
 
         /// <summary>
+        ///     Maps to the turn-based PlanAction phase.
         ///     Evaluates logic during the paused planning phase.
         /// </summary>
-        void PlanAction(EnemyAIController enemy);
+        public virtual void OnUpdate()
+        {
+        }
+
+        public virtual void OnExit()
+        {
+        }
 
         /// <summary>
-        ///     Executes the physical action when the turn begins.
+        ///     Executes the physical action when the real-time turn execution begins.
         /// </summary>
-        void ExecuteAction(EnemyAIController enemy);
-
-        void Exit(EnemyAIController enemy);
+        public abstract void ExecuteAction();
     }
 
-    public enum EnemyStartingState
+    public class HSMChaseState : EnemyBaseState
     {
-        Chase,
-        Flee,
-        Attack
+        public HSMChaseState(EnemyAIController enemy) : base(enemy)
+        {
+        }
+
+        public override void OnUpdate()
+        {
+            if (Enemy.Target != null)
+                Enemy.Agent.SetDestination(Enemy.Target.position);
+        }
+
+        public override void ExecuteAction()
+        {
+            Enemy.Agent.isStopped = false; // Unpause for movement
+        }
+
+        public override void OnExit()
+        {
+            Enemy.Agent.isStopped = true;
+        }
+    }
+
+    public class HSMFleeState : EnemyBaseState
+    {
+        private readonly float fleeDistance;
+
+        public HSMFleeState(EnemyAIController enemy, float fleeDistance = 8f) : base(enemy)
+        {
+            this.fleeDistance = fleeDistance;
+        }
+
+        public override void OnEnter()
+        {
+            Enemy.Agent.isStopped = true;
+        }
+
+        public override void OnUpdate()
+        {
+            if (Enemy.Target == null) return;
+
+            Vector3 fleeDirection = (Enemy.transform.position - Enemy.Target.position).normalized;
+            Vector3 targetFleePosition = Enemy.transform.position + fleeDirection * fleeDistance;
+
+            // O(1) Spatial Query ensuring NavMesh compliance
+            if (NavMesh.SamplePosition(targetFleePosition, out NavMeshHit hit, fleeDistance, NavMesh.AllAreas))
+                Enemy.Agent.SetDestination(hit.position);
+        }
+
+        public override void ExecuteAction()
+        {
+            Enemy.Agent.isStopped = false;
+        }
+
+        public override void OnExit()
+        {
+            Enemy.Agent.isStopped = true;
+        }
+    }
+
+    public class HSMAttackState : EnemyBaseState
+    {
+        public HSMAttackState(EnemyAIController enemy) : base(enemy)
+        {
+        }
+
+        public override void OnEnter()
+        {
+            Enemy.Agent.isStopped = true; // Stop moving to aim
+        }
+
+        public override void OnUpdate()
+        {
+            if (Enemy.Target == null || Enemy.PrimaryAbility == null) return;
+
+            // Prevent queuing multiple times if already channeling a shot
+            if (Enemy.Abilities.HasQueuedAbility) return;
+
+            AbilityContext context = new(
+                null,
+                Enemy.gameObject,
+                Enemy.FirePoint,
+                Enemy.Target.gameObject,
+                Enemy.Target.position
+            );
+
+            Enemy.Abilities.QueueAbility(Enemy.PrimaryAbility, context);
+        }
+
+        public override void ExecuteAction()
+        {
+            // Face target horizontally
+            Vector3 direction = (Enemy.Target.position - Enemy.transform.position).normalized;
+            direction.y = 0;
+            if (direction != Vector3.zero)
+                Enemy.transform.rotation = Quaternion.LookRotation(direction);
+
+            Enemy.Abilities.ExecuteAction();
+        }
+    }
+
+    public enum EnemyArchetype
+    {
+        Rifleman, // Mid-range LoS Shooter
+        Hugger, // Melee AoE
+        Sniper // Long-range, kites if approached
     }
 
     [RequireComponent(typeof(NavMeshAgent), typeof(AbilityController))]
@@ -34,32 +153,29 @@ namespace Ability.NewAbilitySystem
         [field: SerializeField]
         public Transform Target { get; private set; }
 
-        [field: SerializeField] public AbilityData ShootAbility { get; private set; }
-        [field: SerializeField] public float AttackRange { get; private set; } = 15f;
+        [field: SerializeField] public AbilityData PrimaryAbility { get; private set; }
+        [field: SerializeField] public Transform FirePoint { get; private set; }
         [field: SerializeField] public LayerMask SightObstacles { get; private set; }
-        [field: SerializeField] public Transform FirePoint;
 
-        [field: Header("Behavior")]
-        [Tooltip("Defines the initial state of the AI's state machine.")]
+        [field: Header("Archetype Specs")]
         [field: SerializeField]
-        public EnemyStartingState StartingState { get; private set; } = EnemyStartingState.Chase;
+        public EnemyArchetype Archetype { get; private set; } = EnemyArchetype.Rifleman;
 
-        private IEnemyState currentState;
+        [field: SerializeField] public float AttackRange { get; private set; } = 15f;
+        [field: SerializeField] public float SafeDistance { get; private set; } = 8f; // Used by Snipers
+
         public NavMeshAgent Agent { get; private set; }
         public AbilityController Abilities { get; private set; }
+        public StateMachine Brain { get; private set; }
 
-        // Cache our states to prevent O(1) garbage allocation on state swaps[cite: 2]
-        public ChaseState StateChase { get; } = new();
-        public AttackState StateAttack { get; } = new();
-        public FleeState StateFlee { get; } = new(); // Newly cached state
+        // Cached per turn for O(1) condition checks
+        public float TargetDistanceSqr { get; private set; }
 
         private void Awake()
         {
             Agent = GetComponent<NavMeshAgent>();
             Abilities = GetComponent<AbilityController>();
 
-            // --- Snappy Movement Configuration ---
-            // Lowered from 9999f to prevent Transform NaN corruption (the "disappearing" bug)
             Agent.acceleration = 120f;
             Agent.angularSpeed = 1000f;
             Agent.autoBraking = true;
@@ -68,89 +184,57 @@ namespace Ability.NewAbilitySystem
 
         private void Start()
         {
-            // 1. Safely bind the agent to the floor before doing anything else
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5f, NavMesh.AllAreas))
             {
-                // Warp forces the agent onto the legal NavMesh surface instantly
                 Agent.Warp(hit.position);
                 Agent.isStopped = true;
             }
             else
             {
-                Debug.LogError($"[EnemyAI] {name} is not above a baked NavMesh and will break!");
+                Debug.LogError($"[EnemyAI] {name} is off the NavMesh!");
             }
 
-            // 2. Auto-acquire the player via Tag if not manually assigned
             if (Target == null)
             {
                 GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-                if (playerObj != null)
-                    Target = playerObj.transform;
-                else
-                    Debug.LogWarning($"[EnemyAI] {name} could not find an object tagged 'Player' in the scene.");
+                if (playerObj != null) Target = playerObj.transform;
             }
 
             TurnManager.Instance.RegisterEntity(this);
-
-            // 3. Initialize State
-            InitializeStartingState();
+            BuildBrain();
         }
 
         private void OnDestroy()
         {
-            if (TurnManager.Instance != null)
-                TurnManager.Instance.UnregisterEntity(this);
+            if (TurnManager.Instance != null) TurnManager.Instance.UnregisterEntity(this);
         }
 
         public int Initiative { get; } = 10;
 
-        // --- ITurnEntity Implementation ---[cite: 2]
         public void PlanAction()
         {
-            currentState?.PlanAction(this);
+            // 1. Cache mathematics once per turn
+            if (Target != null)
+                TargetDistanceSqr = (Target.position - transform.position).sqrMagnitude;
+
+            // 2. StateMachine evaluates zero-GC transitions, then calls OnUpdate() on current state
+            Brain?.Update();
         }
 
         public void DrawIntents()
         {
-            // Abilities are drawn by the AbilityController. 
-            // If you ever want the enemy to draw a movement path line natively, do it here!
         }
 
         public void ExecuteAction()
         {
-            currentState?.ExecuteAction(this);
+            // 3. Cast to our bridge state and execute physics/rendering
+            if (Brain?.CurrentState is EnemyBaseState activeState) activeState.ExecuteAction();
         }
 
         public void EndTurn()
         {
             Agent.isStopped = true;
             Abilities.EndTurn();
-        }
-
-        private void InitializeStartingState()
-        {
-            switch (StartingState)
-            {
-                case EnemyStartingState.Chase:
-                    ChangeState(StateChase);
-                    break;
-                case EnemyStartingState.Flee:
-                    ChangeState(StateFlee);
-                    break;
-                case EnemyStartingState.Attack:
-                    ChangeState(StateAttack);
-                    break;
-                default:
-                    ChangeState(StateChase);
-                    break;
-            }
-        }
-
-        public void ChangeState(IEnemyState newState)
-        {
-            currentState?.Exit(this);
-            currentState = newState;
-            currentState?.Enter(this);
         }
 
         public bool HasLineOfSight()
@@ -160,145 +244,64 @@ namespace Ability.NewAbilitySystem
             Vector3 direction = targetPos - origin;
 
             if (Physics.Raycast(origin, direction, out RaycastHit hit, AttackRange, SightObstacles))
-                if (hit.transform != Target)
-                    return false;
+                return hit.transform == Target;
             return true;
         }
-    }
 
-    public class ChaseState : IEnemyState
-    {
-        public void Enter(EnemyAIController enemy)
+        // --- THE FACTORY PATTERN ---
+        private void BuildBrain()
         {
-        }
+            Brain = new StateMachine();
 
-        public void PlanAction(EnemyAIController enemy)
-        {
-            if (enemy.Target == null) return;
+            // Instantiate behavior singletons for this enemy
+            HSMChaseState chase = new(this);
+            HSMAttackState attack = new(this);
+            HSMFleeState flee = new(this, SafeDistance + 2f);
 
-            float distanceSqr = (enemy.Target.position - enemy.transform.position).sqrMagnitude;
-            bool inRange = distanceSqr <= enemy.AttackRange * enemy.AttackRange;
-
-            if (inRange && enemy.HasLineOfSight())
+            switch (Archetype)
             {
-                enemy.ChangeState(enemy.StateAttack);
-                enemy.StateAttack.PlanAction(enemy);
-                return;
+                case EnemyArchetype.Rifleman:
+                    // Chases until in range & LoS, then shoots.
+                    Brain.AddTransition(chase, attack, () => InRangeAndLoS() && NotChanneling());
+                    Brain.AddTransition(attack, chase, () => OutOfRangeOrNoLoS() && NotChanneling());
+                    Brain.SetState(chase);
+                    break;
+
+                case EnemyArchetype.Hugger:
+                    // Similar to Rifleman, but AttackRange acts as melee range. 
+                    Brain.AddTransition(chase, attack, () => InRangeAndLoS() && NotChanneling());
+                    Brain.AddTransition(attack, chase, () => OutOfRangeOrNoLoS() && NotChanneling());
+                    Brain.SetState(chase);
+                    break;
+
+                case EnemyArchetype.Sniper:
+                    // Complex behavior: Flee if rushed, Snipe if at perfect range, chase if too far.
+                    Brain.AddTransition(chase, attack, () => InRangeAndLoS() && IsSafeDistance() && NotChanneling());
+                    Brain.AddTransition(chase, flee, () => IsTooClose() && NotChanneling());
+
+                    Brain.AddTransition(attack, flee, () => IsTooClose() && NotChanneling());
+                    Brain.AddTransition(attack, chase, () => OutOfRangeOrNoLoS() && NotChanneling());
+
+                    Brain.AddTransition(flee, attack, () => IsSafeDistance() && InRangeAndLoS() && NotChanneling());
+                    Brain.AddTransition(flee, chase, () => IsSafeDistance() && !InRangeAndLoS() && NotChanneling());
+
+                    Brain.SetState(chase);
+                    break;
             }
 
-            enemy.Agent.SetDestination(enemy.Target.position);
+            return;
 
-            // REMOVED: TurnManager.Instance.RequestTurns(1);
-        }
+            // CRITICAL: Prevent interrupting channeled abilities (like a Sniper aiming)
+            bool NotChanneling() => !Abilities.HasQueuedAbility;
 
-        public void ExecuteAction(EnemyAIController enemy)
-        {
-            // Unpause the agent so it actually moves during the real-time execution window
-            enemy.Agent.isStopped = false;
-        }
+            // Reusable, zero-allocation condition delegates
+            bool InRangeAndLoS() => TargetDistanceSqr <= AttackRange * AttackRange && HasLineOfSight();
 
-        public void Exit(EnemyAIController enemy)
-        {
-            enemy.Agent.isStopped = true;
-        }
-    }
+            bool OutOfRangeOrNoLoS() => TargetDistanceSqr > AttackRange * AttackRange || !HasLineOfSight();
 
-    public class FleeState : IEnemyState
-    {
-        private readonly float fleeDistance;
-        private readonly float safeDistance;
+            bool IsTooClose() => TargetDistanceSqr < SafeDistance * SafeDistance;
 
-        public FleeState(float safeDistance = 8f, float fleeDistance = 5f)
-        {
-            this.safeDistance = safeDistance;
-            this.fleeDistance = fleeDistance;
-        }
-
-        public void Enter(EnemyAIController enemy)
-        {
-            enemy.Agent.isStopped = true;
-        }
-
-        public void PlanAction(EnemyAIController enemy)
-        {
-            if (enemy.Target == null) return;
-
-            float distanceSqr = (enemy.Target.position - enemy.transform.position).sqrMagnitude;
-
-            // If the player is far enough away, switch to Attack (Aiming/Shooting)
-            if (distanceSqr > safeDistance * safeDistance)
-            {
-                enemy.ChangeState(enemy.StateAttack);
-                enemy.StateAttack.PlanAction(enemy);
-                return;
-            }
-
-            // Calculate a flee vector pointing away from the target
-            Vector3 fleeDirection = (enemy.transform.position - enemy.Target.position).normalized;
-            Vector3 targetFleePosition = enemy.transform.position + fleeDirection * fleeDistance;
-
-            // O(1) Spatial Query to ensure the flee point is on the NavMesh
-            if (NavMesh.SamplePosition(targetFleePosition, out NavMeshHit hit, fleeDistance, NavMesh.AllAreas))
-                enemy.Agent.SetDestination(hit.position);
-        }
-
-        public void ExecuteAction(EnemyAIController enemy)
-        {
-            enemy.Agent.isStopped = false;
-        }
-
-        public void Exit(EnemyAIController enemy)
-        {
-            enemy.Agent.isStopped = true;
-        }
-    }
-
-    public class AttackState : IEnemyState
-    {
-        public void Enter(EnemyAIController enemy)
-        {
-            // Stop moving to shoot
-            enemy.Agent.isStopped = true;
-        }
-
-        public void PlanAction(EnemyAIController enemy)
-        {
-            if (enemy.Target == null) return;
-
-            float distanceSqr = (enemy.Target.position - enemy.transform.position).sqrMagnitude;
-            bool inRange = distanceSqr <= enemy.AttackRange * enemy.AttackRange;
-
-            // If the player moved out of range or behind cover, go back to chasing
-            if (!inRange || !enemy.HasLineOfSight())
-            {
-                enemy.ChangeState(enemy.StateChase);
-                enemy.StateChase.PlanAction(enemy);
-                return;
-            }
-
-            // Queue the attack using your existing modular context!
-            AbilityContext context = new(
-                enemy.gameObject,
-                enemy.FirePoint,
-                enemy.Target.gameObject,
-                enemy.Target.position
-            );
-
-            enemy.Abilities.QueueAbility(enemy.ShootAbility, context);
-        }
-
-        public void ExecuteAction(EnemyAIController enemy)
-        {
-            // Face the target visually before shooting
-            Vector3 direction = (enemy.Target.position - enemy.transform.position).normalized;
-            direction.y = 0; // Keep rotation strictly horizontal
-            if (direction != Vector3.zero) enemy.transform.rotation = Quaternion.LookRotation(direction);
-
-            enemy.Abilities.ExecuteAction();
-        }
-
-        public void Exit(EnemyAIController enemy)
-        {
+            bool IsSafeDistance() => TargetDistanceSqr >= SafeDistance * SafeDistance;
         }
     }
 }

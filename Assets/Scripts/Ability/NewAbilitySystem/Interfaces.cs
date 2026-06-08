@@ -2,16 +2,19 @@
 
 namespace Ability.NewAbilitySystem
 {
-    public readonly struct AbilityContext
+    public struct AbilityContext
     {
+        public AbilityData Data;
+        
         public readonly GameObject Source;
         public readonly Transform Origin;
         public readonly GameObject Target;
         public readonly Vector3 TargetPosition;
 
-        public AbilityContext(GameObject source, Transform origin = null, GameObject target = null,
+        public AbilityContext(AbilityData data, GameObject source, Transform origin = null, GameObject target = null,
             Vector3 targetPosition = default)
         {
+            Data = data;
             Source = source;
             Origin = origin != null ? origin : source.transform;
             Target = target;

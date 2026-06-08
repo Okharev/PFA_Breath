@@ -129,7 +129,7 @@ namespace Ability.NewAbilitySystem
             if (context.Source.TryGetComponent(out AmmoComponent ammo)) ammo.Consume(ammoCost);
         }
     }
-
+    
     [Serializable]
     public class SpawnLaserHazardEffect : IAbilityEffect, IPreviewableEffect
     {
@@ -145,7 +145,10 @@ namespace Ability.NewAbilitySystem
         {
             // Determine origin, falling back to source position if Origin is missing
             Vector3 origin = context.Origin != null ? context.Origin.position : context.Source.transform.position;
-            Vector3 target = context.TargetPosition;
+            
+            // Crucial: We use context.TargetPosition, NOT context.Target.transform.position.
+            // This ensures we shoot at the locked coordinate, allowing the player to dodge during the delay!
+            Vector3 target = context.TargetPosition; 
 
             // Flatten the vertical axis to create a strictly horizontal plane
             if (forcePlanar) target.y = origin.y;
@@ -172,13 +175,146 @@ namespace Ability.NewAbilitySystem
         {
             Vector3 origin = context.Origin != null ? context.Origin.position : context.Source.transform.position;
             Vector3 target = context.TargetPosition;
+            
             if (forcePlanar) target.y = origin.y;
 
             // Draw a thick red line
             drawer.DrawLine(origin, target, Color.red);
         }
     }
+    
+    [Serializable]
+    public class SequentialDashEffect : IAbilityEffect, IPreviewableEffect
+    {
+        [HideInInspector] public string name = "Sequential Dash Effect";
 
+        [Tooltip("The unique memory key used by the AbilityController blackboard.")]
+        public string comboKey = "DashCombo";
+
+        [Tooltip("Time in seconds the dash takes to complete.")]
+        public float dashDuration = 0.25f;
+        
+        [Tooltip("The maximum distance of the FIRST dash.")]
+        public float maxDashDistance = 5f;
+
+        public string ghostLayerName = "PhasingGhost";
+
+        public void Execute(AbilityContext context)
+        {
+            if (!context.Source.TryGetComponent(out AbilityController controller)) return;
+            
+            int currentPhase = controller.GetTransientState(comboKey);
+            float activeDistance = currentPhase == 1 ? (maxDashDistance * 0.5f) : maxDashDistance;
+
+            if (context.Source.TryGetComponent(out MonoBehaviour runner))
+            {
+                controller.StartCoroutine(DashRoutine(context, activeDistance));
+            }
+
+            if (currentPhase == 0)
+            {
+                // --- PHASE 1 ---
+                controller.SetTransientState(comboKey, 1);
+                controller.RefundCooldown(context.Data); 
+                
+                // NEW: Lock the controller so the player CANNOT shoot or walk.
+                controller.LockCombo(context.Data);
+            }
+            else
+            {
+                // --- PHASE 2 ---
+                controller.SetTransientState(comboKey, 0);
+                
+                // NEW: Unlock the controller so normal gameplay resumes next turn.
+                controller.UnlockCombo();
+                
+                if (TurnManager.Instance != null)
+                {
+                    TurnManager.Instance.RequestTurns(1);
+                }
+            }
+        }
+
+        private IEnumerator DashRoutine(AbilityContext context, float activeDistance)
+        {
+            Debug.Log("--> Coroutine Entered!");
+            
+            GameObject source = context.Source;
+            NavMeshAgent agent = source.GetComponent<NavMeshAgent>();
+            HealthComponent health = source.GetComponent<HealthComponent>(); 
+
+            if (agent != null) agent.enabled = false;
+            if (health != null) health.IsInvincible = true;
+
+            int originalLayer = source.layer;
+            int targetLayer = LayerMask.NameToLayer(ghostLayerName);
+            
+            if (targetLayer != -1) source.layer = targetLayer;
+            else Debug.LogWarning($"Layer '{ghostLayerName}' does not exist in your project settings!");
+
+            Vector3 startPos = source.transform.position;
+            Vector3 direction = (context.TargetPosition - startPos).normalized;
+            float requestedDistance = Vector3.Distance(startPos, context.TargetPosition);
+            float actualDistance = Mathf.Min(requestedDistance, activeDistance);
+            
+            Debug.Log($"Dash Math -> Start: {startPos}, Target: {context.TargetPosition}, Distance to travel: {actualDistance}");
+
+            if (actualDistance <= 0.1f)
+            {
+                Debug.LogWarning("Dash aborted: Target is too close to the player!");
+                Cleanup(source, agent, health, originalLayer);
+                yield break;
+            }
+            
+            Vector3 endPos = startPos + (direction * actualDistance);
+            float elapsed = 0f;
+            int frameCount = 0;
+
+            while (elapsed < dashDuration)
+            {
+                elapsed += Time.unscaledDeltaTime; 
+                float t = Mathf.Clamp01(elapsed / dashDuration);
+                float easedT = 1f - Mathf.Pow(1f - t, 3f); 
+                source.transform.position = Vector3.Lerp(startPos, endPos, easedT);
+                
+                frameCount++;
+                yield return null;
+            }
+
+            Debug.Log($"Dash finished moving over {frameCount} frames. Snapping to end position.");
+            source.transform.position = endPos;
+
+            // NavMesh Validation
+            if (agent != null)
+            {
+                if (NavMesh.SamplePosition(endPos, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
+                {
+                    Debug.Log($"NavMesh Validated at {hit.position}");
+                    source.transform.position = hit.position;
+                }
+                else
+                {
+                    Debug.LogWarning("Ended Dash OFF the NavMesh!");
+                }
+            }
+
+            Cleanup(source, agent, health, originalLayer);
+            Debug.Log("--> Coroutine Exited cleanly.");
+        }
+
+        private void Cleanup(GameObject source, NavMeshAgent agent, HealthComponent health, int originalLayer)
+        {
+            if (agent != null) agent.enabled = true;
+            if (health != null) health.IsInvincible = false;
+            source.layer = originalLayer;
+        }
+
+        public void DrawPreview(AbilityContext context, IntentDrawer drawer)
+        {
+            // ... (keep your existing DrawPreview code here)
+        }
+    }
+    
     [Serializable]
     public class AoEDamageEffect : IAbilityEffect, IPreviewableEffect
     {
@@ -225,7 +361,7 @@ namespace Ability.NewAbilitySystem
     }
 
     [Serializable]
-    public class TwinSalvoEffect : IAbilityEffect, IPreviewableEffect // <-- Implemented Interface
+    public class TwinSalvoEffect : IAbilityEffect, IPreviewableEffect
     {
         [HideInInspector] public string name = "Twin Salvo Effect";
 

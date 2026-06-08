@@ -11,7 +11,11 @@ namespace Ability.NewAbilitySystem
         public int cooldownTurns = 3;
         public int channelTurns;
 
-        // Apply both attributes to unlock the dropdown in the inspector
+        [Header("Micro-Timing")]
+        [Tooltip("Percentage of the turn duration to wait before firing. 0 = Instant, 0.5 = Halfway, 1.0 = End of turn.")]
+        [Range(0f, 1f)] 
+        public float executionDelayFraction = 0f;
+
         [SerializeReference, SubclassSelector]
         public List<IAbilityCondition> conditions = new();
 
@@ -20,12 +24,10 @@ namespace Ability.NewAbilitySystem
 
         public bool TryCast(AbilityContext context)
         {
-            // Evaluate Conditions safely
             foreach (IAbilityCondition condition in conditions)
                 if (condition != null && !condition.CanExecute(context))
                     return false;
 
-            // Execute Effects safely
             foreach (IAbilityEffect effect in effects) effect?.Execute(context);
 
             return true;

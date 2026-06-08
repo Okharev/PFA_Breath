@@ -30,6 +30,8 @@ namespace Skills.UI
             target.RegisterCallback<PointerUpEvent>(OnPointerUp, TrickleDown.TrickleDown);
             target.RegisterCallback<PointerCaptureOutEvent>(OnPointerCaptureOut, TrickleDown.TrickleDown);
             target.RegisterCallback<WheelEvent>(OnWheel, TrickleDown.TrickleDown);
+            
+            viewport.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
         }
 
         protected override void UnregisterCallbacksFromTarget()
@@ -39,6 +41,15 @@ namespace Skills.UI
             target.UnregisterCallback<PointerUpEvent>(OnPointerUp);
             target.UnregisterCallback<PointerCaptureOutEvent>(OnPointerCaptureOut);
             target.UnregisterCallback<WheelEvent>(OnWheel);
+            
+            viewport.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+        }
+        
+        private void OnGeometryChanged(GeometryChangedEvent evt)
+        {
+            // The moment the screen size is known, force the camera to obey the bounds.
+            // This prevents the "0.25f" NaN fallback from persisting.
+            ApplyTransform();
         }
         
         private void OnPointerDown(PointerDownEvent evt)

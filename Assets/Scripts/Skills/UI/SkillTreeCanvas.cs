@@ -72,7 +72,7 @@ namespace Skills.UI
             }
         }
 
-        private void DrawConnection(Painter2D paint2D, Vector2 start, Vector2 end, BaseNodeData sourceNode, BaseNodeData targetNode, bool unlocked)
+        private static void DrawConnection(Painter2D paint2D, Vector2 start, Vector2 end, BaseNodeData sourceNode, BaseNodeData targetNode, bool unlocked)
         {
             // 1. Determine Thickness
             bool isSourceEmotion = sourceNode is EmotionNodeData;
@@ -113,7 +113,7 @@ namespace Skills.UI
             paint2D.Stroke();
         }
 
-        private Color GetNodeColor(BaseNodeData node)
+        private static Color GetNodeColor(BaseNodeData node)
         {
             if (node is EmotionNodeData eNode)
             {
@@ -133,15 +133,12 @@ namespace Skills.UI
 
         private static float GetNodeDiameter(BaseNodeData node)
         {
-
             return node is EmotionNodeData ? 100f : 70f;
         }
 
         private static Vector2 GetCenterPosition(BaseNodeData node)
         {
             // The offset must ALWAYS be exactly half of the diameter above!
-            // Reduced from 75f (half of 150) to 50f (half of 100)
-            // Reduced from 50f (half of 100) to 35f (half of 70)
             float offset = (node is EmotionNodeData) ? 50f : 35f;
             return new Vector2(node.Position.x + offset, node.Position.y + offset);
         }

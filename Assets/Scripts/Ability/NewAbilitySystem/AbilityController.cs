@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -49,20 +50,65 @@ namespace Ability.NewAbilitySystem
                 return;
             }
 
-            if (queuedAbility.TryCast(queuedContext))
+            // --- REFACTORED: Unified Delay Logic ---
+            if (queuedAbility.executionDelayFraction > 0f)
             {
-                ApplyCooldown(queuedAbility);
-                OnAbilityExecuted?.Invoke();
+                StartCoroutine(DelayedExecutionRoutine(queuedAbility, queuedContext));
+            }
+            else
+            {
+                ExecuteInstantly(queuedAbility, queuedContext);
             }
 
             queuedAbility = null;
         }
+        
+        private IEnumerator DelayedExecutionRoutine(AbilityData ability, AbilityContext context)
+        {
+            // O(1) mathematical lookup synced perfectly to your TurnManager
+            float delayInRealSeconds = TurnManager.Instance.secondsPerTurn * ability.executionDelayFraction;
+            
+            // We use Realtime because TurnManager manipulates Time.timeScale during Phase 1 & 3
+            yield return new WaitForSecondsRealtime(delayInRealSeconds);
+
+            ExecuteInstantly(ability, context);
+        }
+
+        private void ExecuteInstantly(AbilityData ability, AbilityContext context)
+        {
+            if (ability.TryCast(context))
+            {
+                ApplyCooldown(ability);
+                OnAbilityExecuted?.Invoke();
+            }
+        }
 
         public event Action OnAbilityExecuted;
+        
+        public AbilityData LockedComboAbility { get; private set; }
+        
+        public void LockCombo(AbilityData ability)
+        {
+            LockedComboAbility = ability;
+        }
+
+        public void UnlockCombo()
+        {
+            LockedComboAbility = null;
+        }
 
         // --- RELATIVE COOLDOWN TRACKER ---
         private readonly Dictionary<AbilityData, int> activeCooldowns = new();
 
+        // --- NEW: Allows combo effects to refund premature cooldowns ---
+        public void RefundCooldown(AbilityData ability)
+        {
+            if (ability != null && activeCooldowns.ContainsKey(ability))
+            {
+                activeCooldowns[ability] = 0;
+            }
+        }
+        
         public bool IsOnCooldown(AbilityData ability)
         {
             return activeCooldowns.TryGetValue(ability, out int cd) && cd > 0;
@@ -83,39 +129,39 @@ namespace Ability.NewAbilitySystem
             return activeCooldowns.GetValueOrDefault(ability, 0);
         }
 
-        // --- THE MAGIC DECREMENTER ---
-        public void EndTurn()
-        {
-            // Safely iterate and tick down the cooldowns by 1 every round
-            List<AbilityData> keys = new(activeCooldowns.Keys);
-            foreach (AbilityData ability in keys)
-            {
-                if (activeCooldowns[ability] > 0)
-                {
-                    activeCooldowns[ability]--;
-                }
-            }
-        }
+        private readonly Dictionary<string, int> transientStates = new();
 
-        // --- REFACTORED: COMBAT QUEUE ROUTINE ---
+        public int GetTransientState(string key) => transientStates.GetValueOrDefault(key, 0);
+        public void SetTransientState(string key, int value) => transientStates[key] = value;
+
+
         public bool QueueAbility(AbilityData ability, AbilityContext context)
         {
-            // Enforce unified cooldown safety rule
-            if (IsOnCooldown(ability))
+            // NEW: Reject if we are locked into a different combo!
+            if (LockedComboAbility != null && ability != LockedComboAbility)
+            {
+                Debug.Log($"[Action Blocked] You must finish the {LockedComboAbility.abilityName} combo first!");
                 return false;
+            }
+
+            if (IsOnCooldown(ability)) return false;
 
             queuedAbility = ability;
             queuedContext = context;
             currentChannelTurns = ability.channelTurns;
-
             return true;
         }
 
-        // --- NEW: EXPLORATION IMMEDIATE ROUTINE ---
         public bool TryExecuteImmediate(AbilityData ability, AbilityContext context)
         {
-            if (IsOnCooldown(ability))
+            // NEW: Reject if we are locked into a different combo!
+            if (LockedComboAbility != null && ability != LockedComboAbility)
+            {
+                Debug.Log($"[Action Blocked] You must finish the {LockedComboAbility.abilityName} combo first!");
                 return false;
+            }
+
+            if (IsOnCooldown(ability)) return false;
 
             if (ability.TryCast(context))
             {
@@ -123,8 +169,22 @@ namespace Ability.NewAbilitySystem
                 OnAbilityExecuted?.Invoke();
                 return true;
             }
-
             return false;
+        }
+        
+        public void EndTurn()
+        {
+            List<AbilityData> keys = new(activeCooldowns.Keys);
+            foreach (AbilityData ability in keys)
+            {
+                if (activeCooldowns[ability] > 0) activeCooldowns[ability]--;
+            }
+            
+            transientStates.Clear(); 
+            
+            // NEW: Safety wipe! If the turn is forced to end (e.g., combat ends or player is stunned),
+            // we must clear the lock so the player isn't soft-locked next turn.
+            UnlockCombo(); 
         }
     }
 }

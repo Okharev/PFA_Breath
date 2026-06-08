@@ -30,15 +30,15 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4805482828720501141}
   serializedVersion: 2
-  m_LocalRotation: {x: -1, y: -0, z: -0, w: 0.0000029653306}
-  m_LocalPosition: {x: 0, y: 1.2479751, z: 0.00550225}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.00550225}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8143960613544247591}
   - {fileID: 616632160060475760}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: -180, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!136 &7273601503522182645
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -152,13 +152,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.EnemyAIController
   <Target>k__BackingField: {fileID: 0}
-  <ShootAbility>k__BackingField: {fileID: 11400000, guid: bc3255dc0cfa49640b8093df495c093d, type: 2}
-  <AttackRange>k__BackingField: 2
+  <PrimaryAbility>k__BackingField: {fileID: 11400000, guid: bc3255dc0cfa49640b8093df495c093d, type: 2}
+  <FirePoint>k__BackingField: {fileID: 616632160060475760}
   <SightObstacles>k__BackingField:
     serializedVersion: 2
     m_Bits: 192
-  FirePoint: {fileID: 616632160060475760}
-  <StartingState>k__BackingField: 0
+  <Archetype>k__BackingField: 1
+  <AttackRange>k__BackingField: 2
+  <SafeDistance>k__BackingField: 8
 --- !u!1 &6359587058521299137
 GameObject:
   m_ObjectHideFlags: 0
@@ -216,13 +217,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6398942141208681103}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.70710623, z: -0, w: -0.70710737}
-  m_LocalPosition: {x: 0, y: 1.634, z: 0}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0.7071068, w: 0}
+  m_LocalPosition: {x: 0, y: 0.07, z: 0}
   m_LocalScale: {x: 53.54, y: 53.54, z: 53.54}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 7276882448658245994}
-  m_LocalEulerAnglesHint: {x: 0, y: 450, z: 0}
+  m_LocalEulerAnglesHint: {x: -180, y: 90, z: 0}
 --- !u!33 &4554707057676088740
 MeshFilter:
   m_ObjectHideFlags: 0

@@ -40,7 +40,8 @@ namespace Skills.UI
                     width = Length.Percent(100),
                     height = Length.Percent(100),
                     overflow = Overflow.Hidden,
-                    display = DisplayStyle.None
+                    display = DisplayStyle.None,
+                    backgroundColor = new Color(0.05f, 0.05f, 0.05f, 1f)
                 },
                 pickingMode = PickingMode.Position
             };
@@ -55,15 +56,22 @@ namespace Skills.UI
                 },
                 pickingMode = PickingMode.Position
             };
-
-            // --- THE FIX: APPLY BACKGROUND TO THE CANVAS ---
+            
+            // --- APPLY BACKGROUND TO THE CANVAS ---
             if (backgroundTexture != null)
             {
                 treeCanvas.style.backgroundImage = new StyleBackground(backgroundTexture);
-        
-                // CRITICAL: Lock the canvas size strictly to the texture resolution.
-                // This guarantees O(1) exact alignment. A node saved at (500, 500) 
-                // will ALWAYS rest exactly on pixel (500, 500) of your map art.
+
+                // 1. PREVENT SQUISHING (CRITICAL FIX)
+                // Forces the Flexbox engine to respect absolute pixel dimensions even if they overflow the screen.
+                treeCanvas.style.flexShrink = 0;
+    
+                // 2. EXPLICIT SCALE MODE
+                // Ensures the texture is mapped 1:1 without arbitrary stretching.
+                treeCanvas.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+
+                // 3. LOCK DIMENSIONS
+                // Guarantees O(1) exact alignment for your nodes.
                 treeCanvas.style.width = backgroundTexture.width;
                 treeCanvas.style.height = backgroundTexture.height;
             }
@@ -72,7 +80,6 @@ namespace Skills.UI
                 // Fallback scaling if no map is provided
                 treeCanvas.style.flexGrow = 1; 
             }
-            // -----------------------------------------------
 
             // 3. Assemble and Bind Elements
             viewport.Add(treeCanvas);

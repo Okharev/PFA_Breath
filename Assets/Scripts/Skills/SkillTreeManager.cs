@@ -204,7 +204,7 @@ namespace Skills
                 }
             }
 
-            if (!nodeLevels.ContainsKey(node.GUID)) nodeLevels[node.GUID] = 0;
+            nodeLevels.TryAdd(node.GUID, 0);
             nodeLevels[node.GUID]++;
 
             Debug.Log($"[SkillTreeManager] Upgraded Node: {node.NodeName} to Level {nodeLevels[node.GUID]} (Cost: {costToDeduct})");

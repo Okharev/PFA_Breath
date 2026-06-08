@@ -110,7 +110,7 @@ namespace Ability.NewAbilitySystem
 
             if (activeLoadout.TryGetValue(currentActiveSlot, out AbilityData activeAbility))
             {
-                AbilityContext aimContext = new(gameObject, FirePoint, null, currentAimPosition);
+                AbilityContext aimContext = new(activeAbility, gameObject, FirePoint, null, currentAimPosition);
                 foreach (IAbilityEffect effect in activeAbility.effects)
                     if (effect is IPreviewableEffect preview)
                         preview.DrawPreview(aimContext, IntentDrawer.Instance);
@@ -264,7 +264,7 @@ namespace Ability.NewAbilitySystem
             // Only allow the Dash ability to be fired during exploration
             if (ability == player.DefaultDash)
             {
-                AbilityContext context = new AbilityContext(player.gameObject, player.FirePoint, null, targetPosition);
+                AbilityContext context = new AbilityContext(player.DefaultDash, player.gameObject, player.FirePoint, null, targetPosition);
                 
                 // Use the TryExecuteImmediate method you already built for real-time firing!
                 player.Abilities.TryExecuteImmediate(ability, context);
@@ -309,7 +309,7 @@ namespace Ability.NewAbilitySystem
         public void HandleMoveInput(PlayerController player, Vector3 destination)
         {
             if (player.BasicMoveAbility == null) return;
-            AbilityContext context = new(player.gameObject, targetPosition: destination);
+            AbilityContext context = new(player.BasicMoveAbility, player.gameObject, targetPosition: destination);
 
             if (player.Abilities.QueueAbility(player.BasicMoveAbility, context))
                 TurnManager.Instance.RequestTurns(1);
@@ -318,10 +318,25 @@ namespace Ability.NewAbilitySystem
         public void HandleAbilityInput(PlayerController player, AbilityData ability, Vector3 targetPosition)
         {
             if (ability == null) return;
-            AbilityContext context = new(player.gameObject, player.FirePoint, null, targetPosition);
+            AbilityContext context = new(ability, player.gameObject, player.FirePoint, null, targetPosition);
 
-            if (player.Abilities.QueueAbility(ability, context))
-                TurnManager.Instance.RequestTurns(1);
+            // --- ROUTING BASED ON TURN COST ---
+            if (ability.turnCost == 0)
+            {
+                // Path A: Free Action (e.g., Phase 1 Dash)
+                // Executes immediately during the paused planning phase. 
+                // The TurnManager is NOT told to advance time.
+                player.Abilities.TryExecuteImmediate(ability, context);
+            }
+            else
+            {
+                // Path B: Standard Turn-Ending Action
+                if (player.Abilities.QueueAbility(ability, context))
+                {
+                    // Dynamically request turns based on the ability's actual cost
+                    TurnManager.Instance.RequestTurns(ability.turnCost);
+                }
+            }
         }
 
         public void EndTurn(PlayerController player)

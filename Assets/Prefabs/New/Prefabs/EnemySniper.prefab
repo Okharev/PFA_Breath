@@ -152,13 +152,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.EnemyAIController
   <Target>k__BackingField: {fileID: 0}
-  <ShootAbility>k__BackingField: {fileID: 11400000, guid: c1dfe7cdc2a84af439689dba887bd672, type: 2}
-  <AttackRange>k__BackingField: 15
+  <PrimaryAbility>k__BackingField: {fileID: 11400000, guid: c1dfe7cdc2a84af439689dba887bd672, type: 2}
+  <FirePoint>k__BackingField: {fileID: 616632160060475760}
   <SightObstacles>k__BackingField:
     serializedVersion: 2
     m_Bits: 192
-  FirePoint: {fileID: 616632160060475760}
-  <StartingState>k__BackingField: 1
+  <Archetype>k__BackingField: 2
+  <AttackRange>k__BackingField: 15
+  <SafeDistance>k__BackingField: 8
 --- !u!1 &6359587058521299137
 GameObject:
   m_ObjectHideFlags: 0

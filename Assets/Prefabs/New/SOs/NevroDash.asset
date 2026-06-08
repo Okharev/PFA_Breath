@@ -10,23 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a529fe6cad98467fbee1ccd9e64b92f5, type: 3}
-  m_Name: SniperShot
+  m_Name: NevroDash
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
-  abilityName: SniperShot
-  turnCost: 1
-  cooldownTurns: 3
-  channelTurns: 1
-  executionDelayFraction: 0.992
+  abilityName: NevroDash
+  turnCost: 0
+  cooldownTurns: 0
+  channelTurns: 0
+  executionDelayFraction: 0
   conditions: []
   effects:
-  - rid: 996992787387777088
+  - rid: 8373033023233065029
   references:
     version: 2
     RefIds:
-    - rid: 996992787387777088
-      type: {class: SpawnLaserHazardEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+    - rid: 8373033023233065029
+      type: {class: SequentialDashEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
       data:
-        name: Spawn Laser Hazard
-        laserHazardPrefab: {fileID: 3456654590020048089, guid: 4a4448055bc468e4ea1ec938a6f09250, type: 3}
-        forcePlanar: 1
-        executionDelay: 0.98
+        name: Sequential Dash Effect
+        comboKey: DashCombo
+        dashDuration: 0.25
+        maxDashDistance: 5
+        ghostLayerName: Dashing

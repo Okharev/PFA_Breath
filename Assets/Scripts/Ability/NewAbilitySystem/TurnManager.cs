@@ -8,34 +8,27 @@ namespace Ability.NewAbilitySystem
     public interface ITurnEntity
     {
         int Initiative { get; }
-
-        /// <summary>
-        ///     Called during the strategic pause. The entity decides its next move here (e.g., AI pathfinding, queueing
-        ///     abilities).
-        /// </summary>
         void PlanAction();
-
-        /// <summary>
-        ///     NEW: Called immediately after PlanAction during the pause. Entities submit their visual intents here.
-        /// </summary>
         void DrawIntents();
-
-        /// <summary>
-        ///     Called on frame-1 of the turn execution. The entity commits the queued action.
-        /// </summary>
         void ExecuteAction();
-
-        /// <summary>
-        ///     Called when the turn finishes. Used for decrementing cooldowns, ticking poison damage, or resolving status effects.
-        /// </summary>
         void EndTurn();
     }
 
     [DefaultExecutionOrder(-50)]
     public class TurnManager : MonoBehaviour
     {
-        [Header("Turn Settings")] [Tooltip("Real-time seconds one turn takes to execute.")]
+        [Header("Turn Settings")] 
+        [Tooltip("Real-time seconds one turn takes to execute.")]
         public float secondsPerTurn = 1.0f;
+
+        [Header("Time Scale Transitions")]
+        [Tooltip("Percentage of the turn duration spent ramping up to 1x speed.")]
+        [Range(0f, 0.5f)] // Capped at 0.5 (50%) so ramp up/down can never exceed 100% combined
+        public float rampUpPercentage = 0.10f; // 10% default
+
+        [Tooltip("Percentage of the turn duration spent ramping down to 0x speed.")]
+        [Range(0f, 0.5f)]
+        public float rampDownPercentage = 0.01f; // 1% default
 
         // O(1) Add/Remove, but we need safe iteration.
         private readonly HashSet<ITurnEntity> activeTurnEntities = new();
@@ -44,11 +37,10 @@ namespace Ability.NewAbilitySystem
         private readonly List<ITurnEntity> entityIterationBuffer = new();
 
         private float defaultFixedDeltaTime;
-
         private int pendingTurnCost;
         private Coroutine turnExecutionCoroutine;
-        public static TurnManager Instance { get; private set; }
 
+        public static TurnManager Instance { get; private set; }
         public bool IsExecuting { get; private set; }
         public int CurrentTurn { get; private set; }
 
@@ -62,58 +54,31 @@ namespace Ability.NewAbilitySystem
 
         private void Update()
         {
-            // Plan moves if we are in Combat and not currently executing a turn
             if (GameModeManager.Instance.CurrentMode == GameMode.Combat && !IsExecuting)
             {
-                // Clear old visuals at the start of the frame before entities rethink their plans
                 if (IntentDrawer.Instance != null) IntentDrawer.Instance.ClearAll();
 
-                // Copy to buffer to prevent modification exceptions if entities spawn/die during planning
                 PrepareIterationBuffer();
 
                 foreach (ITurnEntity entity in entityIterationBuffer) entity.PlanAction();
-
-                //  Allow all entities to draw their confirmed intent for this frame
                 foreach (ITurnEntity entity in entityIterationBuffer) entity.DrawIntents();
 
-                // --- Safe Execution Phase ---
-                // After ALL entities have finished planning without interruption,
-                // we safely check if a turn needs to be executed.
                 if (!IsExecuting && pendingTurnCost > 0)
                 {
-                    // Erase all intent visuals the exact moment the turn begins executing
                     if (IntentDrawer.Instance != null) IntentDrawer.Instance.ClearAll();
-
                     turnExecutionCoroutine = StartCoroutine(ExecuteTurnsRoutine());
                 }
             }
         }
 
-        private void OnEnable()
-        {
-            GameModeManager.OnGameModeChanged += HandleGameModeChanged;
-        }
-
-        private void OnDisable()
-        {
-            GameModeManager.OnGameModeChanged -= HandleGameModeChanged;
-        }
+        private void OnEnable() => GameModeManager.OnGameModeChanged += HandleGameModeChanged;
+        private void OnDisable() => GameModeManager.OnGameModeChanged -= HandleGameModeChanged;
 
         public static event Action<int> OnTurnTicked;
 
-        public void RegisterEntity(ITurnEntity entity)
-        {
-            activeTurnEntities.Add(entity);
-        }
+        public void RegisterEntity(ITurnEntity entity) => activeTurnEntities.Add(entity);
+        public void UnregisterEntity(ITurnEntity entity) => activeTurnEntities.Remove(entity);
 
-        public void UnregisterEntity(ITurnEntity entity)
-        {
-            activeTurnEntities.Remove(entity);
-        }
-
-        /// <summary>
-        ///     Request turns to be executed. The manager will execute the highest requested amount.
-        /// </summary>
         public void RequestTurns(int turnCost)
         {
             if (turnCost > pendingTurnCost) pendingTurnCost = turnCost;
@@ -122,55 +87,78 @@ namespace Ability.NewAbilitySystem
         private IEnumerator ExecuteTurnsRoutine()
         {
             IsExecuting = true;
+
+            // 1. Prepare and Execute Intended Actions
+            PrepareIterationBuffer();
+            foreach (ITurnEntity entity in entityIterationBuffer)
+                entity.ExecuteAction(); 
+
+            // Calculate exact real-time duration of our 3 phases
+            float rampUpDuration = secondsPerTurn * rampUpPercentage;
+            float rampDownDuration = secondsPerTurn * rampDownPercentage;
+            float holdDuration = secondsPerTurn - rampUpDuration - rampDownDuration;
+
+            // --- PHASE 1: RAMP UP ---
+            if (rampUpDuration > 0f)
+            {
+                float elapsed = 0f;
+                // O(1) operation per frame. Binds strictly to unscaled time to avoid time dilation logic loops.
+                while (elapsed < rampUpDuration)
+                {
+                    elapsed += Time.unscaledDeltaTime; 
+                    SetTimeScale(Mathf.Lerp(0f, 1f, elapsed / rampUpDuration));
+                    yield return null; 
+                }
+            }
+
+            // Snap to exactly 1 in case floating point math slightly over/undershot
             SetTimeScale(1f);
 
-            // Execute exactly ONE turn's worth of time, regardless of how many turns an ability costs.
-            PrepareIterationBuffer();
+            // --- PHASE 2: HOLD ---
+            if (holdDuration > 0f)
+            {
+                // We MUST use real-time here because our timeScale is actively fluctuating during the routine
+                yield return new WaitForSecondsRealtime(holdDuration);
+            }
 
-            foreach (ITurnEntity entity in entityIterationBuffer)
-                entity.ExecuteAction(); // Entities handle their own channeling state internally
+            // --- PHASE 3: RAMP DOWN ---
+            if (rampDownDuration > 0f)
+            {
+                float elapsed = 0f;
+                while (elapsed < rampDownDuration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    SetTimeScale(Mathf.Lerp(1f, 0f, elapsed / rampDownDuration));
+                    yield return null;
+                }
+            }
 
-            // Wait for the duration of the turn (using scaled time so pauses/slow-mo affect it)
-            yield return new WaitForSeconds(secondsPerTurn);
-
+            SetTimeScale(0f);
             CurrentTurn++;
 
             // --- ARCHITECTURAL FIX: MUTATE STATE BEFORE UPDATING UI ---
-        
-            // 1. Resolve all backend math (like cooldown decrements) first!
             PrepareIterationBuffer();
             foreach (ITurnEntity entity in entityIterationBuffer) entity.EndTurn();
         
-            // 2. NOW we tell the UI to draw the finished state
             OnTurnTicked?.Invoke(CurrentTurn);
 
-            // ----------------------------------------------------------
-
-            SetTimeScale(0f);
             IsExecuting = false;
             pendingTurnCost = 0;
         }
 
-        /// <summary>
-        ///     Handles the State Pattern transition between game modes gracefully.
-        /// </summary>
         private void HandleGameModeChanged(GameMode mode)
         {
             switch (mode)
             {
                 case GameMode.Exploration:
-                    // Force break out of turn execution if we switch modes mid-combat
                     if (turnExecutionCoroutine != null)
                     {
                         StopCoroutine(turnExecutionCoroutine);
                         IsExecuting = false;
                         pendingTurnCost = 0;
                     }
-
-                    // NEW: Ensure no combat graphics linger on the screen during exploration
                     if (IntentDrawer.Instance != null) IntentDrawer.Instance.ClearAll();
-
-                    SetTimeScale(1f);
+                    SetTimeScale(1f); // Hard snap to 1 so the player immediately resumes control
                     break;
 
                 case GameMode.Combat:
@@ -182,6 +170,7 @@ namespace Ability.NewAbilitySystem
         private void SetTimeScale(float targetTimeScale)
         {
             Time.timeScale = targetTimeScale;
+            // Scaling FixedDeltaTime keeps Physics behavior (rigidbody velocity/collisions) perfectly smooth and deterministic
             Time.fixedDeltaTime = Mathf.Clamp(defaultFixedDeltaTime * targetTimeScale, 0.00001f, defaultFixedDeltaTime);
         }
 
@@ -189,7 +178,6 @@ namespace Ability.NewAbilitySystem
         {
             entityIterationBuffer.Clear();
             entityIterationBuffer.AddRange(activeTurnEntities);
-            // Sort descending by Initiative. Highest initiative acts first.
             entityIterationBuffer.Sort((a, b) => b.Initiative.CompareTo(a.Initiative));
         }
     }
