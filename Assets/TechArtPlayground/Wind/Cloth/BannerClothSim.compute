@@ -81,7 +81,9 @@ RWStructuredBuffer<uint> CellOffsets;
 // --- SPATIAL HASHING MATH ---
 uint Hash(int3 cell) 
 {
-    return ((uint)(cell.x * 73856093) ^ (uint)(cell.y * 19349663) ^ (uint)(cell.z * 83492791)) % _HashGridSize;
+    // Replaced % _HashGridSize with & (_HashGridSize - 1)
+    // This ONLY works because 131072 is a power of two!
+    return ((uint)(cell.x * 73856093) ^ (uint)(cell.y * 19349663) ^ (uint)(cell.z * 83492791)) & (_HashGridSize - 1);
 }
 
 [numthreads(64, 1, 1)]
@@ -333,6 +335,11 @@ void CSSolveConstraints(uint3 id : SV_DispatchThreadID)
     }
 }
 
+struct VertexTriLink { uint startIndex; uint count; };
+StructuredBuffer<int3> Triangles;
+StructuredBuffer<VertexTriLink> VertexTriLinks;
+StructuredBuffer<int> VertexTriIndices;
+
 // ==========================================
 // --- 3. INTEGRATE (UPDATE VELOCITY) ---
 // ==========================================
@@ -346,17 +353,19 @@ void CSIntegrate(uint3 id : SV_DispatchThreadID)
     {
         float3 newVelocity = (PredictedPositions[id.x] - Positions[id.x]) / _DeltaTime;
         
-        int4 adj = Adjacency[id.x];
+        // Topology-Agnostic Velocity Smoothing
         float3 avgVel = newVelocity;
         float count = 1.0f;
-
-        if (adj.x != -1) { avgVel += PhysicsData[adj.x].velocity; count += 1.0f; }
-        if (adj.y != -1) { avgVel += PhysicsData[adj.y].velocity; count += 1.0f; }
-        if (adj.z != -1) { avgVel += PhysicsData[adj.z].velocity; count += 1.0f; }
-        if (adj.w != -1) { avgVel += PhysicsData[adj.w].velocity; count += 1.0f; }
+        
+        SpringLink link = SpringLinks[id.x];
+        for(uint i = 0; i < link.count; i++)
+        {
+            Spring spring = Springs[link.startIndex + i];
+            avgVel += PhysicsData[spring.targetIndex].velocity;
+            count += 1.0f;
+        }
 
         avgVel /= count;
-        
         newVelocity = lerp(newVelocity, avgVel, 0.1f);
 
         float speed = length(newVelocity);
@@ -370,39 +379,31 @@ void CSIntegrate(uint3 id : SV_DispatchThreadID)
 }
 
 // ==========================================
-// --- 4. ATOMIC-FREE NORMALS ---
+// --- 4. TOPOLOGY-AGNOSTIC NORMALS ---
 // ==========================================
 [numthreads(64, 1, 1)]
 void CSComputeNormals(uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= _VertexCount) return;
+    
+    VertexTriLink link = VertexTriLinks[id.x];
+    float3 accumulatedNormal = float3(0, 0, 0);
 
-    int4 adj = Adjacency[id.x];
-    float3 p = Positions[id.x];
-    float3 n = float3(0,0,0);
+    // Loop through all triangles this vertex is a part of
+    for(uint i = 0; i < link.count; i++)
+    {
+        int triIndex = VertexTriIndices[link.startIndex + i];
+        int3 tri = Triangles[triIndex];
+        
+        float3 v0 = Positions[tri.x];
+        float3 v1 = Positions[tri.y];
+        float3 v2 = Positions[tri.z];
+        
+        // Compute Face Normal (Cross Product of edges)
+        float3 faceNormal = cross(v1 - v0, v2 - v0);
+        accumulatedNormal += faceNormal;
+    }
 
-    // FIXED: Safely fetch vectors without risking an out-of-bounds array read (-1)
-    float3 left = float3(0,0,0);
-    if (adj.x != -1) left = Positions[adj.x] - p;
-    else if (adj.y != -1) left = p - Positions[adj.y]; // Fallback to mirror
-
-    float3 right = float3(0,0,0);
-    if (adj.y != -1) right = Positions[adj.y] - p;
-    else if (adj.x != -1) right = p - Positions[adj.x];
-
-    float3 up = float3(0,0,0);
-    if (adj.z != -1) up = Positions[adj.z] - p;
-    else if (adj.w != -1) up = p - Positions[adj.w];
-
-    float3 down = float3(0,0,0);
-    if (adj.w != -1) down = Positions[adj.w] - p;
-    else if (adj.z != -1) down = p - Positions[adj.z];
-
-    n += cross(right, up);
-    n += cross(left, down);
-    n += cross(up, left);
-    n += cross(down, right);
-
-    float len = length(n);
-    Normals[id.x] = (len > 0.0001f) ? n / len : float3(0, 0, -1);
+    float len = length(accumulatedNormal);
+    Normals[id.x] = (len > 0.0001f) ? (accumulatedNormal / len) : float3(0, 1, 0);
 }

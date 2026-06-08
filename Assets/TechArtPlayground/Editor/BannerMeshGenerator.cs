@@ -17,6 +17,11 @@ namespace TechArtPlayground.Editor
         public enum AnchorMode { Top, Left, Right, Bottom, PinnedCorners }
         private AnchorMode _anchorMode = AnchorMode.Top;
 
+        // Forme du bas (Triangle médiéval)
+        public enum BottomStyle { Straight, Pointed, Swallowtail }
+        private BottomStyle _bottomStyle = BottomStyle.Straight;
+        private float _triangleDepth = 1.0f;
+
         // Sauvegarde
         private string _saveName = "NewBannerMesh";
 
@@ -37,6 +42,16 @@ namespace TechArtPlayground.Editor
             
             _segmentsX = EditorGUILayout.IntSlider("Segments X", _segmentsX, 1, 100);
             _segmentsY = EditorGUILayout.IntSlider("Segments Y", _segmentsY, 1, 100);
+
+            GUILayout.Space(10);
+            GUILayout.Label("Forme du Bas (Style Médiéval)", EditorStyles.boldLabel);
+            _bottomStyle = (BottomStyle)EditorGUILayout.EnumPopup("Style", _bottomStyle);
+            
+            if (_bottomStyle != BottomStyle.Straight)
+            {
+                _triangleDepth = EditorGUILayout.FloatField("Profondeur du Triangle", _triangleDepth);
+                EditorGUILayout.HelpBox("Modifie la longueur de la pointe ou de la découpe.", MessageType.None);
+            }
 
             GUILayout.Space(10);
             GUILayout.Label("Paramètres Physiques (Vertex Colors)", EditorStyles.boldLabel);
@@ -76,8 +91,29 @@ namespace TechArtPlayground.Editor
                     float u = (float)x / _segmentsX;
                     float v = (float)y / _segmentsY;
 
-                    // Position (Le pivot est au centre-haut : X est centré, Y descend)
-                    vertices[index] = new Vector3((u - 0.5f) * _width, -v * _height, 0);
+                    // --- CALCUL DE LA FORME EN TRIANGLE ---
+                    float yOffset = 0f;
+                    if (_bottomStyle != BottomStyle.Straight)
+                    {
+                        // Distance depuis le centre (0 au centre, 1 sur les bords extérieurs)
+                        float centerDist = Mathf.Abs(u - 0.5f) * 2f; 
+                        
+                        if (_bottomStyle == BottomStyle.Pointed)
+                        {
+                            // Pointed : Le centre descend plus bas.
+                            float pointOffset = (1f - centerDist) * _triangleDepth;
+                            yOffset = -pointOffset * v; // Multiplié par v pour répartir l'étirement
+                        }
+                        else if (_bottomStyle == BottomStyle.Swallowtail)
+                        {
+                            // Swallowtail : Le centre remonte (découpe en V inversé).
+                            float cutOffset = (1f - centerDist) * _triangleDepth;
+                            yOffset = cutOffset * v;
+                        }
+                    }
+
+                    // Position finale
+                    vertices[index] = new Vector3((u - 0.5f) * _width, (-v * _height) + yOffset, 0);
                     
                     normals[index] = Vector3.back; // Face à la caméra par défaut
                     uvs[index] = new Vector2(u, 1.0f - v); // UV standard
@@ -145,8 +181,6 @@ namespace TechArtPlayground.Editor
 
             string fullPath = $"{folderPath}/{_saveName}.asset";
             
-            // Assure-toi de ne pas écraser accidentellement en ajoutant un numéro si besoin,
-            // ou écrase si tu mets à jour le même maillage.
             AssetDatabase.CreateAsset(mesh, fullPath);
             AssetDatabase.SaveAssets();
 

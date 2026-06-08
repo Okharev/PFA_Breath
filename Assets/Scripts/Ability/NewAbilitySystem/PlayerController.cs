@@ -185,7 +185,7 @@ namespace Ability.NewAbilitySystem
                 currentState?.HandleAiming(this, targetPos);
             }
 
-            // --- NEW: Handle Left Click (Interact vs Move) ---
+            // --- Handle Left Click (Interact vs Move) ---
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
@@ -196,7 +196,7 @@ namespace Ability.NewAbilitySystem
                     if (hit.collider.TryGetComponent(out IInteractable interactable))
                     {
                         // Trigger the interaction and consume the input
-                        interactable.Interact(this.gameObject);
+                        interactable.Interact(gameObject);
                         return; 
                     }
                 }

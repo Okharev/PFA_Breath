@@ -163,8 +163,14 @@ namespace TechArtPlayground.Water
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (!Application.isPlaying) return;
-            PushAllComputeData();
+            // Removed the play-mode lock. 
+            // Wrap in delayCall to safely pass data to ComputeShaders and Materials in edit mode.
+            UnityEditor.EditorApplication.delayCall += () =>
+            {
+                if (this == null || !this.isActiveAndEnabled) return;
+                PushAllComputeData();
+                UnityEditor.SceneView.RepaintAll();
+            };
         }
 #endif
         

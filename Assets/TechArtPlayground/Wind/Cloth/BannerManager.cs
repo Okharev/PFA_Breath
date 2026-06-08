@@ -5,6 +5,7 @@ using UnityEngine.Rendering;
 
 namespace TechArtPlayground.Wind.Cloth
 {
+    [DefaultExecutionOrder(-50)]
     public class PhysicsBannerManager : MonoBehaviour
     {
         private const float FixedTimeStep = 0.01666f;
@@ -43,6 +44,9 @@ namespace TechArtPlayground.Wind.Cloth
         private static readonly int BufferID = Shader.PropertyToID("_NormalsBuffer");
         private static readonly int PositionsBufferID = Shader.PropertyToID("_PositionsBuffer");
         private static readonly int VsBuffer = Shader.PropertyToID("_UVsBuffer");
+        private static readonly int TrianglesID = Shader.PropertyToID("Triangles");
+        private static readonly int VertexTriLinksID = Shader.PropertyToID("VertexTriLinks");
+        private static readonly int VertexTriIndicesID = Shader.PropertyToID("VertexTriIndices");
 
         [Header("Resources")] 
         public ComputeShader clothCompute;
@@ -186,8 +190,11 @@ namespace TechArtPlayground.Wind.Cloth
 
         private void Update()
         {
-            if (_bannerInstances.Count == 0) return;
+            if (_mainCam == null) _mainCam = Camera.main;
+            if (_mainCam == null) return; 
 
+            if (_bannerInstances.Count == 0) return;
+            
             // 1. Wind Polling Firewall
             if (GlobalWeatherManager.Instance != null)
             {
@@ -224,9 +231,23 @@ namespace TechArtPlayground.Wind.Cloth
             }
 
             // 4. Render Loop
+
             foreach (BannerInstance inst in _bannerInstances)
+            {
                 if (inst.IsVisible)
-                    Graphics.DrawMesh(inst.RenderMesh, Matrix4x4.identity, clothMaterial, gameObject.layer, _mainCam, 0, inst.MatBlock);
+                {
+                    // CHANGED: Passed 'null' instead of '_mainCam' to allow URP Shadow rendering
+                    Graphics.DrawMesh(
+                        inst.RenderMesh, 
+                        Matrix4x4.identity, 
+                        inst.Node.clothMaterial, 
+                        gameObject.layer, 
+                        null, 
+                        0, 
+                        inst.MatBlock
+                    );
+                }
+            }
         }
 
         // ==========================================
@@ -285,43 +306,52 @@ namespace TechArtPlayground.Wind.Cloth
         {
             clothCompute.SetInt(VertexCount, inst.VertexCount);
 
-            // Predict Kernel
+            // 1. Predict Kernel
             clothCompute.SetBuffer(_kPredict, Positions, inst.PositionsBuffer);
             clothCompute.SetBuffer(_kPredict, PredictedPositions, inst.PredictedPositionsBuffer);
             clothCompute.SetBuffer(_kPredict, PhysicsData, inst.PhysicsBuffer);
             clothCompute.SetBuffer(_kPredict, Normals, inst.NormalsBuffer);
 
-            // Solve Constraints Kernel
+            // 2. Solve Constraints Kernel
             clothCompute.SetBuffer(_kSolve, PredictedPositions, inst.PredictedPositionsBuffer);
             clothCompute.SetBuffer(_kSolve, PhysicsData, inst.PhysicsBuffer);
             clothCompute.SetBuffer(_kSolve, SpringLinks, inst.SpringLinksBuffer);
             clothCompute.SetBuffer(_kSolve, Springs, inst.SpringsBuffer);
             clothCompute.SetBuffer(_kSolve, Colliders, inst.CollidersBuffer);
 
-            // Self Collide Kernel
-            clothCompute.SetBuffer(_kSelfCollide, Positions, inst.PositionsBuffer);
-            clothCompute.SetBuffer(_kSelfCollide, PredictedPositions, inst.PredictedPositionsBuffer);
-            clothCompute.SetBuffer(_kSelfCollide, PhysicsData, inst.PhysicsBuffer);
-            clothCompute.SetBuffer(_kSelfCollide, CellOffsets, inst.CellOffsetsBuffer);
-            clothCompute.SetBuffer(_kSelfCollide, SortedHashPairs, inst.SortedHashPairsBuffer);
+            // 3. Self Collide Kernel (Only bounds if active)
+            if (enableSelfCollision)
+            {
+                clothCompute.SetBuffer(_kSelfCollide, Positions, inst.PositionsBuffer);
+                clothCompute.SetBuffer(_kSelfCollide, PredictedPositions, inst.PredictedPositionsBuffer);
+                clothCompute.SetBuffer(_kSelfCollide, PhysicsData, inst.PhysicsBuffer);
+                clothCompute.SetBuffer(_kSelfCollide, CellOffsets, inst.CellOffsetsBuffer);
+                clothCompute.SetBuffer(_kSelfCollide, SortedHashPairs, inst.SortedHashPairsBuffer);
+            }
 
-            // Integrate Kernel
+            // 4. Integrate Kernel (UPDATED for Arbitrary Springs)
             clothCompute.SetBuffer(_kIntegrate, Positions, inst.PositionsBuffer);
             clothCompute.SetBuffer(_kIntegrate, PredictedPositions, inst.PredictedPositionsBuffer);
             clothCompute.SetBuffer(_kIntegrate, PhysicsData, inst.PhysicsBuffer);
-            clothCompute.SetBuffer(_kIntegrate, Adjacency, inst.AdjacencyBuffer);
+            clothCompute.SetBuffer(_kIntegrate, SpringLinks, inst.SpringLinksBuffer); // Replaced Adjacency
+            clothCompute.SetBuffer(_kIntegrate, Springs, inst.SpringsBuffer);         // Replaced Adjacency
 
-            // Normals Kernel
+            // 5. Normals Kernel (UPDATED for Arbitrary Triangles)
             clothCompute.SetBuffer(_kNormals, Positions, inst.PositionsBuffer);
-            clothCompute.SetBuffer(_kNormals, Adjacency, inst.AdjacencyBuffer);
             clothCompute.SetBuffer(_kNormals, Normals, inst.NormalsBuffer);
+            clothCompute.SetBuffer(_kNormals, TrianglesID, inst.TrianglesBuffer);               // New Topology
+            clothCompute.SetBuffer(_kNormals, VertexTriLinksID, inst.VertexTriLinksBuffer);     // New Topology
+            clothCompute.SetBuffer(_kNormals, VertexTriIndicesID, inst.VertexTriIndicesBuffer); // New Topology
 
-            // Hashing Kernels
-            clothCompute.SetBuffer(_kHash, Positions, inst.PositionsBuffer);
-            clothCompute.SetBuffer(_kHash, HashPairs, inst.HashPairsBuffer);
-            clothCompute.SetBuffer(_kClearOffsets, CellOffsets, inst.CellOffsetsBuffer);
-            clothCompute.SetBuffer(_kBuildOffsets, CellOffsets, inst.CellOffsetsBuffer);
-            clothCompute.SetBuffer(_kBuildOffsets, SortedHashPairs, inst.SortedHashPairsBuffer);
+            // 6. Hashing Kernels (Unchanged)
+            if (enableSelfCollision)
+            {
+                clothCompute.SetBuffer(_kHash, Positions, inst.PositionsBuffer);
+                clothCompute.SetBuffer(_kHash, HashPairs, inst.HashPairsBuffer);
+                clothCompute.SetBuffer(_kClearOffsets, CellOffsets, inst.CellOffsetsBuffer);
+                clothCompute.SetBuffer(_kBuildOffsets, CellOffsets, inst.CellOffsetsBuffer);
+                clothCompute.SetBuffer(_kBuildOffsets, SortedHashPairs, inst.SortedHashPairsBuffer);
+            }
         }
 
         private void DispatchRadixSort(BannerInstance inst)
@@ -370,7 +400,7 @@ namespace TechArtPlayground.Wind.Cloth
 
         private void InitializeBanners()
         {
-            PhysicsBannerNode[] nodes = FindObjectsByType<PhysicsBannerNode>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            PhysicsBannerNode[] nodes = FindObjectsByType<PhysicsBannerNode>(FindObjectsInactive.Exclude);
             int maxVerticesInAnyBanner = 0;
 
             foreach (PhysicsBannerNode node in nodes)
@@ -391,6 +421,13 @@ namespace TechArtPlayground.Wind.Cloth
         // ==========================================
         // STRUCTS
         // ==========================================
+        
+        [StructLayout(LayoutKind.Sequential)]
+        public struct Int3 { public int x, y, z; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct VertexTriangleLink { public uint startIndex; public uint count; }
+        
         [StructLayout(LayoutKind.Sequential)]
         public struct PhysicsState
         {
@@ -459,6 +496,8 @@ namespace TechArtPlayground.Wind.Cloth
             public readonly GraphicsBuffer CellOffsetsBuffer;
             public readonly GraphicsBuffer CollidersBuffer;
             public readonly GraphicsBuffer HashPairsBuffer;
+            
+            
             public bool IsActive = true;
             public bool IsVisible = true;
             public readonly MaterialPropertyBlock MatBlock;
@@ -475,6 +514,10 @@ namespace TechArtPlayground.Wind.Cloth
             public readonly GraphicsBuffer SpringsBuffer;
             public float TimeSinceVisible;
             public readonly GraphicsBuffer UVsBuffer;
+            
+            public readonly GraphicsBuffer TrianglesBuffer;
+            public readonly GraphicsBuffer VertexTriLinksBuffer;
+            public readonly GraphicsBuffer VertexTriIndicesBuffer;
 
             public readonly int VertexCount;
             public readonly Bounds WorldBounds;
@@ -482,137 +525,120 @@ namespace TechArtPlayground.Wind.Cloth
             public BannerInstance(PhysicsBannerNode node, float compliance, int hashSize)
             {
                 Node = node;
-                VertexCount = node.resolution.x * node.resolution.y;
-
-                // Generous bounding box to prevent culling when blowing in wind
-                float maxStretch = Mathf.Max(node.dimensions.x, node.dimensions.y) * 2f;
-                WorldBounds = new Bounds(node.transform.position, new Vector3(maxStretch, maxStretch, maxStretch));
-
-                // 1. Gather Colliders specific to THIS node
+                Mesh sourceMesh = node.clothMesh;
+                VertexCount = sourceMesh.vertexCount;
+                
+                // Fallback if bounds aren't calculated
+                WorldBounds = new Bounds(node.transform.position, sourceMesh.bounds.size * 2f);
                 _activeColliders = node.GetComponentsInChildren<ClothStaticCollider>();
                 _colliderDataArray = new ClothColliderData[Mathf.Max(1, _activeColliders.Length)];
 
-                // 2. Generate Local Data Arrays
-                List<Vector3> positions = new(VertexCount);
-                List<Vector3> normals = new(VertexCount);
-                List<Vector2> uvs = new(VertexCount);
-                List<PhysicsState> physics = new(VertexCount);
-                List<SpringLink> springLinks = new(VertexCount);
-                List<Spring> springs = new();
-                List<Int4> adjacency = new(VertexCount);
-                List<int> meshIndices = new();
+                Vector3[] verts = sourceMesh.vertices;
+                Vector3[] norms = sourceMesh.normals;
+                Vector2[] uvs = sourceMesh.uv;
+                Color[] colors = sourceMesh.colors;
+                int[] triangles = sourceMesh.triangles;
 
-                Vector2 step = new(node.dimensions.x / (node.resolution.x - 1), node.dimensions.y / (node.resolution.y - 1));
-
-                for (int y = 0; y < node.resolution.y; y++)
-                for (int x = 0; x < node.resolution.x; x++)
+                // Fallback if mesh has no vertex colors
+                if (colors == null || colors.Length == 0)
                 {
-                    int index = y * node.resolution.x + x;
-                    Vector3 localPos = new(x * step.x - node.dimensions.x * 0.5f, -(y * step.y), 0);
-                    positions.Add(node.transform.TransformPoint(localPos));
-                    normals.Add(-node.transform.forward);
+                    colors = new Color[VertexCount];
+                    for (int i = 0; i < VertexCount; i++) colors[i] = Color.white;
+                }
 
-                    float uCoord = (float)x / (node.resolution.x - 1);
-                    float vCoord = 1.0f - (float)y / (node.resolution.y - 1);
-                    uvs.Add(new Vector2(uCoord, vCoord));
+                List<PhysicsState> physics = new List<PhysicsState>(VertexCount);
+                for (int i = 0; i < VertexCount; i++)
+                {
+                    Vector3 worldPos = node.transform.TransformPoint(verts[i]);
+                    verts[i] = worldPos; // Convert to world space for initial state
 
-                    float invMass = y == 0 ? 0.0f : 1.0f;
-                    float selfCollide = 1.0f;
-
-                    if (node.weightMap != null)
-                    {
-                        int texX = Mathf.Clamp(Mathf.RoundToInt(uCoord * (node.weightMap.width - 1)), 0, node.weightMap.width - 1);
-                        int texY = Mathf.Clamp(Mathf.RoundToInt(vCoord * (node.weightMap.height - 1)), 0, node.weightMap.height - 1);
-                        Color c = node.weightMap.GetPixel(texX, texY);
-                        invMass = c.r;
-                        selfCollide = c.b;
-                    }
+                    // Extract Physics data from Vertex Colors
+                    float invMass = colors[i].r;
+                    float stiffnessMult = Mathf.Lerp(1.0f, 0.0f, colors[i].g);
+                    float selfCollide = colors[i].b;
 
                     physics.Add(new PhysicsState
                     {
-                        velocity = Vector3.zero, inverseMass = invMass, colliderStart = 0,
-                        colliderCount = (uint)_activeColliders.Length, selfCollideMask = selfCollide, padding = 0f
+                        velocity = Vector3.zero,
+                        inverseMass = invMass,
+                        colliderStart = 0,
+                        colliderCount = (uint)_activeColliders.Length,
+                        selfCollideMask = selfCollide,
+                        padding = 0f
                     });
-
-                    Int4 adj = new(-1, -1, -1, -1);
-                    if (x > 0) adj.x = index - 1;
-                    if (x < node.resolution.x - 1) adj.y = index + 1;
-                    if (y > 0) adj.z = index - node.resolution.x;
-                    if (y < node.resolution.y - 1) adj.w = index + node.resolution.x;
-
-                    if (node.isPrayerFlagMode)
-                    {
-                        if (x > 0 && x / node.flagWidth != (x - 1) / node.flagWidth) adj.x = -1;
-                        if (x < node.resolution.x - 1 && x / node.flagWidth != (x + 1) / node.flagWidth) adj.y = -1;
-                    }
-
-                    adjacency.Add(adj);
                 }
 
-                for (int y = 0; y < node.resolution.y; y++)
-                for (int x = 0; x < node.resolution.x; x++)
+                // --- GENERATE ARBITRARY SPRINGS FROM EDGES ---
+                List<SpringLink> springLinks = new List<SpringLink>(VertexCount);
+                List<Spring> springs = new List<Spring>();
+                
+                // Build an adjacency list to find unique connections per vertex
+                List<int>[] vertexNeighbors = new List<int>[VertexCount];
+                for (int i = 0; i < VertexCount; i++) vertexNeighbors[i] = new List<int>();
+
+                for (int i = 0; i < triangles.Length; i += 3)
                 {
-                    int index = y * node.resolution.x + x;
+                    int v0 = triangles[i];
+                    int v1 = triangles[i + 1];
+                    int v2 = triangles[i + 2];
+
+                    if (!vertexNeighbors[v0].Contains(v1)) vertexNeighbors[v0].Add(v1);
+                    if (!vertexNeighbors[v0].Contains(v2)) vertexNeighbors[v0].Add(v2);
+                    
+                    if (!vertexNeighbors[v1].Contains(v0)) vertexNeighbors[v1].Add(v0);
+                    if (!vertexNeighbors[v1].Contains(v2)) vertexNeighbors[v1].Add(v2);
+                    
+                    if (!vertexNeighbors[v2].Contains(v0)) vertexNeighbors[v2].Add(v0);
+                    if (!vertexNeighbors[v2].Contains(v1)) vertexNeighbors[v2].Add(v1);
+                }
+
+                for (int i = 0; i < VertexCount; i++)
+                {
                     uint startIndex = (uint)springs.Count;
-                    uint springCount = 0;
-
-                    float stiffnessMult = 1.0f;
-                    if (node.weightMap != null)
+                    foreach (int neighbor in vertexNeighbors[i])
                     {
-                        int texX = Mathf.Clamp(Mathf.RoundToInt((float)x / (node.resolution.x - 1) * (node.weightMap.width - 1)), 0, node.weightMap.width - 1);
-                        int texY = Mathf.Clamp(Mathf.RoundToInt((1.0f - (float)y / (node.resolution.y - 1)) * (node.weightMap.height - 1)), 0, node.weightMap.height - 1);
-                        stiffnessMult = Mathf.Lerp(1.0f, 0.0f, node.weightMap.GetPixel(texX, texY).g);
-                    }
-
-                    void AddSpring(int nx, int ny, float compMult)
-                    {
-                        if (nx >= 0 && nx < node.resolution.x && ny >= 0 && ny < node.resolution.y)
+                        float dist = Vector3.Distance(verts[i], verts[neighbor]);
+                        float stiffnessMult = Mathf.Lerp(1.0f, 0.0f, colors[i].g);
+                        
+                        springs.Add(new Spring
                         {
-                            if (node.isPrayerFlagMode && !(y == 0 && ny == 0) && x / node.flagWidth != nx / node.flagWidth) return;
-                            int nIdx = ny * node.resolution.x + nx;
-                            float dist = Vector3.Distance(positions[index], positions[nIdx]);
-                            springs.Add(new Spring
-                            {
-                                targetIndex = (uint)nIdx, restLength = dist,
-                                compliance = compliance * compMult * stiffnessMult, padding = 0
-                            });
-                            springCount++;
-                        }
+                            targetIndex = (uint)neighbor,
+                            restLength = dist,
+                            compliance = compliance * stiffnessMult,
+                            padding = 0
+                        });
                     }
-
-                    AddSpring(x, y - 1, 1f);
-                    AddSpring(x, y + 1, 1f);
-                    AddSpring(x - 1, y, 1f);
-                    AddSpring(x + 1, y, 1f);
-                    AddSpring(x - 1, y - 1, 2f);
-                    AddSpring(x + 1, y - 1, 2f);
-                    AddSpring(x - 1, y + 1, 2f);
-                    AddSpring(x + 1, y + 1, 2f);
-                    AddSpring(x, y - 2, 4f);
-                    AddSpring(x, y + 2, 4f);
-                    AddSpring(x - 2, y, 4f);
-                    AddSpring(x + 2, y, 4f);
-
-                    springLinks.Add(new SpringLink { startIndex = startIndex, count = springCount });
+                    springLinks.Add(new SpringLink { startIndex = startIndex, count = (uint)vertexNeighbors[i].Count });
                 }
 
-                for (int y = 0; y < node.resolution.y - 1; y++)
-                for (int x = 0; x < node.resolution.x - 1; x++)
+                // --- GENERATE NORMALS TOPOLOGY ---
+                // We map which triangles belong to which vertex to calculate parallel face normals
+                List<Int3> computeTriangles = new List<Int3>();
+                for (int i = 0; i < triangles.Length; i += 3)
+                    computeTriangles.Add(new Int3 { x = triangles[i], y = triangles[i+1], z = triangles[i+2] });
+
+                List<int>[] vertexToTriangleMap = new List<int>[VertexCount];
+                for (int i = 0; i < VertexCount; i++) vertexToTriangleMap[i] = new List<int>();
+                for (int i = 0; i < computeTriangles.Count; i++)
                 {
-                    if (node.isPrayerFlagMode && (x + 1) % node.flagWidth == 0) continue;
-                    int i0 = y * node.resolution.x + x;
-                    meshIndices.Add(i0);
-                    meshIndices.Add(i0 + node.resolution.x);
-                    meshIndices.Add(i0 + 1);
-                    meshIndices.Add(i0 + 1);
-                    meshIndices.Add(i0 + node.resolution.x);
-                    meshIndices.Add(i0 + node.resolution.x + 1);
+                    vertexToTriangleMap[computeTriangles[i].x].Add(i);
+                    vertexToTriangleMap[computeTriangles[i].y].Add(i);
+                    vertexToTriangleMap[computeTriangles[i].z].Add(i);
                 }
 
-                // 3. Create the Local Mesh
+                List<VertexTriangleLink> triLinks = new List<VertexTriangleLink>(VertexCount);
+                List<int> triIndices = new List<int>();
+                for (int i = 0; i < VertexCount; i++)
+                {
+                    triLinks.Add(new VertexTriangleLink { startIndex = (uint)triIndices.Count, count = (uint)vertexToTriangleMap[i].Count });
+                    triIndices.AddRange(vertexToTriangleMap[i]);
+                }
+
+                // Create the Local Render Mesh
                 RenderMesh = new Mesh { name = "BannerMesh_" + node.name, indexFormat = IndexFormat.UInt32 };
-                RenderMesh.SetVertices(new Vector3[VertexCount]);
-                RenderMesh.SetIndices(meshIndices.ToArray(), MeshTopology.Triangles, 0);
+                RenderMesh.SetVertices(verts);
+                RenderMesh.SetIndices(triangles, MeshTopology.Triangles, 0);
+                RenderMesh.SetUVs(0, uvs);
                 RenderMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 1000f);
 
                 // 4. Allocate Independent GPU Buffers
@@ -629,14 +655,22 @@ namespace TechArtPlayground.Wind.Cloth
                 CellOffsetsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, hashSize, 4);
                 CollidersBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, Mathf.Max(1, _activeColliders.Length), 192);
 
-                PositionsBuffer.SetData(positions);
-                PredictedPositionsBuffer.SetData(positions);
-                NormalsBuffer.SetData(normals);
+                TrianglesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, computeTriangles.Count, 12);
+                VertexTriLinksBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, VertexCount, 8);
+                VertexTriIndicesBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, triIndices.Count, 4);
+                
+                PositionsBuffer.SetData(verts);
+                PredictedPositionsBuffer.SetData(verts); // <--- Added: Prevents NaN explosion on Frame 1 physics
+                NormalsBuffer.SetData(norms);            // <--- Added: Initializes starting normals
                 UVsBuffer.SetData(uvs);
+
+                PositionsBuffer.SetData(verts);
                 PhysicsBuffer.SetData(physics);
                 SpringLinksBuffer.SetData(springLinks);
                 SpringsBuffer.SetData(springs);
-                AdjacencyBuffer.SetData(adjacency);
+                TrianglesBuffer.SetData(computeTriangles);
+                VertexTriLinksBuffer.SetData(triLinks);
+                VertexTriIndicesBuffer.SetData(triIndices);
 
                 UpdateDynamicColliders();
 
@@ -687,11 +721,16 @@ namespace TechArtPlayground.Wind.Cloth
                 PhysicsBuffer?.Dispose();
                 SpringLinksBuffer?.Dispose();
                 SpringsBuffer?.Dispose();
-                AdjacencyBuffer?.Dispose();
+                AdjacencyBuffer?.Dispose(); // Keep this if you haven't fully deleted it yet
                 HashPairsBuffer?.Dispose();
                 SortedHashPairsBuffer?.Dispose();
                 CellOffsetsBuffer?.Dispose();
                 CollidersBuffer?.Dispose();
+    
+                // Add these three new lines:
+                TrianglesBuffer?.Dispose();
+                VertexTriLinksBuffer?.Dispose();
+                VertexTriIndicesBuffer?.Dispose();
             }
         }
     }
