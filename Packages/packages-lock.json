@@ -130,6 +130,16 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.polybrush": {
+      "version": "https://github.com/needle-mirror/com.unity.polybrush.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.settings-manager": "2.0.1",
+        "com.unity.modules.imgui": "1.0.0"
+      },
+      "hash": "5f33e44ab656909f032680ab45ffcfd4d51723ef"
+    },
     "com.unity.probuilder": {
       "version": "6.0.9",
       "depth": 0,
