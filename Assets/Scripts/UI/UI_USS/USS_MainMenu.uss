@@ -2,11 +2,18 @@
 }
 
 .Button {
-    width: 160px;
-    height: 45px;
+    width: 300px;
+    height: 120px;
     align-self: center;
     align-items: center;
     justify-content: center;
+    font-size: 32px;
+    color: rgb(255, 255, 255);
+    -unity-font-definition: url("project://database/Assets/Scripts/UI/UI_2D/Aharoni/ahronbd.ttf?fileID=12800000&guid=6fd4b862a7d761c439c8aca702c2ae14&type=3#ahronbd");
+    -unity-background-image-tint-color: rgb(173, 2, 2);
+    background-image: url("project://database/Assets/Scripts/UI/UI_2D/Ui_MainMenu/Main%20menu/Mainmenu_button.png?fileID=2800000&guid=82ed56c64075b64449215029ea44e3d0&type=3#Mainmenu_button");
+    -unity-slice-scale: 0;
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .Button:hover {
@@ -14,6 +21,6 @@
     transition-duration: 0.5s;
     transition-timing-function: ease;
     transition-delay: 0s;
-    width: 167px;
-    height: 47px;
+    width: 310px;
+    height: 130px;
 }
