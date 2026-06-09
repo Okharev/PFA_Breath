@@ -3,7 +3,17 @@ guid: 665b82e7a9534eb4b90fd9b49a874b1d
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_brick
+    second: {fileID: 2100000, guid: 8e97b571a4664a442b05fba1683fe97d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_trim_patern
+    second: {fileID: 2100000, guid: 704c515ea5d07bc4f95316b52b55e459, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
