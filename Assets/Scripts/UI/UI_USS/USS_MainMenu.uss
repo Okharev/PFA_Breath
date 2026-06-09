@@ -1,0 +1,19 @@
+:root {
+}
+
+.Button {
+    width: 160px;
+    height: 45px;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.Button:hover {
+    transition-property: scale;
+    transition-duration: 0.5s;
+    transition-timing-function: ease;
+    transition-delay: 0s;
+    width: 167px;
+    height: 47px;
+}
