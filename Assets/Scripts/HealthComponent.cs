@@ -7,9 +7,11 @@ using UnityEngine.Events;
 /// </summary>
 public class HealthComponent : MonoBehaviour
 {
-    [Header("Health Settings")] 
-    [Tooltip("The maximum health capacity of the entity.")]
+    [Header("Health Settings")] [Tooltip("The maximum health capacity of the entity.")]
     public float maxHealth = 100f;
+
+    [Header("Events")] [Tooltip("Fired when health changes. Passes (CurrentHealth, MaxHealth).")]
+    public UnityEvent<float, float> OnHealthChanged;
 
     // --- Invincibility Flag ---
     /// <summary>
@@ -17,59 +19,53 @@ public class HealthComponent : MonoBehaviour
     /// </summary>
     public bool IsInvincible { get; set; } = false;
 
-    [Header("Events")] 
-    [Tooltip("Fired when health changes. Passes (CurrentHealth, MaxHealth).")]
-    public UnityEvent<float, float> OnHealthChanged; 
-
-    public event Action<float> OnTakeDamage; // Passes (Damage Amount)
-    public event Action<float> OnHealed;     // Passes (Heal Amount)
-    public event Action<GameObject> OnDeath;
-    
-    private float currentHealth;
-    private bool isDead;
-
     // Expose current health safely for UI or other systems to read without modifying
-    public float CurrentHealth => currentHealth; 
-    public bool IsDead => isDead;
+    public float CurrentHealth { get; private set; }
+
+    public bool IsDead { get; private set; }
 
     private void Start()
     {
-        currentHealth = maxHealth;
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        CurrentHealth = maxHealth;
+        OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
     }
+
+    public event Action<float> OnTakeDamage; // Passes (Damage Amount)
+    public event Action<float> OnHealed; // Passes (Heal Amount)
+    public event Action<GameObject> OnDeath;
 
     public void TakeDamage(float amount)
     {
         // FAST FAIL: Check death, invalid amounts, OR if the entity is currently invincible.
         // This O(1) boolean check prevents unnecessary math and event invocations during a dash.
-        if (isDead || amount <= 0 || IsInvincible) return;
+        if (IsDead || amount <= 0 || IsInvincible) return;
 
-        currentHealth -= amount;
+        CurrentHealth -= amount;
 
         // Clamp health so it doesn't drop below 0
-        currentHealth = Mathf.Max(currentHealth, 0);
+        CurrentHealth = Mathf.Max(CurrentHealth, 0);
 
         OnTakeDamage?.Invoke(amount);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
 
-        if (currentHealth <= 0) Die();
+        if (CurrentHealth <= 0) Die();
     }
 
     public void Heal(float amount)
     {
-        if (isDead || amount <= 0) return;
+        if (IsDead || amount <= 0) return;
 
-        currentHealth += amount;
-        currentHealth = Mathf.Min(currentHealth, maxHealth); // Prevent over-healing
+        CurrentHealth += amount;
+        CurrentHealth = Mathf.Min(CurrentHealth, maxHealth); // Prevent over-healing
 
         OnHealed?.Invoke(amount);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
     }
 
     private void Die()
     {
-        isDead = true;
-        
+        IsDead = true;
+
         // Broadcast the death event BEFORE destroying the object, 
         // ensuring listeners (like TurnManager or UI) can safely read its data one last time.
         OnDeath?.Invoke(gameObject);

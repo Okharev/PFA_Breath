@@ -98,9 +98,10 @@ namespace Ability.NewAbilitySystem.UI
 
             if (uiSlot != null)
             {
-                // Note: Update 'Icon' to match the actual Sprite field name in your AbilityData class
-                // Sprite iconToSet = abilityData != nul; 
-                // uiSlot.SetAbility(iconToSet);
+                // Dynamically fetch the icon from the scriptable object.
+                // If abilityData is null (e.g., slot is unequipped), it passes null to clear the UI.
+                Sprite iconToSet = abilityData != null ? abilityData.Icon : null; 
+                uiSlot.SetAbility(iconToSet);
             }
         }
 

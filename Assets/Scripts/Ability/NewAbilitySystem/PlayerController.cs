@@ -33,7 +33,9 @@ namespace Ability.NewAbilitySystem
         public AbilityData DefaultDash;
         public AbilityData DefaultSpecial;
 
-        [Header("Input Settings")] public LayerMask GroundLayer;
+        [Header("Input Settings")]
+        public LayerMask GroundLayer;
+        public LayerMask InteractableLayer;
 
         [Header("Combat References")] public Transform FirePoint;
 
@@ -171,13 +173,41 @@ namespace Ability.NewAbilitySystem
 
         private void HandleInput()
         {
-            // If the UI is open, instantly drop out of this function to prevent bleeding.
             if (Skills.UI.SkillTreeUIController.IsOpen || DialogueUIController.IsDialogueOpen) 
                 return;
 
             if (Keyboard.current == null || Mouse.current == null) return;
-            if (!TryGetMousePosition(out Vector3 targetPos)) return;
 
+            // We still want to track aiming for abilities
+            if (TryGetMousePosition(out Vector3 targetPos))
+            {
+                currentAimPosition = targetPos;
+                currentState?.HandleAiming(this, targetPos);
+            }
+
+            // --- Handle Left Click (Interact vs Move) ---
+            if (Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                Ray ray = mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+        
+                // 1. Prioritize checking for Interactables
+                if (Physics.Raycast(ray, out RaycastHit hit, 100f, InteractableLayer))
+                {
+                    if (hit.collider.TryGetComponent(out IInteractable interactable))
+                    {
+                        // Trigger the interaction and consume the input
+                        interactable.Interact(gameObject);
+                        return; 
+                    }
+                }
+
+                // 2. Fallback to standard Movement
+                if (TryGetMousePosition(out Vector3 moveTarget))
+                {
+                    currentState?.HandleMoveInput(this, moveTarget);
+                }
+            }
+            
             currentAimPosition = targetPos;
             currentState?.HandleAiming(this, targetPos);
 

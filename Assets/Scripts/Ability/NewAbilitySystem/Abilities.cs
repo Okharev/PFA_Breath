@@ -434,7 +434,6 @@ namespace Ability.NewAbilitySystem
         }
 
         // --- EXECUTION LOGIC ---
-
         private IEnumerator FireSalvoRoutine(AbilityContext context)
         {
             float timeBetweenShots = burstDuration / burstCount;
@@ -689,7 +688,7 @@ namespace Ability.NewAbilitySystem
         public float maxDashDistance = 5f;
 
         [Tooltip("The physics layer string that ignores Enemies and Projectiles.")]
-        public string ghostLayerName = "PhasingGhost";
+        public string ghostLayerName = "Dashing";
 
         public void Execute(AbilityContext context)
         {

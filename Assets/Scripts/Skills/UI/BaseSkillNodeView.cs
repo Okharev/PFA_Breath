@@ -5,6 +5,49 @@ using UnityEngine.UIElements;
 
 namespace Skills.UI
 {
+
+        public static class UIToolkitUtility
+        {
+            private static Texture2D cachedRadialGlow;
+
+            public static Texture2D GetRadialGlowTexture()
+            {
+                if (cachedRadialGlow != null) return cachedRadialGlow;
+
+                int size = 78; // Resolution of the glow
+                cachedRadialGlow = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                {
+                    // CRITICAL: Prevents Unity from trying to save this runtime texture into your scene
+                    hideFlags = HideFlags.HideAndDontSave 
+                };
+
+                Color[] pixels = new Color[size * size];
+                float center = size / 2f;
+                float radius = size / 2f;
+
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++)
+                    {
+                        float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
+                        float normalizedDist = Mathf.Clamp01(dist / radius);
+                    
+                        // Smoothstep creates a beautiful, natural falloff for the bloom
+                        float alpha = 1f - Mathf.SmoothStep(0f, 1f, normalizedDist);
+                    
+                        // Pure white color, driven entirely by the alpha channel
+                        pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                    }
+                }
+
+                cachedRadialGlow.SetPixels(pixels);
+                cachedRadialGlow.Apply();
+
+                return cachedRadialGlow;
+            }
+        }
+    
+    
     public static class SkillNodeFactory
     {
         /// <summary>
@@ -33,12 +76,15 @@ namespace Skills.UI
     {
         public BaseNodeData NodeData { get; protected set; }
         
+        protected VisualElement iconElement;
+        
         protected bool isEditorMode;
         protected Label titleLabel;
         
         // Scheduled Tasks for Click/Hold logic
         protected IVisualElementScheduledItem longPressTask;
         protected bool isLongPressHandled;
+        protected VisualElement glowElement;
 
         public BaseSkillNodeView(BaseNodeData data, bool isEditor = false)
         {
@@ -53,7 +99,13 @@ namespace Skills.UI
             style.justifyContent = Justify.Center;
 
             // --- 2. HARDWARE ACCELERATED TRANSITIONS ---
-            style.transitionProperty = new StyleList<StylePropertyName>(new List<StylePropertyName> { new("scale") });
+            // ADDED: "border-color" and "border-width" to make the glow smooth
+            style.transitionProperty = new StyleList<StylePropertyName>(new List<StylePropertyName> 
+            { 
+                new("scale"), 
+                new("border-color"),
+                new("border-width")
+            });
             style.transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new(0.15f) });
             style.transitionTimingFunction = new StyleList<EasingFunction>(new List<EasingFunction> { new(EasingMode.EaseOutCubic) });
 
@@ -70,6 +122,60 @@ namespace Skills.UI
             RegisterCallback<PointerUpEvent>(OnPointerUp);
             RegisterCallback<PointerOutEvent>(OnPointerOut);
         }
+        
+        /// <summary>
+        /// Generates a perfectly circular icon layer. 
+        /// Kept modular so derived classes can pass in specific sprites.
+        /// </summary>
+    protected void CreateIconLayer(Sprite sprite)
+    {
+        // 1. CREATE THE BLOOM LAYER FIRST (So it sits underneath the icon)
+        glowElement = new VisualElement
+        {
+            pickingMode = PickingMode.Ignore,
+            style =
+            {
+                position = Position.Absolute,
+                // Expand outwards by 25% on all sides to create the spill
+                left = new Length(-25, LengthUnit.Percent),
+                right = new Length(-25, LengthUnit.Percent),
+                top = new Length(-25, LengthUnit.Percent),
+                bottom = new Length(-25, LengthUnit.Percent),
+                
+                backgroundImage = new StyleBackground(UIToolkitUtility.GetRadialGlowTexture()),
+                unityBackgroundScaleMode = ScaleMode.ScaleToFit,
+                
+                opacity = 0f, // Start invisible
+                
+                // Hardware-accelerated fade for the bloom effect
+                transitionProperty = new StyleList<StylePropertyName>(new List<StylePropertyName> { new("opacity") }),
+                transitionDuration = new StyleList<TimeValue>(new List<TimeValue> { new(0.3f) }),
+                transitionTimingFunction = new StyleList<EasingFunction>(new List<EasingFunction> { new(EasingMode.EaseOutCubic) })
+            }
+        };
+        Add(glowElement);
+
+        // 2. CREATE THE ICON LAYER
+        if (sprite != null)
+        {
+            iconElement = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore,
+                style =
+                {
+                    position = Position.Absolute,
+                    left = 0, top = 0, right = 0, bottom = 0,
+                    borderTopLeftRadius = Length.Percent(50),
+                    borderTopRightRadius = Length.Percent(50),
+                    borderBottomLeftRadius = Length.Percent(50),
+                    borderBottomRightRadius = Length.Percent(50),
+                    backgroundImage = new StyleBackground(sprite),
+                    unityBackgroundScaleMode = ScaleMode.ScaleToFit
+                }
+            };
+            Add(iconElement);
+        }
+    }
 
         // --- LIFECYCLE MANAGEMENT ---
         protected virtual void OnAttach(AttachToPanelEvent evt)
@@ -83,17 +189,20 @@ namespace Skills.UI
         }
 
         // --- SHARED TOOLTIP & HOVER LOGIC ---
+// --- SHARED TOOLTIP & HOVER LOGIC ---
         protected virtual void OnPointerEnter(PointerEnterEvent evt)
         {
             style.scale = new StyleScale(new Vector2(1.05f, 1.05f));
-            SkillTooltip.OnUpdateTooltip?.Invoke(NodeData.Description, evt.position);
+            // CHANGED: Passing the whole NodeData object
+            SkillTooltip.OnUpdateTooltip?.Invoke(NodeData, evt.position); 
         }
 
         protected virtual void OnPointerMove(PointerMoveEvent evt)
         {
-            SkillTooltip.OnUpdateTooltip?.Invoke(NodeData.Description, evt.position);
+            // CHANGED: Passing the whole NodeData object
+            SkillTooltip.OnUpdateTooltip?.Invoke(NodeData, evt.position);
         }
-
+        
         protected virtual void OnPointerLeave(PointerLeaveEvent evt)
         {
             style.scale = new StyleScale(Vector2.one);

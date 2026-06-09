@@ -6,6 +6,8 @@ namespace Ability.NewAbilitySystem
     [CreateAssetMenu(menuName = "Strategy/Ability Data")]
     public class AbilityData : ScriptableObject
     {
+        public Sprite Icon;
+        
         public string abilityName;
         public int turnCost = 1;
         public int cooldownTurns = 3;

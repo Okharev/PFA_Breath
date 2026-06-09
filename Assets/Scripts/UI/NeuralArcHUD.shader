@@ -11,12 +11,12 @@ Shader "UI/NeuralArcHUD_UITK"
         _Node5("Node5", Vector) = (0, 0, 0, 0)
         _Node6("Node6", Vector) = (0, 0, 0, 0)
         _Node7("Node7", Vector) = (0, 0, 0, 0)
-        
+
         _Thickness("Thickness", Float) = 0.015
         _Smoothness("Smoothness", Float) = 0.1
         _NoiseScale("Noise Scale", Float) = 15.0
         _OrganicSpeed("Animation Speed", Float) = 1.5
-        
+
         [HDR] _CoreColor("Core Color", Color) = (0.9, 1.0, 1.0, 1.0)
         [HDR] _GlowColor("Glow Color", Color) = (0.02, 1.0, 0.93, 1.0)
 
@@ -25,7 +25,7 @@ Shader "UI/NeuralArcHUD_UITK"
         [HideInInspector][NoScaleOffset]unity_LightmapsInd("unity_LightmapsInd", 2DArray) = "" {}
         [HideInInspector][NoScaleOffset]unity_ShadowMasks("unity_ShadowMasks", 2DArray) = "" {}
     }
-    
+
     SubShader
     {
         Tags
@@ -34,31 +34,30 @@ Shader "UI/NeuralArcHUD_UITK"
             "RenderType"="Transparent"
             "isCustomUITKShader"="true" // CRUCIAL: Tells UITK this is a valid shader
             "Queue"="Transparent"
-            "ShaderGraphShader"="true"  // Required by UITK shim
+            "ShaderGraphShader"="true" // Required by UITK shim
             "IgnoreProjector"="True"
             "PreviewType"="Plane"
             "CanUseSpriteAtlas"="True"
         }
-        
+
         Pass
         {
             Name "Default"
-            
+
             Cull Off
             Blend SrcAlpha OneMinusSrcAlpha, One OneMinusSrcAlpha
             ZWrite Off
-        
+
             HLSLPROGRAM
-        
             #pragma target 3.5
             #pragma vertex uie_custom_vert
             #pragma fragment uie_custom_frag
-        
+
             // UI Toolkit Keywords
             #pragma multi_compile_local _ _UIE_FORCE_GAMMA
             #pragma multi_compile_local _ _UIE_TEXTURE_SLOT_COUNT_4 _UIE_TEXTURE_SLOT_COUNT_2 _UIE_TEXTURE_SLOT_COUNT_1
             #pragma multi_compile_local _ _UIE_RENDER_TYPE_SOLID _UIE_RENDER_TYPE_TEXTURE _UIE_RENDER_TYPE_TEXT _UIE_RENDER_TYPE_GRADIENT
-        
+
             #define UITK_SHADERGRAPH
             #define _SURFACE_TYPE_TRANSPARENT 1
             #define ATTRIBUTES_NEED_TEXCOORD0
@@ -69,7 +68,7 @@ Shader "UI/NeuralArcHUD_UITK"
             #define REQUIRE_DEPTH_TEXTURE
             #define REQUIRE_NORMAL_TEXTURE
             #define SHADERPASS SHADERPASS_CUSTOM_UI
-        
+
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -79,10 +78,10 @@ Shader "UI/NeuralArcHUD_UITK"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
             #include "Packages/com.unity.shadergraph/Editor/Generation/Targets/BuiltIn/ShaderLibrary/Shim/UIShim.hlsl"
-        
+
             // --------------------------------------------------
             // CBUFFER Properties
-            
+
             CBUFFER_START(UnityPerMaterial)
                 float _NodeCount;
                 float4 _Node0, _Node1, _Node2, _Node3, _Node4, _Node5, _Node6, _Node7;
@@ -129,7 +128,7 @@ Shader "UI/NeuralArcHUD_UITK"
 
             // --------------------------------------------------
             // UITK Core Structs
-        
+
             struct Attributes
             {
                 float3 positionOS : POSITION;
@@ -178,8 +177,8 @@ Shader "UI/NeuralArcHUD_UITK"
                 uint stereoTargetEyeIndexAsRTArrayIdx : SV_RenderTargetArrayIndex;
                 #endif
             };
-        
-            PackedVaryings PackVaryings (Varyings input)
+
+            PackedVaryings PackVaryings(Varyings input)
             {
                 PackedVaryings output;
                 ZERO_INITIALIZE(PackedVaryings, output);
@@ -188,11 +187,11 @@ Shader "UI/NeuralArcHUD_UITK"
                 output.color = input.color;
                 return output;
             }
-        
-            Varyings UnpackVaryings (PackedVaryings input)
+
+            Varyings UnpackVaryings(PackedVaryings input)
             {
                 Varyings output;
-                ZERO_INITIALIZE(Varyings, output);
+                    ZERO_INITIALIZE(Varyings, output);
                 output.positionCS = input.positionCS;
                 output.texCoord0 = input.texCoord0;
                 output.color = input.color;
@@ -201,78 +200,81 @@ Shader "UI/NeuralArcHUD_UITK"
 
             // --------------------------------------------------
             // Shader Logic
-            
-            struct VertexDescription { };
-            
+
+            struct VertexDescription
+            {
+            };
+
             VertexDescription VertexDescriptionFunction(VertexDescriptionInputs IN)
             {
                 return (VertexDescription)0;
             }
-        
+
             struct SurfaceDescription
             {
                 float3 BaseColor;
                 float Alpha;
             };
-        
+
             SurfaceDescription SurfaceDescriptionFunction(SurfaceDescriptionInputs IN)
             {
                 SurfaceDescription surface = (SurfaceDescription)0;
-                
+
                 float2 uv = IN.uv0.xy;
                 float time = _Time.y * _OrganicSpeed;
-                
+
                 float2 nodes[8] = {
                     _Node0.xy, _Node1.xy, _Node2.xy, _Node3.xy,
                     _Node4.xy, _Node5.xy, _Node6.xy, _Node7.xy
                 };
-                
+
                 int count = clamp((int)_NodeCount, 1, 8);
-                
+
                 // Add organic wobble to the UV field
                 float2 distortedUV = uv + float2(
                     noise(uv * _NoiseScale + time) * 0.02,
                     noise(uv * _NoiseScale - time) * 0.02
                 );
-                
+
                 // Find central hub anchor
                 float2 centerAnchor = float2(0, 0);
-                for(int j = 0; j < count; j++) {
+                for (int j = 0; j < count; j++)
+                {
                     centerAnchor += nodes[j];
                 }
                 centerAnchor /= max((float)count, 1.0);
                 centerAnchor = lerp(centerAnchor, float2(0.5, 0.5), 0.3);
-                
+
                 float d = 100.0; // Base distance to nothing
-                
+
                 for (int i = 0; i < count; i++)
                 {
                     // Path to next node
                     if (i < count - 1)
                     {
-                        float distEdge = sdSegment(distortedUV, nodes[i], nodes[i+1]);
+                        float distEdge = sdSegment(distortedUV, nodes[i], nodes[i + 1]);
                         d = smin(d, distEdge, _Smoothness);
                     }
-                    
+
                     // Path to central anchor
                     float distCenter = sdSegment(distortedUV, nodes[i], centerAnchor);
                     d = smin(d, distCenter, _Smoothness * 1.5);
                 }
-                
+
                 // Render core line and glow falloff
                 float core = smoothstep(_Thickness, _Thickness * 0.1, d);
                 float glow = smoothstep(_Thickness * 4.0, 0.0, d);
-                
+
                 float3 finalColor = lerp(_GlowColor.rgb, _CoreColor.rgb, core);
                 float alpha = max(core, glow * 0.4) * _GlowColor.a;
-                
+
                 // Output to UI Toolkit
                 surface.BaseColor = finalColor;
                 surface.Alpha = alpha;
-                
+
                 return surface;
             }
-        
+
             VertexDescriptionInputs BuildVertexDescriptionInputs(Attributes input)
             {
                 VertexDescriptionInputs output;
@@ -288,11 +290,10 @@ Shader "UI/NeuralArcHUD_UITK"
                 output.color = input.color;
                 return output;
             }
-        
+
             // --------------------------------------------------
             // UITK execution shim (MANDATORY for compilation)
             #include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/UITKPass.hlsl"
-        
             ENDHLSL
         }
     }

@@ -1,0 +1,27 @@
+.health-container {
+    position: absolute;
+    width: 80px;
+    height: 12px;
+    background-color: rgba(30, 30, 30, 0.8);
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: rgb(10, 10, 10);
+    /* Centers the element perfectly over the calculated coordinate */
+    translate: -50% -100%;
+    overflow: hidden;
+}
+
+.health-fill {
+    width: 100%;
+    height: 100%;
+    background-color: rgb(220, 50, 50);
+    /* Animates width reduction (damage) and color (flash) seamlessly */
+    transition-property: width, background-color;
+    transition-duration: 0.2s, 0.1s;
+    transition-timing-function: ease-out-cubic, ease-in-out;
+}
+
+/* Added dynamically via C# when damage is taken */
+.health-fill.hit-flash {
+    background-color: rgb(255, 255, 255);
+}

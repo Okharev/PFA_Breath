@@ -10,9 +10,9 @@ namespace UI
     {
         public static Action<EmotionNodeData, Vector2> OnShowEquipMenu;
         public static Action OnHideEquipMenu;
+        private readonly Button equipButton;
 
         private EmotionNodeData targetNode;
-        private readonly Button equipButton;
 
         public SkillEquipOverlay()
         {
@@ -63,11 +63,11 @@ namespace UI
         private void Show(EmotionNodeData node, Vector2 screenPos)
         {
             targetNode = node;
-            
+
             // REFACTORED: Show the actual AbilityData name in the button!
             string abilityName = node.GrantedAbility != null ? node.GrantedAbility.abilityName : "Unknown Ability";
             equipButton.text = $"Equip {abilityName} [{node.IntendedSlot}]";
-            
+
             style.left = screenPos.x + 10;
             style.top = screenPos.y - 10;
             style.display = DisplayStyle.Flex;

@@ -12,12 +12,10 @@ public class ActionVisualizer : MonoBehaviour
         Shooting
     }
 
-    [Header("Line Settings")]
-    [Tooltip("The base width of the main aiming/movement line.")]
+    [Header("Line Settings")] [Tooltip("The base width of the main aiming/movement line.")]
     public float baseLineWidth = 0.1f;
 
-    [Header("Materials")] 
-    [Tooltip("Assign your custom Shader Graph material for movement.")]
+    [Header("Materials")] [Tooltip("Assign your custom Shader Graph material for movement.")]
     public Material movementMaterial;
 
     [Tooltip("Assign your custom Shader Graph material for the main shooting trajectory.")]
@@ -26,8 +24,9 @@ public class ActionVisualizer : MonoBehaviour
     [Tooltip("Assign a semi-transparent material for the spread cone area.")]
     public Material spreadMaterial;
 
+    private LineRenderer coneSpreadLine;
+
     private LineRenderer mainLine;
-    private LineRenderer coneSpreadLine; 
 
     private void Awake()
     {
@@ -40,7 +39,7 @@ public class ActionVisualizer : MonoBehaviour
         coneSpreadLine = new GameObject("SpreadCone").AddComponent<LineRenderer>();
         coneSpreadLine.transform.SetParent(transform);
         SetupFlatLineRenderer(coneSpreadLine, baseLineWidth, baseLineWidth);
-        
+
         // Push the cone slightly down so it doesn't Z-fight with the main line or the floor
         coneSpreadLine.transform.localPosition = new Vector3(0, -0.01f, 0);
     }
@@ -54,19 +53,19 @@ public class ActionVisualizer : MonoBehaviour
         lr.positionCount = 2;
         lr.enabled = false;
         lr.useWorldSpace = true;
-        
+
         // Forces the line to face its local Z axis instead of the camera
-        lr.alignment = LineAlignment.TransformZ; 
-        
+        lr.alignment = LineAlignment.TransformZ;
+
         // Rotate the transform so its Z-axis points straight up. 
         // This makes the flat side of the line perfectly parallel to the floor.
         lr.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
 
         lr.startWidth = startWidth;
         lr.endWidth = endWidth;
-        
+
         // Ensure rounded corners don't warp weirdly on flat lines
-        lr.numCapVertices = 0; 
+        lr.numCapVertices = 0;
     }
 
     public void DrawIntent(Vector3 start, Vector3 end, IntentType type, float spreadAngle = 0f)
@@ -89,12 +88,12 @@ public class ActionVisualizer : MonoBehaviour
 
             // Convert spread angle from degrees to radians for Mathf.Tan
             float radAngle = spreadAngle * Mathf.Deg2Rad;
-            
+
             // Calculate total width at the end of the line
             float endWidth = 2f * distance * Mathf.Tan(radAngle);
 
-            coneSpreadLine.startWidth = mainLine.startWidth; 
-            coneSpreadLine.endWidth = endWidth;              
+            coneSpreadLine.startWidth = mainLine.startWidth;
+            coneSpreadLine.endWidth = endWidth;
 
             coneSpreadLine.SetPosition(0, start);
             coneSpreadLine.SetPosition(1, end);

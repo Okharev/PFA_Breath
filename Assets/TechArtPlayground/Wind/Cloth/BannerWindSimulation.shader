@@ -168,5 +168,80 @@
             }
             ENDHLSL
         }
+
+// --- DEPTH ONLY PASS (For Depth Prepass, DoF, SSAO) ---
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+            ZWrite On
+            ColorMask 0 // We only care about writing to the depth buffer
+
+            HLSLPROGRAM
+            #pragma vertex DepthOnlyVertex
+            #pragma fragment DepthOnlyFragment
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            StructuredBuffer<float3> _PositionsBuffer;
+
+            struct Attributes { uint vertexID : SV_VertexID; };
+            struct Varyings { float4 positionCS : SV_POSITION; };
+
+            Varyings DepthOnlyVertex(Attributes input)
+            {
+                Varyings output;
+                float3 positionWS = _PositionsBuffer[input.vertexID];
+                output.positionCS = TransformWorldToHClip(positionWS);
+                return output;
+            }
+
+            half4 DepthOnlyFragment(Varyings input) : SV_Target
+            {
+                return 0;
+            }
+            ENDHLSL
+        }
+
+        // --- DEPTH NORMALS PASS (For SSAO and Decals) ---
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+            ZWrite On
+
+            HLSLPROGRAM
+            #pragma vertex DepthNormalsVertex
+            #pragma fragment DepthNormalsFragment
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            StructuredBuffer<float3> _PositionsBuffer;
+            StructuredBuffer<float3> _NormalsBuffer;
+
+            struct Attributes { uint vertexID : SV_VertexID; };
+            
+            struct Varyings 
+            { 
+                float4 positionCS : SV_POSITION; 
+                float3 normalWS : TEXCOORD0;
+            };
+
+            Varyings DepthNormalsVertex(Attributes input)
+            {
+                Varyings output;
+                float3 positionWS = _PositionsBuffer[input.vertexID];
+                output.positionCS = TransformWorldToHClip(positionWS);
+                output.normalWS = _NormalsBuffer[input.vertexID];
+                return output;
+            }
+
+            half4 DepthNormalsFragment(Varyings input) : SV_Target
+            {
+                // Output normal mapped to 0-1 range for the DepthNormals texture
+                return half4(input.normalWS * 0.5 + 0.5, 1.0);
+            }
+            ENDHLSL
+        }
     }
 }

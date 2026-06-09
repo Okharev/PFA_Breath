@@ -44,9 +44,16 @@ namespace Skills.UI
             if (isEditorMode || SkillTreeManager.Instance == null) return;
 
             int currentLevel = SkillTreeManager.Instance.GetNodeLevel(genericData.GUID);
-            
-            // Dim if locked, bright if unlocked
+    
+            // Dim if locked
             style.opacity = currentLevel > 0 ? 1f : 0.4f;
+
+            // FADE THE BLOOM IN OR OUT
+            if (glowElement != null)
+            {
+                // For generic passives, bloom if they are unlocked
+                glowElement.style.opacity = currentLevel > 0 ? 0.8f : 0f; 
+            }
         }
     }
 }
