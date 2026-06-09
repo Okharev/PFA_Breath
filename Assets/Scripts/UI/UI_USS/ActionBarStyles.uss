@@ -48,44 +48,87 @@
     height: 100%;
 }
 
-/* 3. Refactored Slot Styles (Replaces .ability-slot) */
 .spell-slot {
-    /* --- STRUCTURAL OVERRIDES FOR ARC PLACEMENT --- */
     position: absolute;
-    translate: -50% -50%; /* CRITICAL: Math calculates center, not top-left pivot */
+    width: 60px;
+    height: 60px;
+    background-color: rgba(30, 30, 30, 0.8);
 
-    /* --- YOUR EXISTING MMO VISUALS --- */
-    width: 64px;
-    height: 64px;
-    background-color: #1e1e1e;
-    border-radius: 6px;
+    /* 1. Changed to 50% to make the UI slot a perfect circle */
+    border-radius: 50%;
     border-width: 2px;
-    border-color: #555;
-    align-items: center;
-    justify-content: center;
-    transition-property: opacity, border-color, scale;
+    border-color: #A0A0A0;
+
+    /* Offsets the pivot from Top-Left to the Center */
+    translate: -50% -50%;
+
+    /* Smooth transitions for hover and cooldown tinting */
+    transition-property: scale, translate, border-color, -unity-background-image-tint-color;
     transition-duration: 0.2s;
+    transition-timing-function: ease-out-back;
+
+    /* 2. Ensures the ability icon scales properly inside the circular slot */
+    -unity-background-scale-mode: scale-to-fit;
 }
 
 /* Keep your existing cooldown states and text styling */
 .spell-slot.ability-on-cooldown {
-    opacity: 0.4;
-    border-color: #e24a4a;
+    border-color: #555555;
+    /* Darkens the assigned ability icon to indicate it is unavailable */
+    -unity-background-image-tint-color: rgb(80, 80, 80);
 }
 
 /* Hover effect for polish */
 .spell-slot:hover {
-    scale: 1.1;
-    border-color: #f39c12;
+    scale: 1.15;
+    background-color: rgba(60, 60, 60, 0.9);
+    border-color: #FFFFFF;
+    translate: -50% -15px;
 }
 
 .hotkey-text {
     position: absolute;
-    top: 2px;
-    left: 4px;
-    color: #f39c12;
+    bottom: -22px; /* Pulls it entirely outside the circle */
+    width: 100%;
+    -unity-text-align: middle-center;
+    color: #ffaa00;
     font-size: 14px;
     -unity-font-style: bold;
+}
+
+.ammo-display {
+    position: absolute;
+
+    /* 1. Equalize width and height to form a perfect square foundation */
+    width: 80px;
+    height: 80px;
+
+    /* 2. White background to simulate the sphere */
+    background-color: #FFFFFF;
+
+    /* 3. 50% border-radius turns the square into a perfect circle */
+    border-radius: 50%;
+
+    /* 4. A slight gray border gives it a subtle 3D edge/volume */
+    border-width: 4px;
+    border-color: #E0E0E0;
+
+    /* Crucial: Centers the pivot */
+    translate: -50% -50%;
+
+    align-items: center;
+    justify-content: center;
+
+    /* Optional: Add a subtle shadow for depth */
+    box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ammo-display > #ammo-text {
+    /* Contrast inversion: Dark text on the white background */
+    color: #1A1A1A;
+    font-size: 24px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
 }
 
 .ability-text {
@@ -97,11 +140,14 @@
 
 .cooldown-text {
     position: absolute;
-    color: white;
-    font-size: 32px;
+    width: 100%;
+    height: 100%;
+    color: #ffffff;
+    font-size: 28px;
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    text-shadow: 2px 2px 0px black;
+    /* Adds a harsh shadow to ensure the text pops regardless of the icon's color */
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.9);
 }
 
 /* Channel bar overlays the bottom of the icon */

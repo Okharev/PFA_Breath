@@ -54,6 +54,14 @@ namespace Ability.NewAbilitySystem.UI
             get => _angularPadding; 
             set { _angularPadding = value; UpdateLayout(); } 
         }
+        
+        private float _slotSize = 60f;
+        [UxmlAttribute("slot-size")]
+        public float SlotSize 
+        { 
+            get => _slotSize; 
+            set { _slotSize = value; UpdateLayout(); } 
+        }
 
         [UxmlAttribute("neural-material")]
         public Material NeuralMaterialAsset { get; set; }
@@ -202,14 +210,16 @@ namespace Ability.NewAbilitySystem.UI
 
                 float angleRad = currentAngle * Mathf.Deg2Rad;
 
-                // Cartesian placement
                 float x = center.x + (Mathf.Cos(angleRad) * Radius);
                 float y = center.y + (Mathf.Sin(angleRad) * Radius);
+
+                // Apply dynamic sizing from the Inspector
+                m_spellSlots[i].style.width = SlotSize;
+                m_spellSlots[i].style.height = SlotSize;
 
                 m_spellSlots[i].style.left = x;
                 m_spellSlots[i].style.top = y;
                 
-                // Tangential alignment allows CSS to slide it inward during scale/hover
                 m_spellSlots[i].style.rotate = new Rotate(currentAngle + 90f);
 
                 // Pass UV data to shader (Y axis is inverted between UI Toolkit and Shader Graph)
