@@ -38,7 +38,7 @@ public class MainMenu_Event : MonoBehaviour
     private void OnPlayGameClick(ClickEvent evt)
     {
         Debug.Log("Bienvenue a XAR SAROTH !!!");
-        SceneManager.LoadScene("BlockoutF GA");
+        SceneManager.LoadScene("01_Level");
     }
 
     private void OnPlayZooClick(ClickEvent evt)
