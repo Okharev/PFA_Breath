@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Temp
   m_EditorClassIdentifier: Assembly-CSharp::Skills.SkillTreeGraph
   AllNodes:
+  - rid: 6047565780272807999
+  - rid: 6047565780272808000
   - rid: 6047565780272808001
   - rid: 6047565780272808002
-  - rid: 6047565780272808000
-  - rid: 6047565780272807999
   references:
     version: 2
     RefIds:
@@ -26,10 +26,10 @@ MonoBehaviour:
         GUID: 517dfec0-487d-4a65-ab57-54a988a0e859
         Position:
           serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
+          x: 924.8
+          y: 800
+          width: 160.79999
+          height: 76.79999
         NodeName: Test skill
         Description: 
         PrerequisiteGUIDs: []
@@ -41,19 +41,19 @@ MonoBehaviour:
         GUID: 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
         Position:
           serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
+          x: 1100
+          y: 649.6
+          width: 160.80005
+          height: 76.79999
         NodeName: Nevro Primary
         Description: 
         PrerequisiteGUIDs:
         - 517dfec0-487d-4a65-ab57-54a988a0e859
-        RequiredEmotion: 0
+        RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
         OrbitRotation: 8
-        OrbitSpan: 128.2
+        OrbitSpan: 114.8
         UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: 086a16a0f04c42a45ad7f550477e9e0c, type: 2}
         IntendedSlot: 0
@@ -64,19 +64,19 @@ MonoBehaviour:
         GUID: 8c3abeb7-bb2d-40fd-851c-a8b2af527572
         Position:
           serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
+          x: 1100
+          y: 500
+          width: 160.80005
+          height: 76.79999
         NodeName: Nevro Secondary
         Description: 
         PrerequisiteGUIDs:
         - 517dfec0-487d-4a65-ab57-54a988a0e859
-        RequiredEmotion: 0
+        RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
-        OrbitRotation: 135
-        OrbitSpan: 90
+        OrbitRotation: 164
+        OrbitSpan: 140.2
         UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: 9ba9829911d79454db7093aa65595c8e, type: 2}
         IntendedSlot: 1
@@ -87,20 +87,20 @@ MonoBehaviour:
         GUID: 723c2c9b-5ca7-4f8e-b45e-2df518c0c12f
         Position:
           serializedVersion: 2
-          x: 0
-          y: 0
-          width: 0
-          height: 0
+          x: 1324.8
+          y: 575.2
+          width: 160.79993
+          height: 76.79999
         NodeName: Nevro ultimate
         Description: 
         PrerequisiteGUIDs:
         - 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
         - 8c3abeb7-bb2d-40fd-851c-a8b2af527572
-        RequiredEmotion: 0
+        RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
-        OrbitRotation: 135
-        OrbitSpan: 90
+        OrbitRotation: 324
+        OrbitSpan: 125.5
         UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: d11bba529bd19194899aec5d5daf52e1, type: 2}
         IntendedSlot: 3

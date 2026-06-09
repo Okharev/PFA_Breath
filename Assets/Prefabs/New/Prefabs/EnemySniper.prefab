@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1588429870305754777}
   - component: {fileID: 6692603355748319742}
   - component: {fileID: 6015349057466556885}
+  - component: {fileID: 7146192534985073636}
   m_Layer: 10
   m_Name: EnemySniper
   m_TagString: Untagged
@@ -160,6 +161,19 @@ MonoBehaviour:
   <Archetype>k__BackingField: 2
   <AttackRange>k__BackingField: 15
   <SafeDistance>k__BackingField: 8
+--- !u!114 &7146192534985073636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4805482828720501141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6d47de225ad4cc0b88350bb809d187e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealthPresenter
+  yOffset: 2
 --- !u!1 &6359587058521299137
 GameObject:
   m_ObjectHideFlags: 0

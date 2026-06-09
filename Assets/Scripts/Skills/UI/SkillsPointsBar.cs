@@ -12,88 +12,139 @@ namespace Skills.UI
 
         public SkillPointsBar()
         {
-            // Horizontal container assembly using Flexbox rules
-            style.flexDirection = FlexDirection.Row;
-            style.backgroundColor = new StyleColor(new Color(0.07f, 0.07f, 0.07f, 1f));
-            style.paddingTop = 12;
-            style.paddingBottom = 12;
-            style.paddingLeft = 24;
-            style.paddingRight = 24;
-            style.alignItems = Align.Center;
-            style.justifyContent = Justify.Center;
-
-            // Layout Anchoring: Lock it to the top of the Viewport context safely
+            // --- 1. MAIN CONTAINER: TOP-RIGHT COLUMN ---
             style.position = Position.Absolute;
-            style.top = 0;
-            style.left = 0;
-            style.right = 0;
-            style.height = 50;
-            style.borderBottomWidth = 2;
-            style.borderBottomColor = new StyleColor(new Color(0.2f, 0.2f, 0.2f, 1f));
+            style.top = 24;
+            style.left = 40; // Anchors the entire element to the top right
+            
+            style.flexDirection = FlexDirection.Column;
+            style.alignItems = Align.FlexEnd; // Right-aligns both the title and the points row
+            // style. = PickingMode.Ignore;
 
-            // Setup Generic Counter Elements
-            VisualElement genericGroup = CreatePointGroup("Generic Points", Color.white, out genericPointsLabel);
-            Add(genericGroup);
+            // --- 2. TITLE LABEL ---
+            Label titleLabel = new Label("SKILL POINTS")
+            {
+                style =
+                {
+                    color = new StyleColor(new Color(0.65f, 0.65f, 0.65f, 1f)), // Light Gray
+                    fontSize = 22,
+                    unityFontStyleAndWeight = FontStyle.Bold,
+                    letterSpacing = 2,
+                    marginBottom = 4 // Space between title and the points row
+                }
+            };
+            Add(titleLabel);
 
+            // --- 3. POINTS ROW ---
+            VisualElement pointsRow = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    alignItems = Align.Center
+                }
+            };
+            Add(pointsRow);
+
+            // --- 4. ASSEMBLE POINTS ---
             emotionLabels = new Dictionary<EmotionType, Label>();
 
-            // Generate counters for all existing Emotion types dynamically via code
+            // A) Generic Points (Using null to signify generic)
+            VisualElement genericGroup = CreatePointGroup(null, out genericPointsLabel);
+            pointsRow.Add(genericGroup);
+
+            // B) Emotion Points dynamically generated
             foreach (EmotionType emotion in Enum.GetValues(typeof(EmotionType)))
             {
-                Color themeColor = GetEmotionColor(emotion);
-                VisualElement emotionGroup = CreatePointGroup($"{emotion}", themeColor, out Label valueLabel);
+                VisualElement emotionGroup = CreatePointGroup(emotion, out Label valueLabel);
                 emotionLabels[emotion] = valueLabel;
-                Add(emotionGroup);
+                pointsRow.Add(emotionGroup);
             }
 
-            // Hook panel lifecycle registration loops safely to prevent memory leaks
             RegisterCallback<AttachToPanelEvent>(OnAttach);
             RegisterCallback<DetachFromPanelEvent>(OnDetach);
         }
 
-        private VisualElement CreatePointGroup(string title, Color indicatorColor, out Label valueLabel)
+        /// <summary>
+        /// Creates a [Number] -> [Icon] grouping to match the reference image.
+        /// </summary>
+        private VisualElement CreatePointGroup(EmotionType? emotion, out Label valueLabel)
         {
-            VisualElement container = new();
-            container.style.flexDirection = FlexDirection.Row;
-            container.style.alignItems = Align.Center;
-            container.style.marginRight = 30;
+            VisualElement container = new VisualElement
+            {
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    alignItems = Align.Center,
+                    marginLeft = 16 // Spacing between each point group
+                }
+            };
 
-            VisualElement statusDot = new();
-            statusDot.style.width = 10;
-            statusDot.style.height = 10;
-            statusDot.style.borderTopLeftRadius = 5;
-            statusDot.style.borderTopRightRadius = 5;
-            statusDot.style.borderBottomLeftRadius = 5;
-            statusDot.style.borderBottomRightRadius = 5;
-            statusDot.style.backgroundColor = indicatorColor;
-            statusDot.style.marginRight = 8;
-            // Explicitly clamp center self alignment 
-            statusDot.style.alignSelf = Align.Center;
-            container.Add(statusDot);
-
-            Label titleLabel = new($"{title}: ");
-            titleLabel.style.color = new StyleColor(new Color(0.75f, 0.75f, 0.75f));
-            titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-            // FIX: Strip default margins skewing alignment
-            titleLabel.style.marginTop = 0;
-            titleLabel.style.marginBottom = 0;
-            container.Add(titleLabel);
-
-            valueLabel = new Label("0");
-            valueLabel.style.color = indicatorColor;
-            valueLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-            // Strip default margins skewing alignment
-            valueLabel.style.marginTop = 0;
-            valueLabel.style.marginBottom = 0;
+            // 1. THE NUMBER VALUE (Comes first, e.g., "2 [Icon]")
+            valueLabel = new Label("0")
+            {
+                style =
+                {
+                    color = Color.white,
+                    fontSize = 20,
+                    unityFontStyleAndWeight = FontStyle.Bold,
+                    marginTop = 0, marginBottom = 0,
+                    marginRight = 6 // Space between the number and the icon
+                }
+            };
             container.Add(valueLabel);
 
+            // 2. THE ICON
+            VisualElement iconElement = new VisualElement
+            {
+                style =
+                {
+                    width = 24, 
+                    height = 24,
+                    alignSelf = Align.Center,
+                    unityBackgroundScaleMode = ScaleMode.ScaleToFit
+                }
+            };
+
+            // Try to load the PNG image for the point type
+            Sprite iconSprite = GetIconForPointType(emotion);
+            
+            if (iconSprite != null)
+            {
+                iconElement.style.backgroundImage = new StyleBackground(iconSprite);
+            }
+            else
+            {
+                // FALLBACK: If no image is found, draw a colored circle so the UI doesn't break
+                iconElement.style.backgroundColor = emotion.HasValue ? GetEmotionColor(emotion.Value) : Color.white;
+                iconElement.style.borderTopLeftRadius = Length.Percent(50);
+                iconElement.style.borderTopRightRadius = Length.Percent(50);
+                iconElement.style.borderBottomLeftRadius = Length.Percent(50);
+                iconElement.style.borderBottomRightRadius = Length.Percent(50);
+            }
+
+            container.Add(iconElement);
+
             return container;
+        }
+
+        /// <summary>
+        /// Loads the specific PNG icons dynamically at runtime.
+        /// </summary>
+        private Sprite GetIconForPointType(EmotionType? emotion)
+        {
+            // If it's a generic point
+            if (!emotion.HasValue) 
+                return Resources.Load<Sprite>("Icons/GenericPoint");
+
+            // If it's an emotion point
+            return Resources.Load<Sprite>($"Icons/Emotion_{emotion.Value}");
         }
 
         private void OnAttach(AttachToPanelEvent evt)
         {
             SkillTreeManager.OnSkillTreeUpdated += Refresh;
-            Refresh();
+            Refresh(); // Force refresh on load
         }
 
         private void OnDetach(DetachFromPanelEvent evt)
@@ -105,11 +156,21 @@ namespace Skills.UI
         {
             if (SkillTreeManager.Instance == null) return;
 
+            // Update Generic Points
             genericPointsLabel.text = SkillTreeManager.Instance.genericPoints.ToString();
 
+            // Update Emotion Points
             foreach (KeyValuePair<EmotionType, Label> record in emotionLabels)
+            {
                 if (SkillTreeManager.Instance.emotionPoints.TryGetValue(record.Key, out int currentPoints))
+                {
+                    // Hide the group completely if points are 0, or keep it visible. 
+                    // Depending on your design, you can uncomment the next line to only show emotions you have points for:
+                    // record.Value.parent.style.display = currentPoints > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+                    
                     record.Value.text = currentPoints.ToString();
+                }
+            }
         }
 
         private Color GetEmotionColor(EmotionType emotion)

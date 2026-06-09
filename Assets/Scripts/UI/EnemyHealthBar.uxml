@@ -1,0 +1,8 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Scripts/UI/EnemyHealthBar.uss?fileID=7433441132597879392&amp;guid=92f72285eb7e55b45a950429ed49cd4e&amp;type=3#EnemyHealthBar"/>
+    
+    <ui:VisualElement name="health-container" class="health-container">
+        <ui:VisualElement name="health-fill" class="health-fill" />
+    </ui:VisualElement>
+    
+</ui:UXML>
