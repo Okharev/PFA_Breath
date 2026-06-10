@@ -280,6 +280,34 @@ MonoBehaviour:
   SunScatteringIntensity:
     m_OverrideState: 1
     m_Value: 2
+--- !u!114 &-4734152389700963331
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48642e95733858b458dc5e14f96d4eee, type: 3}
+  m_Name: VolumetricFogVolumeComponent
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.VolumetricFog.VolumetricFogVolumeComponent
+  active: 1
+  anisotropy:
+    m_OverrideState: 1
+    m_Value: 0.75
+  density:
+    m_OverrideState: 1
+    m_Value: 0.05
+  maxDistance:
+    m_OverrideState: 1
+    m_Value: 52.42
+  stepCount:
+    m_OverrideState: 1
+    m_Value: 64
+  colorTint:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 1, b: 1, a: 0}
 --- !u!114 &-4463884970436517307
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -468,6 +496,7 @@ MonoBehaviour:
   - {fileID: -6288072647309666549}
   - {fileID: 7518938298396184218}
   - {fileID: -1410297666881709256}
+  - {fileID: -4734152389700963331}
 --- !u!114 &853819529557874667
 MonoBehaviour:
   m_ObjectHideFlags: 3

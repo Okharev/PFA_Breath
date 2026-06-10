@@ -181,7 +181,7 @@ namespace Ability.NewAbilitySystem.UI
             };
         }
 
-        private void PositionChildElements()
+private void PositionChildElements()
         {
             if (NumSlots < 1 || float.IsNaN(contentRect.width)) return;
 
@@ -190,22 +190,26 @@ namespace Ability.NewAbilitySystem.UI
             float width = contentRect.width;
             float height = contentRect.height;
 
-            // 1. Calculate Angular Padding
             float effectiveStart = startAngle + AngularPadding;
             float effectiveEnd = endAngle - AngularPadding;
-            float angleStep = NumSlots > 1 ? (effectiveEnd - effectiveStart) / (NumSlots - 1) : 0f;
+            
+            // --- NEW: Layout Math Overlap ---
+            // We have 4 slots, but Primary (0) and Secondary (1) share a single position. 
+            // So visually, we only space out (NumSlots - 1) nodes.
+            int visualNodes = NumSlots > 1 ? NumSlots - 1 : 1;
+            float angleStep = visualNodes > 1 ? (effectiveEnd - effectiveStart) / (visualNodes - 1) : 0f;
 
-            // 2. Feed total count to Shader Graph
             if (m_instancedNeuralMaterial != null)
-            {
                 m_instancedNeuralMaterial.SetFloat(s_NodeCount, m_spellSlots.Count);
-            }
 
-            // 3. Position Slots and feed coordinates to Shader Graph
             for (int i = 0; i < m_spellSlots.Count; i++)
             {
-                float currentAngle = NumSlots > 1 
-                    ? effectiveStart + (i * angleStep) 
+                // Force Slot 0 and Slot 1 to share Layout Index 0.
+                // Dash (2) becomes Layout Index 1. Special (3) becomes Layout Index 2.
+                int layoutIndex = (i == 0 || i == 1) ? 0 : i - 1;
+
+                float currentAngle = visualNodes > 1 
+                    ? effectiveStart + (layoutIndex * angleStep) 
                     : (startAngle + endAngle) / 2f; 
 
                 float angleRad = currentAngle * Mathf.Deg2Rad;
@@ -213,13 +217,10 @@ namespace Ability.NewAbilitySystem.UI
                 float x = center.x + (Mathf.Cos(angleRad) * Radius);
                 float y = center.y + (Mathf.Sin(angleRad) * Radius);
 
-                // Apply dynamic sizing from the Inspector
-                m_spellSlots[i].style.width = SlotSize;
+                m_spellSlots[i].style.width = SlotSize; // Assuming you added SlotSize from the previous fix
                 m_spellSlots[i].style.height = SlotSize;
-
                 m_spellSlots[i].style.left = x;
                 m_spellSlots[i].style.top = y;
-                
                 m_spellSlots[i].style.rotate = new Rotate(currentAngle + 90f);
 
                 // Pass UV data to shader (Y axis is inverted between UI Toolkit and Shader Graph)

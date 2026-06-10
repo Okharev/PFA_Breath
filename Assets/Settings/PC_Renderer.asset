@@ -68,7 +68,8 @@ MonoBehaviour:
   - {fileID: 7833122117494664109}
   - {fileID: -2378399605037001433}
   - {fileID: -1705048770253631782}
-  m_RendererFeatureMap: ad6b866f10d7b46c2715d717293afededace505c2d7356e8
+  - {fileID: 8415922140667744833}
+  m_RendererFeatureMap: ad6b866f10d7b46c2715d717293afededace505c2d7356e84192d8f3985ccb74
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -123,3 +124,17 @@ MonoBehaviour:
     BlurQuality: 0
     Falloff: 100
     SampleCount: -1
+--- !u!114 &8415922140667744833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2194160f9e164fa693926f72482e1dfe, type: 3}
+  m_Name: VolumetricFogRendererFeature
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.VolumetricFog.VolumetricFogRendererFeature
+  m_Active: 1
+  fogMaterial: {fileID: 2100000, guid: fd0d68810ac8f42428696c608220c1c3, type: 2}

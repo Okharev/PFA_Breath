@@ -68,3 +68,37 @@
     -unity-font-style: bold;
     -unity-text-align: middle-center;
 }
+
+.spell-slot.stacked-active {
+    scale: 1;
+    /* Keeps it perfectly centered on the mathematical node */
+    translate: -50% -50%;
+    opacity: 1;
+    -unity-background-image-tint-color: #FFFFFF;
+}
+
+.spell-slot.stacked-inactive {
+    /* Shrink the inactive ability */
+    scale: 0.65;
+
+    /* Offsets the pivot. Because the element is rotated toward the corner, 
+       this pushes it deeper into the screen corner and slightly sideways so it peeks out.
+       Tweak these percentages to change which direction it peeks! */
+    translate: -20% -80%;
+
+    /* Darken and fade */
+    -unity-background-image-tint-color: rgb(80, 80, 80);
+    opacity: 0.85;
+}
+
+/* Disable hover effects for the inactive weapon in the stack */
+.spell-slot.stacked-inactive:hover {
+    scale: 0.65;
+    translate: -20% -80%;
+    border-color: #A0A0A0;
+}
+
+/* Hide the hotkey text for the inactive ability to prevent visual clutter */
+.spell-slot.stacked-inactive .hotkey-text {
+    display: none;
+}

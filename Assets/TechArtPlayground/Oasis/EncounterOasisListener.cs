@@ -48,7 +48,7 @@ namespace TechArtPlayground.Oasis
             Debug.Log($"[{gameObject.name}] Room cleared event received. Triggering Oasis.");
             
             // Activate the expanding healing wave
-            oasisNode.TriggerOasis();
+            oasisNode.RetractOasis();
         }
     }
 }
