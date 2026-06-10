@@ -19,15 +19,8 @@ namespace Ability.NewAbilitySystem.UI
         private void OnEnable()
         {
             if (_uiDocument == null) return;
-
-            // Query the parent UI element
             _arcHud = _uiDocument.rootVisualElement.Q<ArcHudPanel>();
-
-            if (_arcHud == null)
-            {
-                Debug.LogWarning("ArcHudPanel not found in the provided UIDocument.");
-                return;
-            }
+            if (_arcHud == null) return;
 
             // --- BIND EVENTS ---
 
@@ -40,10 +33,13 @@ namespace Ability.NewAbilitySystem.UI
             if (_playerController != null)
             {
                 _playerController.OnLoadoutChanged += HandleLoadoutChanged;
+                
+                // NEW: Listen to the swap event
+                _playerController.OnActiveSlotChanged += HandleActiveSlotChanged; 
             
-                // Map hardcoded hotkeys visually to the slots
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Primary))?.SetHotkey("LMB");
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Secondary))?.SetHotkey("RMB");
+                // Setup hardcoded hotkeys (Note: You may want to dynamically change "RMB" based on the active stack)
+                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Primary))?.SetHotkey("1"); // Primary
+                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Secondary))?.SetHotkey("2"); // Secondary
                 _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Dash))?.SetHotkey("SHF");
                 _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Special))?.SetHotkey("R");
             }
@@ -56,7 +52,37 @@ namespace Ability.NewAbilitySystem.UI
                 _ammoComponent.OnAmmoChanged -= HandleAmmoChanged;
 
             if (_playerController != null)
+            {
                 _playerController.OnLoadoutChanged -= HandleLoadoutChanged;
+                _playerController.OnActiveSlotChanged -= HandleActiveSlotChanged; // Prevent memory leak
+            }
+        }
+        
+        private void HandleActiveSlotChanged(AbilitySlot activeSlot)
+        {
+            var primarySlot = _arcHud?.GetSlot(MapSlotToIndex(AbilitySlot.Primary));
+            var secondarySlot = _arcHud?.GetSlot(MapSlotToIndex(AbilitySlot.Secondary));
+
+            if (primarySlot == null || secondarySlot == null) return;
+
+            if (activeSlot == AbilitySlot.Primary)
+            {
+                primarySlot.RemoveFromClassList("stacked-inactive");
+                primarySlot.AddToClassList("stacked-active");
+                primarySlot.BringToFront(); // Pops to the top of the render stack
+
+                secondarySlot.RemoveFromClassList("stacked-active");
+                secondarySlot.AddToClassList("stacked-inactive");
+            }
+            else // Secondary is Active
+            {
+                secondarySlot.RemoveFromClassList("stacked-inactive");
+                secondarySlot.AddToClassList("stacked-active");
+                secondarySlot.BringToFront(); 
+
+                primarySlot.RemoveFromClassList("stacked-active");
+                primarySlot.AddToClassList("stacked-inactive");
+            }
         }
 
         private void Update()
@@ -98,9 +124,10 @@ namespace Ability.NewAbilitySystem.UI
 
             if (uiSlot != null)
             {
-                // Note: Update 'Icon' to match the actual Sprite field name in your AbilityData class
-                // Sprite iconToSet = abilityData != nul; 
-                // uiSlot.SetAbility(iconToSet);
+                // Dynamically fetch the icon from the scriptable object.
+                // If abilityData is null (e.g., slot is unequipped), it passes null to clear the UI.
+                Sprite iconToSet = abilityData != null ? abilityData.Icon : null; 
+                uiSlot.SetAbility(iconToSet);
             }
         }
 

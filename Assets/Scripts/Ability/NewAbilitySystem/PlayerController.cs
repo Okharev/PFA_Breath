@@ -46,6 +46,8 @@ namespace Ability.NewAbilitySystem
         private IPlayerState currentState;
         private Camera mainCamera;
 
+        public event Action<AbilitySlot> OnActiveSlotChanged;
+        
         public NavMeshAgent Agent { get; private set; }
         public AbilityController Abilities { get; private set; }
 
@@ -74,6 +76,8 @@ namespace Ability.NewAbilitySystem
             EquipLocalSlot(AbilitySlot.Secondary, DefaultSecondary);
             EquipLocalSlot(AbilitySlot.Dash, DefaultDash);
             EquipLocalSlot(AbilitySlot.Special, DefaultSpecial);
+            
+            OnActiveSlotChanged?.Invoke(currentActiveSlot);
         }
 
         private void Update()
@@ -212,9 +216,14 @@ namespace Ability.NewAbilitySystem
             currentState?.HandleAiming(this, targetPos);
 
             if (Keyboard.current.tabKey.wasPressedThisFrame)
+            {
                 currentActiveSlot = currentActiveSlot == AbilitySlot.Primary
                     ? AbilitySlot.Secondary
                     : AbilitySlot.Primary;
+                
+                // Broadcast the swap to the HUD
+                OnActiveSlotChanged?.Invoke(currentActiveSlot);
+            }
 
             if (Mouse.current.leftButton.wasPressedThisFrame)
                 currentState?.HandleMoveInput(this, targetPos);

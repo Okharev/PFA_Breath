@@ -12,10 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a529fe6cad98467fbee1ccd9e64b92f5, type: 3}
   m_Name: NevroSecondary
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
+  Icon: {fileID: 21300000, guid: 6b8e37558f787af45bc017c29ebaaf5e, type: 3}
   abilityName: NevroSecondary
   turnCost: 1
   cooldownTurns: 2
   channelTurns: 0
+  executionDelayFraction: 0
   conditions: []
   effects:
   - rid: 996992785912430665
