@@ -65,6 +65,9 @@ public class EncounterRoomTrigger : MonoBehaviour
         if (other.CompareTag("Player")) InitiateEncounter();
     }
 
+    public event Action OnRoomTriggered;        //LPA+ Add event listener when a room is triggered
+
+
     private void InitiateEncounter()
     {
         Debug.Log($"[EncounterRoom] Player entered {gameObject.name}. Initiating Combat!");
@@ -86,6 +89,8 @@ public class EncounterRoomTrigger : MonoBehaviour
 
         GameModeManager.Instance.SetGameMode(GameMode.Combat);
         SpawnEnemies();
+
+        OnRoomTriggered?.Invoke();  //LPA+
     }
 
     private void SpawnEnemies()
