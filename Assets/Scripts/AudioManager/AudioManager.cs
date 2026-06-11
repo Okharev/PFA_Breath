@@ -52,7 +52,7 @@ public class AudioManager : MonoBehaviour
 
 
 
-private void AddToSource(Sound s)
+public void AddToSource(Sound s)
     {
         s.source.clip = s.clip;
         s.source.outputAudioMixerGroup = s.mixer;
@@ -61,6 +61,7 @@ private void AddToSource(Sound s)
         s.source.loop = s.loop;
         s.source.spatialBlend = s.spatialBlend;
         s.source.playOnAwake = s.playOnAwake;
+        s.source.minDistance = s.minDistance;
     }
 
     public void Play(string name)
