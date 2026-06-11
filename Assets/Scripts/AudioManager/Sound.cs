@@ -28,6 +28,7 @@ public class Sound
     public bool loop;
     public bool playOnAwake;
 
+    public float minDistance = 1f;
 
     //[HideInInspector]
     public AudioSource source;
