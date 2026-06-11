@@ -57,7 +57,7 @@ public class MainMenu_Event : MonoBehaviour
         //Debug.Log(" LES ZOO ZOO");
         //audioManager.Play("clic");
         //SceneManager.LoadScene("Scene_Zoo");
-        StartCoroutine(PlayGameAndWait("Scene_Zoo"));
+        StartCoroutine(PlayGameAndWait("03_Zoo"));
     }
 
     private void OnPlayCreditClick(ClickEvent evt)
