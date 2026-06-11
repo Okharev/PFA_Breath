@@ -32,7 +32,6 @@ public class AmbienceMusic : MonoBehaviour
     // Change music ambience with Game mode : Exploration or Combat
     private void HandleAmbienceChange(GameMode newMode)
     {
-        Debug.Log("game mode changed");
         //if (newMode == GameMode.Exploration)
         //{
         //    _audioManager.Play(explorationMusic);
@@ -60,7 +59,6 @@ public class AmbienceMusic : MonoBehaviour
         {
             _audioManager.Play(explorationMusic);
 
-            Debug.Log("play explo music");
 
             while (elapsedTime < timeToFade)
             {
@@ -75,7 +73,6 @@ public class AmbienceMusic : MonoBehaviour
                 yield return null;
             }
 
-            Debug.Log("pause combat music");
 
             _audioManager.Pause(combatMusic);
         }
@@ -83,7 +80,6 @@ public class AmbienceMusic : MonoBehaviour
         {
             _audioManager.Play(combatMusic);
 
-            Debug.Log("combat  music");
 
             while (elapsedTime < timeToFade)
             {
@@ -101,7 +97,6 @@ public class AmbienceMusic : MonoBehaviour
 
             _audioManager.Pause(explorationMusic);
 
-            Debug.Log("pause");
         }
 
 
