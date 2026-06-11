@@ -182,7 +182,7 @@ namespace Ability.NewAbilitySystem
             
             transientStates.Clear(); 
             
-            // NEW: Safety wipe! If the turn is forced to end (e.g., combat ends or player is stunned),
+            // Safety wipe! If the turn is forced to end (e.g., combat ends or player is stunned),
             // we must clear the lock so the player isn't soft-locked next turn.
             UnlockCombo(); 
         }
