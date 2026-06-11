@@ -188,8 +188,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioCharacter
   _abilityController: {fileID: 0}
-  hitSound: impact
-  deathSound: 
+  hitSound: hitEnemy
+  deathSound: deathEnemy
   abilityExecuted: 
 --- !u!1 &6359587058521299137
 GameObject:

@@ -5286,6 +5286,43 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!84 &92263854
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!43 &93878155
 Mesh:
   m_ObjectHideFlags: 0
@@ -16617,43 +16654,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c41de20eafddec24f82e7cd569c27d9a, type: 3}
   m_PrefabInstance: {fileID: 1614323683}
   m_PrefabAsset: {fileID: 0}
---- !u!84 &223579839
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &224848403
 Mesh:
   m_ObjectHideFlags: 0
@@ -23552,43 +23552,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!84 &271004209
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &272751922
 Mesh:
   m_ObjectHideFlags: 0
@@ -146423,6 +146386,43 @@ MonoBehaviour:
   yaw: 40
   useSmoothing: 1
   smoothTime: 0.15
+--- !u!84 &1370428546
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!43 &1370813518
 Mesh:
   m_ObjectHideFlags: 0
@@ -170185,8 +170185,8 @@ MonoBehaviour:
   windDirection: {x: -0.9759002, y: -4.8795004}
   phillipsAmplitude: 0.002
   choppiness: 0.94
-  displacementMap: {fileID: 223579839}
-  derivativeMap: {fileID: 271004209}
+  displacementMap: {fileID: 92263854}
+  derivativeMap: {fileID: 1370428546}
 --- !u!43 &1667392703
 Mesh:
   m_ObjectHideFlags: 0
@@ -188425,7 +188425,7 @@ MonoBehaviour:
     source: {fileID: 0}
   - nameMusic: hitEnemy
     typeMusic: 0
-    clip: {fileID: 8300000, guid: 01bf4c49611c407468183a58de3f4f93, type: 3}
+    clip: {fileID: 8300000, guid: 3cf828a3b7637404d870849d34ea531f, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
     volume: 0.669
     pitch: 1
@@ -188447,7 +188447,18 @@ MonoBehaviour:
     source: {fileID: 0}
   - nameMusic: clearRoom
     typeMusic: 0
-    clip: {fileID: 8300000, guid: d629805bb84c75046af93396d34d5fa0, type: 3}
+    clip: {fileID: 8300000, guid: eec1e47a8aa57d94fbe47b598af4f31a, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.5
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: deathEnemy
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: 3cf828a3b7637404d870849d34ea531f, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
     volume: 0.5
     pitch: 1
