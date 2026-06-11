@@ -19,13 +19,13 @@ public class GameOver_Event : MonoBehaviour
         ButtonRetart.RegisterCallback<ClickEvent>(OnTryAgain);
 
         ButtonMainMenu = UI_GameOver.rootVisualElement.Q("B_MainMenu") as Button;
-        ButtonRetart.RegisterCallback<ClickEvent>(BackOnMenu);
+        ButtonMainMenu.RegisterCallback<ClickEvent>(BackOnMenu);
 
         ButtonCredit = UI_GameOver.rootVisualElement.Q("B_Credit") as Button;
-        ButtonRetart.RegisterCallback<ClickEvent>(OnCreditClick);
+        ButtonCredit.RegisterCallback<ClickEvent>(OnCreditClick);
 
         ButtonQuit = UI_GameOver.rootVisualElement.Q("B_Quit") as Button;
-        ButtonRetart.RegisterCallback<ClickEvent>(OnQuitGame);
+        ButtonQuit.RegisterCallback<ClickEvent>(OnQuitGame);
     }   
     private void OnDisable()
     {
