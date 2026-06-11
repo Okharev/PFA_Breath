@@ -56,7 +56,7 @@ MonoBehaviour:
     - model: {fileID: 8926484042661615208}
       id: 0
       isStickyNote: 0
-  - title: Base Loop
+  - title: ecume
     position:
       serializedVersion: 2
       x: 2740
@@ -353,8 +353,9 @@ MonoBehaviour:
   m_Owners:
   - {fileID: 8926484042661614613}
   - {fileID: 8926484042661614662}
-  - {fileID: 8926484042661614898}
   - {fileID: 8926484042661615470}
+  - {fileID: 8926484042661614898}
+  - {fileID: 8926484042661615502}
   dataType: 0
   capacity: 32
   stripCapacity: 1
@@ -390,9 +391,11 @@ MonoBehaviour:
       slotIndex: 0
   m_OutputFlowSlot:
   - link:
+    - context: {fileID: 8926484042661615470}
+      slotIndex: 0
     - context: {fileID: 8926484042661614898}
       slotIndex: 0
-    - context: {fileID: 8926484042661615470}
+    - context: {fileID: 8926484042661615502}
       slotIndex: 0
   integration: 0
   angularIntegration: 0
@@ -1026,7 +1029,7 @@ MonoBehaviour:
   flipbookBlendFrames: 0
   flipbookMotionVectors: 0
   useSoftParticle: 0
-  vfxSystemSortPriority: 2
+  vfxSystemSortPriority: 0
   sort: 0
   sortMode: 0
   revertSorting: 0
@@ -1157,7 +1160,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Color, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"r":0.051886796951293948,"g":0.44667330384254458,"b":1.0,"a":1.0}'
+      m_SerializableObject: '{"r":0.051886796951293948,"g":0.44667330384254458,"b":1.0,"a":0.0}'
     m_Space: -1
   m_Property:
     name: _Water_Color
@@ -1327,7 +1330,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Color, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"r":0.2971698045730591,"g":0.6310549378395081,"b":1.0,"a":1.0}'
+      m_SerializableObject: '{"r":0.2971698045730591,"g":0.6310549378395081,"b":1.0,"a":0.0}'
     m_Space: -1
   m_Property:
     name: _MainTexColor
@@ -1622,7 +1625,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614916}
   - {fileID: 8926484042661614917}
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 0
+  m_UICollapsed: 1
   m_UISuperCollapsed: 0
   m_MasterSlot: {fileID: 8926484042661614915}
   m_MasterData:
@@ -1901,7 +1904,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614928}
   - {fileID: 8926484042661614929}
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 0
+  m_UICollapsed: 1
   m_UISuperCollapsed: 0
   m_MasterSlot: {fileID: 8926484042661614926}
   m_MasterData:
@@ -1910,7 +1913,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.4000000059604645,"y":5.150000095367432,"z":1.0}'
+      m_SerializableObject: '{"x":0.5600000023841858,"y":5.5,"z":3.4000000953674318}'
     m_Space: -1
   m_Property:
     name: _Scale
@@ -3211,7 +3214,7 @@ MonoBehaviour:
   flipbookBlendFrames: 0
   flipbookMotionVectors: 0
   useSoftParticle: 0
-  vfxSystemSortPriority: 1
+  vfxSystemSortPriority: 4
   sort: 0
   sortMode: 0
   revertSorting: 0
@@ -6198,7 +6201,7 @@ MonoBehaviour:
   flipbookBlendFrames: 0
   flipbookMotionVectors: 0
   useSoftParticle: 0
-  vfxSystemSortPriority: 5
+  vfxSystemSortPriority: 1
   sort: 0
   sortMode: 0
   revertSorting: 0
@@ -7670,7 +7673,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.029999999329447748,"y":0.009999999776482582,"z":0.019999999552965165}'
+      m_SerializableObject: '{"x":0.05000000074505806,"y":0.019999999552965165,"z":0.029999999329447748}'
     m_Space: -1
   m_Property:
     name: A
@@ -7797,7 +7800,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615455}
   - {fileID: 8926484042661615456}
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 0
+  m_UICollapsed: 1
   m_UISuperCollapsed: 0
   m_MasterSlot: {fileID: 8926484042661615453}
   m_MasterData:
@@ -7806,7 +7809,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.05000000074505806,"y":0.014999999664723874,"z":0.05000000074505806}'
+      m_SerializableObject: '{"x":0.09000000357627869,"y":0.05999999865889549,"z":0.05000000074505806}'
     m_Space: -1
   m_Property:
     name: B
@@ -8024,7 +8027,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEditor.VFX.Position, Unity.VisualEffectGraph.Editor,
           Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"position":{"x":0.0,"y":-5.0,"z":0.6600000262260437}}'
+      m_SerializableObject: '{"position":{"x":0.05000000074505806,"y":-5.300000190734863,"z":1.9299999475479127}}'
     m_Space: 0
   m_Property:
     name: _Position
@@ -8258,7 +8261,7 @@ MonoBehaviour:
   flipbookBlendFrames: 0
   flipbookMotionVectors: 0
   useSoftParticle: 0
-  vfxSystemSortPriority: 4
+  vfxSystemSortPriority: 2
   sort: 0
   sortMode: 0
   revertSorting: 0
@@ -8348,7 +8351,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.4000000059604645,"y":5.0,"z":1.0}'
+      m_SerializableObject: '{"x":0.5600000023841858,"y":5.599999904632568,"z":3.4000000953674318}'
     m_Space: -1
   m_Property:
     name: _Scale
@@ -8543,7 +8546,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 1
+      m_SerializableObject: 1.05
     m_Space: -1
   m_Property:
     name: _Size
@@ -8674,7 +8677,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615485}
   - {fileID: 8926484042661615486}
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 0
+  m_UICollapsed: 1
   m_UISuperCollapsed: 0
   m_MasterSlot: {fileID: 8926484042661615482}
   m_MasterData:
@@ -9350,9 +9353,11 @@ MonoBehaviour:
   - {fileID: 8926484042661615532}
   m_OutputSlots: []
   m_Label: cylinder outside
-  m_Data: {fileID: 8926484042661615534}
+  m_Data: {fileID: 8926484042661614627}
   m_InputFlowSlot:
-  - link: []
+  - link:
+    - context: {fileID: 8926484042661614662}
+      slotIndex: 0
   m_OutputFlowSlot:
   - link: []
   blendMode: 1
@@ -9453,7 +9458,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615506}
   - {fileID: 8926484042661615507}
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
+  m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_MasterSlot: {fileID: 8926484042661615504}
   m_MasterData:
@@ -9462,7 +9467,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.009999999776482582,"y":0.10000000149011612,"z":0.009999999776482582}'
+      m_SerializableObject: '{"x":0.5600000023841858,"y":5.599999904632568,"z":3.200000047683716}'
     m_Space: -1
   m_Property:
     name: _Scale
@@ -10271,7 +10276,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.0,"y":0.10000000149011612}'
+      m_SerializableObject: '{"x":0.0,"y":0.4000000059604645}'
     m_Space: -1
   m_Property:
     name: _MainTexSpeed
@@ -10371,7 +10376,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.139
+      m_SerializableObject: 0.581
     m_Space: -1
   m_Property:
     name: _Clip
@@ -10405,7 +10410,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 1.24
+      m_SerializableObject: 1.96
     m_Space: -1
   m_Property:
     name: _MeshTexPower
@@ -10432,31 +10437,3 @@ MonoBehaviour:
   m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 1
   m_UISuperCollapsed: 0
---- !u!114 &8926484042661615534
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d78581a96eae8bf4398c282eb0b098bd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.VisualEffectGraph.Editor::UnityEditor.VFX.VFXDataParticle
-  m_UIIgnoredErrors: []
-  m_Parent: {fileID: 0}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
-  title: 
-  m_Owners:
-  - {fileID: 8926484042661615502}
-  dataType: 0
-  capacity: 128
-  stripCapacity: 1
-  particlePerStripCount: 128
-  needsComputeBounds: 0
-  boundsMode: 0
-  m_Space: 0

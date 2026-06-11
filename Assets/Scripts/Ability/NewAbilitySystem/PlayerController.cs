@@ -32,7 +32,9 @@ namespace Ability.NewAbilitySystem
         public AbilityData DefaultSecondary;
         public AbilityData DefaultDash;
         public AbilityData DefaultSpecial;
+        public AbilityData DefaultReload;
 
+        
         [Header("Input Settings")]
         public LayerMask GroundLayer;
         public LayerMask InteractableLayer;
@@ -76,6 +78,7 @@ namespace Ability.NewAbilitySystem
             EquipLocalSlot(AbilitySlot.Secondary, DefaultSecondary);
             EquipLocalSlot(AbilitySlot.Dash, DefaultDash);
             EquipLocalSlot(AbilitySlot.Special, DefaultSpecial);
+            EquipLocalSlot(AbilitySlot.Reload, DefaultReload);
             
             OnActiveSlotChanged?.Invoke(currentActiveSlot);
         }
@@ -133,7 +136,7 @@ namespace Ability.NewAbilitySystem
             currentState?.EndTurn(this);
         }
 
-        // --- NEW: LOCAL EVENT BUS ---
+        // --- LOCAL EVENT BUS ---
         // UI will listen to this so it knows exactly what the player is holding!
         public event Action<AbilitySlot, AbilityData> OnLoadoutChanged;
 
@@ -171,6 +174,7 @@ namespace Ability.NewAbilitySystem
                 AbilitySlot.Secondary => DefaultSecondary,
                 AbilitySlot.Dash => DefaultDash,
                 AbilitySlot.Special => DefaultSpecial,
+                AbilitySlot.Reload => DefaultReload,
                 _ => null
             };
         }
@@ -236,6 +240,10 @@ namespace Ability.NewAbilitySystem
                 if (activeLoadout.TryGetValue(AbilitySlot.Dash, out AbilityData dashAbility))
                     currentState?.HandleAbilityInput(this, dashAbility, targetPos);
 
+            if (Keyboard.current.fKey.wasPressedThisFrame)
+                if (activeLoadout.TryGetValue(AbilitySlot.Special, out AbilityData specialAbility))
+                    currentState?.HandleAbilityInput(this, specialAbility, targetPos);
+            
             if (Keyboard.current.rKey.wasPressedThisFrame)
                 if (activeLoadout.TryGetValue(AbilitySlot.Special, out AbilityData specialAbility))
                     currentState?.HandleAbilityInput(this, specialAbility, targetPos);
