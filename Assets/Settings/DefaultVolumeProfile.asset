@@ -293,21 +293,48 @@ MonoBehaviour:
   m_Name: VolumetricFogVolumeComponent
   m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.VolumetricFog.VolumetricFogVolumeComponent
   active: 1
-  anisotropy:
-    m_OverrideState: 1
-    m_Value: 0.75
   density:
     m_OverrideState: 1
-    m_Value: 0.05
+    m_Value: 0.06
+  anisotropy:
+    m_OverrideState: 1
+    m_Value: 0.228
+  colorTint:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0.8757844, b: 0.8745098, a: 1}
+  edgeColor:
+    m_OverrideState: 1
+    m_Value: {r: 0.4, g: 0.45, b: 0.5, a: 1}
+  rayIntensity:
+    m_OverrideState: 1
+    m_Value: 1.88
+  baseHeight:
+    m_OverrideState: 1
+    m_Value: 0
+  heightFalloff:
+    m_OverrideState: 1
+    m_Value: 0
+  ambientMultiplier:
+    m_OverrideState: 1
+    m_Value: 0
+  noiseTexture:
+    m_OverrideState: 1
+    m_Value: {fileID: 11700000, guid: dbca65ed5cc7f0a4b9b33dfdab30a47e, type: 2}
+  noiseScale:
+    m_OverrideState: 1
+    m_Value: 0.02
+  noiseIntensity:
+    m_OverrideState: 1
+    m_Value: 1
+  windVelocity:
+    m_OverrideState: 1
+    m_Value: {x: 0.2, y: 0, z: 0.1}
   maxDistance:
     m_OverrideState: 1
-    m_Value: 52.42
+    m_Value: 64
   stepCount:
     m_OverrideState: 1
     m_Value: 64
-  colorTint:
-    m_OverrideState: 1
-    m_Value: {r: 1, g: 1, b: 1, a: 0}
 --- !u!114 &-4463884970436517307
 MonoBehaviour:
   m_ObjectHideFlags: 3
