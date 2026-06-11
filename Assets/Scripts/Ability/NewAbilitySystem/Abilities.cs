@@ -217,7 +217,7 @@ namespace Ability.NewAbilitySystem
                 controller.SetTransientState(comboKey, 1);
                 controller.RefundCooldown(context.Data); 
                 
-                // NEW: Lock the controller so the player CANNOT shoot or walk.
+                //  Lock the controller so the player CANNOT shoot or walk.
                 controller.LockCombo(context.Data);
             }
             else
@@ -225,7 +225,7 @@ namespace Ability.NewAbilitySystem
                 // --- PHASE 2 ---
                 controller.SetTransientState(comboKey, 0);
                 
-                // NEW: Unlock the controller so normal gameplay resumes next turn.
+                // Unlock the controller so normal gameplay resumes next turn.
                 controller.UnlockCombo();
                 
                 if (TurnManager.Instance != null)
@@ -311,7 +311,7 @@ namespace Ability.NewAbilitySystem
 
         public void DrawPreview(AbilityContext context, IntentDrawer drawer)
         {
-            // ... (keep your existing DrawPreview code here)
+            // Implement me !!!!!!!
         }
     }
     
@@ -659,7 +659,7 @@ namespace Ability.NewAbilitySystem
         [HideInInspector] public string name = "Safe Landing Check";
         
         [Tooltip("How far down we check for valid ground.")]
-        public float dropCheckTolerance = 2.0f;
+        public float dropCheckTolerance = 0.5f;
 
         public bool CanExecute(AbilityContext context)
         {
