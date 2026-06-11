@@ -47447,6 +47447,43 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!84 &605804624
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!43 &610736544
 Mesh:
   m_ObjectHideFlags: 0
@@ -68709,8 +68746,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioHealth
   _abilityController: {fileID: 786706523}
-  hitSound: impact
-  deathSound: wind
+  hitSound: hitPlayer
+  deathSound: death
   abilityExecuted: isole
 --- !u!1 &787941012
 GameObject:
@@ -94042,43 +94079,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!84 &933578240
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &936714825
 Mesh:
   m_ObjectHideFlags: 0
@@ -127223,43 +127223,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!84 &1230892953
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1233597136
 GameObject:
   m_ObjectHideFlags: 0
@@ -168958,8 +168921,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cca485a5a9a8d34e8aeae8c589fe460, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioTriggerRoom
-  enteringSound: 
-  clearingSound: 
+  enteringSound: enterRoom
+  clearingSound: clearRoom
 --- !u!43 &1627664640
 Mesh:
   m_ObjectHideFlags: 0
@@ -170129,8 +170092,8 @@ MonoBehaviour:
   windDirection: {x: -0.9759002, y: -4.8795004}
   phillipsAmplitude: 0.002
   choppiness: 0.94
-  displacementMap: {fileID: 1230892953}
-  derivativeMap: {fileID: 933578240}
+  displacementMap: {fileID: 605804624}
+  derivativeMap: {fileID: 1804323332}
 --- !u!43 &1667392703
 Mesh:
   m_ObjectHideFlags: 0
@@ -187867,6 +187830,43 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1793205369}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!84 &1804323332
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1808005162
 GameObject:
   m_ObjectHideFlags: 0
@@ -188334,17 +188334,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   sounds:
-  - nameMusic: wind
+  - nameMusic: exploration
     typeMusic: 0
-    clip: {fileID: 8300000, guid: 72e2d43dc18b5514e834b30e2f0ef07c, type: 3}
+    clip: {fileID: 8300000, guid: dab425a2f5b80fc4fa44df3b4f8e959f, type: 3}
     mixer: {fileID: -6103896839496543522, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.959
+    volume: 0.802
     pitch: 1
     spatialBlend: 0
-    loop: 0
-    playOnAwake: 1
+    loop: 1
+    playOnAwake: 0
     source: {fileID: 0}
-  - nameMusic: impact
+  - nameMusic: combat
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: 27eb44c0d7b1d0c459abaf21a8f5c1fc, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.5
+    pitch: 1
+    spatialBlend: 0
+    loop: 1
+    playOnAwake: 0
+    source: {fileID: 0}
+  - nameMusic: hitPlayer
     typeMusic: 0
     clip: {fileID: 8300000, guid: f506a157cd33e77489aa0b75bad00a71, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
@@ -188354,17 +188364,27 @@ MonoBehaviour:
     loop: 0
     playOnAwake: 1
     source: {fileID: 0}
-  - nameMusic: clic
+  - nameMusic: hitEnemy
     typeMusic: 0
-    clip: {fileID: 8300000, guid: a4b38ec9476d0e645b025fa4cc18742e, type: 3}
+    clip: {fileID: 8300000, guid: f506a157cd33e77489aa0b75bad00a71, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
     volume: 0.5
     pitch: 1
     spatialBlend: 0
     loop: 0
-    playOnAwake: 1
+    playOnAwake: 0
     source: {fileID: 0}
-  - nameMusic: isole
+  - nameMusic: enterRoom
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: ed7b42c3c5b51ee4f9699e2ba921ad27, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.5
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
+    source: {fileID: 0}
+  - nameMusic: clearRoom
     typeMusic: 0
     clip: {fileID: 8300000, guid: 27eb44c0d7b1d0c459abaf21a8f5c1fc, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
@@ -188372,7 +188392,17 @@ MonoBehaviour:
     pitch: 1
     spatialBlend: 0
     loop: 0
-    playOnAwake: 1
+    playOnAwake: 0
+    source: {fileID: 0}
+  - nameMusic: clicButton
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: ed7b42c3c5b51ee4f9699e2ba921ad27, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.5
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
     source: {fileID: 0}
   audioMixer: {fileID: 24100000, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
   ambienceMusic: 
@@ -188388,9 +188418,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d70055b28ad074479f2f62ae7977135, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AmbienceMusic
-  explorationMusic: wind
-  combatMusic: impact
-  effectClearing: 
+  timeToFade: 0.25
+  explorationMusic: exploration
+  combatMusic: combat
 --- !u!43 &1822627137
 Mesh:
   m_ObjectHideFlags: 0
