@@ -1,3 +1,5 @@
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -10,6 +12,8 @@ public class MainMenu_Event : MonoBehaviour
     private Button ButtonZoo;
     private UIDocument UIMain_Menu;
     private AudioManager audioManager;
+
+    public string buttonSound;
 
     private void Awake()
     {
@@ -38,25 +42,30 @@ public class MainMenu_Event : MonoBehaviour
         ButtonCredit.UnregisterCallback<ClickEvent>(OnPlayCreditClick);
     }
 
+    
+
     private void OnPlayGameClick(ClickEvent evt)
     {
-        Debug.Log("Bienvenue a XAR SAROTH !!!");
-        audioManager.Play("clic");
-        SceneManager.LoadScene("01_Level");
+        StartCoroutine(PlayGameAndWait("01_Level"));
+        //Debug.Log("Bienvenue a XAR SAROTH !!!");
+        //audioManager.Play("clic");
+        //SceneManager.LoadScene("01_Level");
     }
 
     private void OnPlayZooClick(ClickEvent evt)
     {
-        Debug.Log(" LES ZOO ZOO");
-        audioManager.Play("clic");
-        SceneManager.LoadScene("Scene_Zoo");
+        //Debug.Log(" LES ZOO ZOO");
+        //audioManager.Play("clic");
+        //SceneManager.LoadScene("Scene_Zoo");
+        StartCoroutine(PlayGameAndWait("Scene_Zoo"));
     }
 
     private void OnPlayCreditClick(ClickEvent evt)
     {
-        Debug.Log("The End M*therfucker");
-        audioManager.Play("clic");
-        SceneManager.LoadScene("04_CreditMenu");
+        //Debug.Log("The End M*therfucker");
+        //audioManager.Play("clic");
+        //SceneManager.LoadScene("04_CreditMenu");
+        StartCoroutine(PlayGameAndWait("04_CreditMenu"));
     }
 
     private void QuitClick(ClickEvent evt)
@@ -65,4 +74,16 @@ public class MainMenu_Event : MonoBehaviour
         audioManager.Play("clic");
         Application.Quit();
     }
+
+    private IEnumerator PlayGameAndWait(string scene)
+    {
+        Sound s = audioManager.GetSound(buttonSound);
+        audioManager.Play(buttonSound);
+
+
+        yield return new WaitForSeconds(s.clip.length);
+        SceneManager.LoadScene(scene);
+    }
+
+
 }

@@ -12,6 +12,8 @@ public class AudioManager : MonoBehaviour
     public Sound[] sounds;
     [SerializeField] AudioMixer audioMixer;
 
+    public string ambienceMusic;
+
     // Une liste des musique qui sont en cours de lecture
     // Faire pause à ces musiques si on est en pause
 
@@ -38,7 +40,19 @@ public class AudioManager : MonoBehaviour
 
     }
 
-    private void AddToSource(Sound s)
+
+    private void Start()
+    {
+        if (ambienceMusic != null) 
+        {
+            Play(ambienceMusic);
+        }
+        
+    }
+
+
+
+private void AddToSource(Sound s)
     {
         s.source.clip = s.clip;
         s.source.outputAudioMixerGroup = s.mixer;
@@ -54,7 +68,6 @@ public class AudioManager : MonoBehaviour
         Sound s = Array.Find(sounds, sound => sound.nameMusic == name);
         if (s == null)
         {
-            Debug.Log("didn't find the sound");
             return;
         }
 
@@ -69,9 +82,19 @@ public class AudioManager : MonoBehaviour
         //    AddToSource(s);
         //}
 
-        Debug.Log("the sound was found");
         s.source.Play();
 
+    }
+
+    public void Pause(string name)
+    {
+        Sound s = Array.Find(sounds, sound => sound.nameMusic == name);
+        if (s == null)
+        {
+            return;
+        }
+
+        s.source.Pause();
     }
 
     public void SetMainVolume(float volume)
@@ -85,8 +108,9 @@ public class AudioManager : MonoBehaviour
     }
 
 
-    public IEnumerator PlayOnActor(string name, GameObject actor)
+    public IEnumerator PlayOnGO(string name, GameObject actor)
     {
+        Debug.Log(actor.gameObject.name);
         Sound sound = GetSound(name);
 
         sound.source = actor.gameObject.AddComponent<AudioSource>();
@@ -111,6 +135,6 @@ public class AudioManager : MonoBehaviour
 
     }
 
-
+    
 
 }

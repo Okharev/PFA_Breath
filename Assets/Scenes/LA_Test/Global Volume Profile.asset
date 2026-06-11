@@ -107,6 +107,62 @@ MonoBehaviour:
   - {fileID: 6121622075943090965}
   - {fileID: 6334202769477601228}
   - {fileID: -7418994651866997575}
+  - {fileID: 5804270692322377650}
+--- !u!114 &5804270692322377650
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48642e95733858b458dc5e14f96d4eee, type: 3}
+  m_Name: VolumetricFogVolumeComponent
+  m_EditorClassIdentifier: Assembly-CSharp::TechArtPlayground.VolumetricFog.VolumetricFogVolumeComponent
+  active: 1
+  density:
+    m_OverrideState: 1
+    m_Value: 0.1
+  anisotropy:
+    m_OverrideState: 1
+    m_Value: 0.92
+  colorTint:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 0.8757844, b: 0.8745098, a: 1}
+  edgeColor:
+    m_OverrideState: 1
+    m_Value: {r: 0.4, g: 0.45, b: 0.5, a: 1}
+  rayIntensity:
+    m_OverrideState: 1
+    m_Value: 1.64
+  baseHeight:
+    m_OverrideState: 1
+    m_Value: 0
+  heightFalloff:
+    m_OverrideState: 1
+    m_Value: 0.01
+  ambientMultiplier:
+    m_OverrideState: 1
+    m_Value: 0.155
+  noiseTexture:
+    m_OverrideState: 1
+    m_Value: {fileID: 11700000, guid: dbca65ed5cc7f0a4b9b33dfdab30a47e, type: 2}
+  noiseScale:
+    m_OverrideState: 1
+    m_Value: 0.2
+  noiseIntensity:
+    m_OverrideState: 1
+    m_Value: 0.988
+  windVelocity:
+    m_OverrideState: 1
+    m_Value: {x: 0.2, y: 0, z: 0.1}
+  maxDistance:
+    m_OverrideState: 1
+    m_Value: 64
+  stepCount:
+    m_OverrideState: 1
+    m_Value: 64
 --- !u!114 &6121622075943090965
 MonoBehaviour:
   m_ObjectHideFlags: 3

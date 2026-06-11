@@ -31,6 +31,7 @@ public class IsometricCameraFollow : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (target == null) return;
         // 1. Calculate the isometric rotation based on pitch and yaw angles
         Quaternion cameraRotation = Quaternion.Euler(pitch, yaw, 0f);
 
