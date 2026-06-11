@@ -41,7 +41,7 @@ namespace RoomBuilding
                 roomProps[i] = _propParent.GetChild(i);
             }
 
-            _rebuilder.SnapshotCleanState(roomProps);
+            // _rebuilder.SnapshotCleanState(roomProps);
             
             Debug.Log($"[RoomEncounterController] État initial sauvegardé avec succès pour {roomProps.Length} objets ! N'oublie pas de sauvegarder ta scène.");
         }
@@ -126,8 +126,8 @@ namespace RoomBuilding
         {
             Debug.Log("Room cleared! Executing dual-snapshot rebuild.");
             
-            _rebuilder.SnapshotDestroyedState();
-            _rebuilder.TriggerRebuild();
+            // _rebuilder.SnapshotDestroyedState();
+            // _rebuilder.TriggerRebuild();
         }
     }
 }
