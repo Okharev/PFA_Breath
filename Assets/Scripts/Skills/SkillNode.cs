@@ -39,7 +39,8 @@ namespace Skills
         Secondary,
         Movement,
         Special,
-        Dash
+        Dash,
+        Reload
     }
 
     public enum NodeType
