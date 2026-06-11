@@ -16617,6 +16617,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c41de20eafddec24f82e7cd569c27d9a, type: 3}
   m_PrefabInstance: {fileID: 1614323683}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &223579839
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!43 &224848403
 Mesh:
   m_ObjectHideFlags: 0
@@ -23515,6 +23552,43 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!84 &271004209
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!43 &272751922
 Mesh:
   m_ObjectHideFlags: 0
@@ -49395,43 +49469,6 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
---- !u!84 &628742144
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &628978398
 GameObject:
   m_ObjectHideFlags: 0
@@ -143838,43 +143875,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!84 &1357929730
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &1362344783
 Mesh:
   m_ObjectHideFlags: 0
@@ -145305,6 +145305,71 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1001 &1365684709
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4618493869378184167, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 8300000, guid: 35486aad7be630a4bb81faa5bdb44db9, type: 3}
+    - target: {fileID: 4618493869378184167, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: MinDistance
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 5747366734917314246, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_Name
+      value: SpatialAudio
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.44536155
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.39
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.37200764
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d36852d1dd062294b9a1576681d06958, type: 3}
 --- !u!1 &1366169162
 GameObject:
   m_ObjectHideFlags: 0
@@ -146222,7 +146287,6 @@ GameObject:
   - component: {fileID: 1370422069}
   - component: {fileID: 1370422071}
   - component: {fileID: 1370422068}
-  - component: {fileID: 1370422067}
   - component: {fileID: 1370422070}
   m_Layer: 0
   m_Name: Main Camera
@@ -146231,14 +146295,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &1370422067
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1370422066}
-  m_Enabled: 1
 --- !u!20 &1370422068
 Camera:
   m_ObjectHideFlags: 0
@@ -170129,8 +170185,8 @@ MonoBehaviour:
   windDirection: {x: -0.9759002, y: -4.8795004}
   phillipsAmplitude: 0.002
   choppiness: 0.94
-  displacementMap: {fileID: 1357929730}
-  derivativeMap: {fileID: 628742144}
+  displacementMap: {fileID: 223579839}
+  derivativeMap: {fileID: 271004209}
 --- !u!43 &1667392703
 Mesh:
   m_ObjectHideFlags: 0
@@ -188338,61 +188394,67 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: 65ecb5bd3ac4ae94e8a2a5404ecb4cd9, type: 3}
     mixer: {fileID: -6103896839496543522, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.802
+    volume: 0.515
     pitch: 1
     spatialBlend: 0
     loop: 1
     playOnAwake: 0
+    minDistance: 1
     source: {fileID: 0}
   - nameMusic: combat
     typeMusic: 0
     clip: {fileID: 8300000, guid: c7722c6b8f8145b4c8b432ed91750457, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.515
     pitch: 1
     spatialBlend: 0
     loop: 1
     playOnAwake: 0
+    minDistance: 1
     source: {fileID: 0}
   - nameMusic: hitPlayer
     typeMusic: 0
     clip: {fileID: 8300000, guid: 3cf828a3b7637404d870849d34ea531f, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.669
     pitch: 1
     spatialBlend: 0
     loop: 0
     playOnAwake: 1
+    minDistance: 1
     source: {fileID: 0}
   - nameMusic: hitEnemy
     typeMusic: 0
-    clip: {fileID: 8300000, guid: f506a157cd33e77489aa0b75bad00a71, type: 3}
+    clip: {fileID: 8300000, guid: 01bf4c49611c407468183a58de3f4f93, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.669
     pitch: 1
     spatialBlend: 0
     loop: 0
     playOnAwake: 0
+    minDistance: 1
     source: {fileID: 0}
   - nameMusic: enterRoom
     typeMusic: 0
     clip: {fileID: 8300000, guid: 74e50756d61ffab4f9158c2fee7a862b, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.669
     pitch: 1
     spatialBlend: 0
     loop: 0
     playOnAwake: 0
+    minDistance: 1
     source: {fileID: 0}
   - nameMusic: clearRoom
     typeMusic: 0
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: d629805bb84c75046af93396d34d5fa0, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
     volume: 0.5
     pitch: 1
     spatialBlend: 0
     loop: 0
     playOnAwake: 0
+    minDistance: 1
     source: {fileID: 0}
   - nameMusic: clicButton
     typeMusic: 0
@@ -188403,6 +188465,7 @@ MonoBehaviour:
     spatialBlend: 0
     loop: 0
     playOnAwake: 0
+    minDistance: 1
     source: {fileID: 0}
   audioMixer: {fileID: 24100000, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
   ambienceMusic: 
@@ -218260,3 +218323,4 @@ SceneRoots:
   - {fileID: 809224246}
   - {fileID: 304253894}
   - {fileID: 956528398}
+  - {fileID: 1365684709}
