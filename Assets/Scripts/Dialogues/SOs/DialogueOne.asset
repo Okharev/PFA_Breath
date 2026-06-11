@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
-  nextNode: {fileID: -7766395334477247457}
+  nextNode: {fileID: 0}
   position: {x: 350.4, y: 160}
   choices: []
   enterEffects: []
@@ -35,7 +35,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
   speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
   text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
-  nextNode: {fileID: 7230074648593141015}
+  nextNode: {fileID: 0}
   position: {x: 700, y: 160}
   choices: []
   enterEffects: []
@@ -56,7 +56,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
-  nextNode: {fileID: -221593598531952535}
+  nextNode: {fileID: 0}
   position: {x: 350.4, y: 320}
   choices: []
   enterEffects: []
@@ -77,7 +77,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
-  nextNode: {fileID: 6062544571918634021}
+  nextNode: {fileID: 0}
   position: {x: 1400, y: 160}
   choices: []
   enterEffects: []
@@ -102,15 +102,15 @@ MonoBehaviour:
   position: {x: 0, y: 0}
   choices:
   - choiceText: aaaaaaa
-    nextNode: {fileID: 7230074648593141015}
+    nextNode: {fileID: 0}
     conditions: []
     choiceEffects: []
   - choiceText: eeeee
-    nextNode: {fileID: -8125061978649550496}
+    nextNode: {fileID: 0}
     conditions: []
     choiceEffects: []
   - choiceText: ffff
-    nextNode: {fileID: -7189770314788902399}
+    nextNode: {fileID: 0}
     conditions: []
     choiceEffects: []
   enterEffects: []
@@ -167,7 +167,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: Enter dialogue here...
-  nextNode: {fileID: -221593598531952535}
+  nextNode: {fileID: 0}
   position: {x: 1750.4, y: 0}
   choices: []
   enterEffects: []
@@ -192,20 +192,20 @@ MonoBehaviour:
   position: {x: 1050.4, y: 0}
   choices:
   - choiceText: i grant 4 blue points
-    nextNode: {fileID: 8992933567841023472}
+    nextNode: {fileID: 0}
     conditions: []
     choiceEffects:
     - rid: 6047565912557748293
   - choiceText: 
-    nextNode: {fileID: 8992933567841023472}
+    nextNode: {fileID: 0}
     conditions: []
     choiceEffects: []
   - choiceText: 
-    nextNode: {fileID: -2865612445419964773}
+    nextNode: {fileID: 0}
     conditions: []
     choiceEffects: []
   - choiceText: 
-    nextNode: {fileID: -2865612445419964773}
+    nextNode: {fileID: 0}
     conditions: []
     choiceEffects: []
   enterEffects: []
@@ -231,7 +231,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: I am <b>fine</b>, but the ground is <color=#ff0000><tremble>shaking violently!</tremble></color>
-  nextNode: {fileID: 6062544571918634021}
+  nextNode: {fileID: 0}
   position: {x: 1400, y: 0}
   choices: []
   enterEffects: []

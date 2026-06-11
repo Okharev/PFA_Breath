@@ -57,7 +57,7 @@ public class MainMenu_Event : MonoBehaviour
         //Debug.Log(" LES ZOO ZOO");
         //audioManager.Play("clic");
         //SceneManager.LoadScene("Scene_Zoo");
-        StartCoroutine(PlayGameAndWait("Scene_Zoo"));
+        StartCoroutine(PlayGameAndWait("03_Zoo"));
     }
 
     private void OnPlayCreditClick(ClickEvent evt)
@@ -70,9 +70,10 @@ public class MainMenu_Event : MonoBehaviour
 
     private void QuitClick(ClickEvent evt)
     {
-        Debug.Log("Tmort Tmort AAAAAAH");
-        audioManager.Play("clic");
-        Application.Quit();
+        //Debug.Log("Tmort Tmort AAAAAAH");
+        //audioManager.Play("clic");
+        //Application.Quit();
+        StartCoroutine(QuitGameAndWait());
     }
 
     private IEnumerator PlayGameAndWait(string scene)
@@ -85,5 +86,14 @@ public class MainMenu_Event : MonoBehaviour
         SceneManager.LoadScene(scene);
     }
 
+    private IEnumerator QuitGameAndWait()
+    {
+        Sound s = audioManager.GetSound(buttonSound);
+        audioManager.Play(buttonSound);
+
+
+        yield return new WaitForSeconds(s.clip.length);
+        Application.Quit();
+    }
 
 }

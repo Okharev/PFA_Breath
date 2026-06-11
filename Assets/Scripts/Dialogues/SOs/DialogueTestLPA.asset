@@ -1,0 +1,241 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8197217351717156893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Yeah yeah... They said things like \xAB you could do better \xBB or \"You're
+    not enough\" ( or \xAB My life would've be better off without you \xBB )"
+  nextNode: {fileID: -224905437831176105}
+  position: {x: 1778, y: 149}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-5624410957584826671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: 'Darling, do you remember the room? '
+  nextNode: {fileID: 0}
+  position: {x: 979, y: 185}
+  choices:
+  - choiceText: I remember the sound
+    nextNode: {fileID: -5116608510381126891}
+    conditions: []
+    choiceEffects: []
+  - choiceText: I was smaller back then
+    nextNode: {fileID: -4604305591470745926}
+    conditions: []
+    choiceEffects: []
+  - choiceText: Everything's our fault
+    nextNode: {fileID: 0}
+    conditions:
+    - rid: 1439625947722547279
+    - rid: 1439625947722547280
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439625947722547279
+      type: {class: RequirePreviousChoiceCondition, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        requiredChoiceId: Phase2_Sound
+        invertCheck: 0
+    - rid: 1439625947722547280
+      type: {class: RequirePreviousChoiceCondition, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        requiredChoiceId: Phase2_Small
+        invertCheck: 0
+--- !u!114 &-5116608510381126891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: It sounded like a voice. I can still here it in my sleep
+  nextNode: {fileID: -8197217351717156893}
+  position: {x: 1335, y: 152}
+  choices: []
+  enterEffects:
+  - rid: 1439625947722547277
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439625947722547277
+      type: {class: RecordLocalChoiceEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        choiceId: Phase2_Sound
+--- !u!114 &-4604305591470745926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: Why does it matter (it matters somehow)
+  nextNode: {fileID: 50791689099511288}
+  position: {x: 1354, y: 287}
+  choices: []
+  enterEffects:
+  - rid: 1439625947722547278
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439625947722547278
+      type: {class: RecordLocalChoiceEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        choiceId: Phase2_Small
+--- !u!114 &-4320875656873797890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Because they aren\u2019t ready. Simple as that."
+  nextNode: {fileID: 843512277631787137}
+  position: {x: 238, y: 172}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-224905437831176105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: I'm confused. Whose voice is that?
+  nextNode: {fileID: -5624410957584826671}
+  position: {x: 2229, y: 147}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 221ded2a86284bd8af3d68ba095cedeb, type: 3}
+  m_Name: DialogueTestLPA
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.Conversation
+  conversationTitle: test pla
+  startingNode: {fileID: -4320875656873797890}
+--- !u!114 &50791689099511288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: We were so vulnerable, so naive - that's for sure. We couldn't understand
+    any of her words
+  nextNode: {fileID: 8895636065326907769}
+  position: {x: 1754, y: 293}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &843512277631787137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: 'Darling, do you remember the room? '
+  nextNode: {fileID: -5624410957584826671}
+  position: {x: 609, y: 176}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &8895636065326907769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: We understood enough
+  nextNode: {fileID: -5624410957584826671}
+  position: {x: 2230, y: 345}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
