@@ -1,18 +1,21 @@
 using Ability.NewAbilitySystem;
+using System.Collections;
 using UnityEngine;
+using static Autodesk.Fbx.FbxTime;
 
 public class AmbienceMusic : MonoBehaviour
 {
     private AudioManager _audioManager;
     private GameModeManager _gameModeManager;
 
+    public float timeToFade = 0.25f;
 
     [Header("Music")]
     public string explorationMusic;
     public string combatMusic;
 
-    [Header("Room")]
-    public string effectClearing;
+    //[Header("Room")]
+    //public string effectClearing;
 
 
 
@@ -30,16 +33,79 @@ public class AmbienceMusic : MonoBehaviour
     private void HandleAmbienceChange(GameMode newMode)
     {
         Debug.Log("game mode changed");
+        //if (newMode == GameMode.Exploration)
+        //{
+        //    _audioManager.Play(explorationMusic);
+        //    _audioManager.Pause(combatMusic);
+        //}
+        //else
+        //{
+        //    _audioManager.Play(combatMusic);
+        //    _audioManager.Pause(explorationMusic);
+        //}
+
+        StopAllCoroutines();
+        StartCoroutine(FadeTrack(newMode));
+
+    }
+
+    private IEnumerator FadeTrack(GameMode newMode)
+    {
+        float elapsedTime = 0f;
+
+        Sound exploSound = _audioManager.GetSound(explorationMusic);
+        Sound combatSound = _audioManager.GetSound(combatMusic);
+
         if (newMode == GameMode.Exploration)
         {
             _audioManager.Play(explorationMusic);
+
+            Debug.Log("play explo music");
+
+            while (elapsedTime < timeToFade)
+            {
+                exploSound.source.volume = Mathf.Lerp(0, 1, elapsedTime / timeToFade);
+                combatSound.source.volume = Mathf.Lerp(1, 0, elapsedTime / timeToFade);
+
+                // Define borders for volume
+                exploSound.source.volume = Mathf.Clamp(exploSound.source.volume, 0, exploSound.volume);
+                combatSound.source.volume = Mathf.Clamp(combatSound.source.volume, 0, combatSound.volume);
+
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            Debug.Log("pause combat music");
+
             _audioManager.Pause(combatMusic);
         }
         else
         {
             _audioManager.Play(combatMusic);
+
+            Debug.Log("combat  music");
+
+            while (elapsedTime < timeToFade)
+            {
+                combatSound.source.volume = Mathf.Lerp(0, 1, elapsedTime / timeToFade);
+                exploSound.source.volume = Mathf.Lerp(1, 0, elapsedTime / timeToFade);
+
+                // Define borders for volume
+                exploSound.source.volume = Mathf.Clamp(exploSound.source.volume, 0, exploSound.volume);
+                combatSound.source.volume = Mathf.Clamp(combatSound.source.volume, 0, combatSound.volume);
+
+                elapsedTime += Time.unscaledDeltaTime;
+
+                yield return null;
+            }
+
             _audioManager.Pause(explorationMusic);
+
+            Debug.Log("pause");
         }
+
+
+
 
     }
 
