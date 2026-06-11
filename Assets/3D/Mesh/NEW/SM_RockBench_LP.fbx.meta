@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: a5b01eacb45463147af2811114c4293f
+guid: 31a2c98461c97a14f939d6b920569a5f
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -7,8 +7,13 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: M_trim_patern8
-    second: {fileID: 2100000, guid: 704c515ea5d07bc4f95316b52b55e459, type: 2}
+      name: M_brick3
+    second: {fileID: 2100000, guid: 8e97b571a4664a442b05fba1683fe97d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_rock.017
+    second: {fileID: 2100000, guid: 249ab39b61fbc314096efdad0fcb5187, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
