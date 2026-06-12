@@ -55,11 +55,12 @@ namespace RoomBuilding
         [SerializeField] [Tooltip("Minimum distance or rotation change required to trigger a rebuild.")]
         private float _sleepDistanceThreshold = 0.01f;
 
-        [SerializeField] [HideInInspector] private PropRebuildData[] _propsData;
-        [SerializeField] [HideInInspector] private int _propCount;
+        [SerializeField] private PropRebuildData[] _propsData;
+        [SerializeField] private int _propCount;
 
         private bool _isRebuilding;
 
+        //
         // Observer Pattern: Allows NavMesh, Audio, or VFX managers to react without tight coupling
         public event Action OnRebuildComplete;
 
@@ -166,7 +167,7 @@ namespace RoomBuilding
                 data.PropTransform.position = data.CleanState.Position;
                 data.PropTransform.rotation = data.CleanState.Rotation;
 
-                if (data.PropTransform.TryGetComponent<Rigidbody>(out Rigidbody rb))
+                if (data.PropTransform.TryGetComponent(out Rigidbody rb))
                 {
 #if UNITY_EDITOR
                     Undo.RecordObject(rb, "Load Clean State Physics");

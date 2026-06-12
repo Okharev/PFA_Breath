@@ -174,7 +174,7 @@ namespace TechArtPlayground.Rain
             occlusionCamera.targetTexture = occlusionTexture;
             occlusionCamera.enabled = true;
 
-            var camData = camObj.AddComponent<UniversalAdditionalCameraData>();
+            UniversalAdditionalCameraData camData = camObj.AddComponent<UniversalAdditionalCameraData>();
             camData.renderShadows = false;
             camData.requiresColorOption = CameraOverrideOption.Off;
             camData.requiresDepthOption = CameraOverrideOption.On;
@@ -191,7 +191,7 @@ namespace TechArtPlayground.Rain
 
             if (argsBuffer != null && crossMesh != null)
             {
-                var args = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+                GraphicsBuffer.IndirectDrawIndexedArgs[] args = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
                 args[0].indexCountPerInstance = crossMesh.GetIndexCount(0);
                 args[0].instanceCount = (uint)currentActiveParticles;
                 argsBuffer.SetData(args);
@@ -298,8 +298,8 @@ namespace TechArtPlayground.Rain
             Vector3 baseRainVelocity = new Vector3(windVel.x, -currentFallSpeed, windVel.z);
             Vector3 finalRainVelocity = baseRainVelocity - (smoothedCameraVelocity * cameraVelocityCompensation);
 
-            rainCompute.SetFloat(DeltaTimeId, Time.deltaTime);
-            rainCompute.SetFloat(TimeId, Time.time);
+            rainCompute.SetFloat(DeltaTimeId, Time.unscaledDeltaTime);
+            rainCompute.SetFloat(TimeId, Time.unscaledTime);
             rainCompute.SetVector(RainVelocityId, finalRainVelocity);
             rainMaterial.SetVector(RainVelocityId, finalRainVelocity);
             rainCompute.SetVector(CameraPosId, simulationCenter);
@@ -321,7 +321,7 @@ namespace TechArtPlayground.Rain
 
             splashRequestsBuffer.SetCounterValue(0);
 
-            splashCompute.SetFloat(DeltaTimeId, Time.deltaTime);
+            splashCompute.SetFloat(DeltaTimeId, Time.unscaledDeltaTime);
             int updateGroups = Mathf.CeilToInt(maxSplashes / 128f);
             splashCompute.Dispatch(splashUpdateKernel, updateGroups, 1, 1);
 
@@ -331,16 +331,19 @@ namespace TechArtPlayground.Rain
         
         private void CreateSplashQuad()
         {
-            quadMesh = new Mesh { name = "SplashQuad" };
-            quadMesh.vertices = new Vector3[] { 
-                new Vector3(-0.5f, -0.5f, 0), new Vector3(-0.5f, 0.5f, 0), 
-                new Vector3(0.5f, 0.5f, 0), new Vector3(0.5f, -0.5f, 0) 
+            quadMesh = new Mesh
+            {
+                name = "SplashQuad",
+                vertices = new Vector3[] { 
+                    new Vector3(-0.5f, -0.5f, 0), new Vector3(-0.5f, 0.5f, 0), 
+                    new Vector3(0.5f, 0.5f, 0), new Vector3(0.5f, -0.5f, 0) 
+                },
+                uv = new Vector2[] { new Vector2(0,0), new Vector2(0,1), new Vector2(1,1), new Vector2(1,0) },
+                triangles = new int[] { 0, 1, 2, 0, 2, 3 }
             };
-            quadMesh.uv = new Vector2[] { new Vector2(0,0), new Vector2(0,1), new Vector2(1,1), new Vector2(1,0) };
-            quadMesh.triangles = new int[] { 0, 1, 2, 0, 2, 3 };
 
             splashArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size);
-            var args = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+            GraphicsBuffer.IndirectDrawIndexedArgs[] args = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
             args[0].indexCountPerInstance = quadMesh.GetIndexCount(0);
             args[0].instanceCount = (uint)maxSplashes;
             splashArgsBuffer.SetData(args);

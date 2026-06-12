@@ -73,7 +73,7 @@ namespace Ability.NewAbilitySystem
             GameModeManager.OnGameModeChanged += HandleGameModeChanged;
             HandleGameModeChanged(GameModeManager.Instance.CurrentMode);
 
-            // --- NEW: INITIALIZE DEFAULTS ---
+            // --- INITIALIZE DEFAULTS ---
             EquipLocalSlot(AbilitySlot.Primary, DefaultPrimary);
             EquipLocalSlot(AbilitySlot.Secondary, DefaultSecondary);
             EquipLocalSlot(AbilitySlot.Dash, DefaultDash);
