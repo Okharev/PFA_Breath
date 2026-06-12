@@ -17,10 +17,11 @@ public class PlayerAnimation : MonoBehaviour
     private void Update()
     {
         if (_animator == null) return;
-        
+
+        if (!_agent.isActiveAndEnabled) return;
+
     if (_agent.remainingDistance >= remainingDistance)
         {
-            Debug.Log("il y a encore de la marche à faire");
             _animator.SetBool("isWalking", true);
         }
         else
