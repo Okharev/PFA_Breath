@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 6015349057466556885}
   - component: {fileID: 7146192534985073636}
   - component: {fileID: 5720039338238070646}
+  - component: {fileID: -553696352122786381}
   m_Layer: 10
   m_Name: EnemySniper
   m_TagString: Untagged
@@ -191,6 +192,20 @@ MonoBehaviour:
   hitSound: hitEnemy
   deathSound: deathEnemy
   abilityExecuted: 
+--- !u!114 &-553696352122786381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4805482828720501141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4013db913df23594e91219a92f03e985, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyChangeMaterial
+  _material: {fileID: 2100000, guid: 17da3ed57f9301b4cbdefe90c7a98e2b, type: 2}
+  renderer: {fileID: 0}
 --- !u!1 &6359587058521299137
 GameObject:
   m_ObjectHideFlags: 0

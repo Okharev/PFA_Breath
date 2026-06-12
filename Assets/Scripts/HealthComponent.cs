@@ -71,6 +71,6 @@ public class HealthComponent : MonoBehaviour
         OnDeath?.Invoke(gameObject);
 
         // Architectural Note: Consider replacing Destroy with Object Pooling in the future!
-        Destroy(gameObject);
+        //Destroy(gameObject);
     }
 }
