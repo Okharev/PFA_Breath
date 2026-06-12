@@ -463,9 +463,7 @@ void CSMain_SplineFlow(uint3 id : SV_DispatchThreadID)
     // Procedural target speed fluctuation 
     float targetSpeed = speed + (sin(time * 2.0f + (float)id.x) * 0.5f);
 
-    // ==========================================
-    // THE FIX PART 1: Extract only the fraction!
-    // ==========================================
+    // Extract only the fraction!
     float currentT = frac(boid.splineT);
 
     // --- 3. O(1) SPLINE LOOKUP ---

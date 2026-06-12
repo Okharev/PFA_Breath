@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.VFX;
 
 namespace Ability.NewAbilitySystem
 {
@@ -20,7 +21,7 @@ namespace Ability.NewAbilitySystem
             if (Physics.Raycast(projectile.transform.position, projectile.transform.forward, out RaycastHit hit,
                     moveDistance, projectile.hitMask))
             {
-                projectile.HandleHit(hit.collider.gameObject);
+                projectile.HandleHit(hit.collider.gameObject, hit.point);
                 projectile.transform.position = hit.point;
             }
             else
@@ -59,7 +60,7 @@ namespace Ability.NewAbilitySystem
             if (Physics.Raycast(projectile.transform.position, projectile.transform.forward, out RaycastHit hit,
                     moveDistance, projectile.hitMask))
             {
-                projectile.HandleHit(hit.collider.gameObject);
+                projectile.HandleHit(hit.collider.gameObject, hit.point);
                 projectile.transform.position = hit.point;
             }
             else
@@ -76,7 +77,10 @@ namespace Ability.NewAbilitySystem
 
         public float maxLifeTime = 5f;
         public LayerMask hitMask;
-
+        
+        [Header("VFX")]
+        [SerializeField] public GameObject HitVFXPrefab = null;
+        
         [Header("Piercing Settings")] public int maxPierces;
 
         // The active flight strategy
@@ -127,12 +131,25 @@ namespace Ability.NewAbilitySystem
             currentBehavior = newBehavior;
         }
 
-        public void HandleHit(GameObject hitObject)
+        public void HandleHit(GameObject hitObject, Vector3 hitPoint)
         {
+            if (HitVFXPrefab != null)
+            {
+                // Instantiate the Prefab which contains the VisualEffect component
+                GameObject effectInstance = Instantiate(HitVFXPrefab, hitPoint, hitObject.transform.rotation);
+        
+                // Note: You must handle destroying the VFX object after it plays.
+                // A simple Destroy works for now, assuming the effect lasts less than 2 seconds.
+                Destroy(effectInstance, 2f); 
+            }
+    
             Payload.ApplyTo(hitObject);
             CurrentPierces++;
 
-            if (CurrentPierces > maxPierces || hitObject.CompareTag("Environment")) Destroy(gameObject);
+            if (CurrentPierces > maxPierces || hitObject.CompareTag("Environment")) 
+            {
+                Destroy(gameObject);
+            }
         }
     }
 }

@@ -10,7 +10,15 @@ public class CheckpointBench : MonoBehaviour, IInteractable
         
         // Trigger the UI to open
         SkillTreeUIController.Instance.OpenMenu();
+
+        if (instigator.TryGetComponent(out OxygenComponent oxygen))
+        {
+            oxygen.Replenish(oxygen.maxOxygen);
+        }
         
-        // Optional: Trigger a save game event, heal the player, or reset enemy spawns here.
+        if (instigator.TryGetComponent(out HealthComponent health))
+        {
+            health.Heal(health.maxHealth);
+        }
     }
 }
