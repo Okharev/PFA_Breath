@@ -281,17 +281,23 @@ half4 frag(Varyings input) : SV_Target
     half3 caustics = half3(r, g, b) * _CausticsStrength * transmittance;
     refractColor += (caustics * _ShallowColor.rgb);
 
-    // Calculate final albedo using the stylized transmittance
-    half3 waterVolumeColor = lerp(_DeepColor.rgb, _ShallowColor.rgb, stylizedTransmittance);
+
+    // 1. Normalize the local wave height (0 to 1)
+    float normalizedHeight = saturate(input.waveHeight / max(0.1, _MaxWaveHeight));
+
+    // 2. Create a "Deep Upwelling" color. 
+    // Even in infinitely deep water, wave peaks scatter some ambient light.
+    // We blend a bit of the shallow color into the deep color based on wave height.
+    half3 upwellingColor = lerp(_DeepColor.rgb, _ShallowColor.rgb * 0.6, normalizedHeight * 0.5);
+
+    // 3. Use this dynamic color as the base, instead of the flat _DeepColor
+    half3 waterVolumeColor = lerp(upwellingColor, _ShallowColor.rgb, stylizedTransmittance);
+
+    // 4. Calculate final albedo
     half3 albedo = lerp(waterVolumeColor, refractColor, transmittance);
 
-    // =========================================================================
-    // 4. FOAM SYSTEM (Dual-Layer Cellular Breakup)
-    // =========================================================================
-    // STYLIZED FIX: Subtracting a second noise creates dynamic, morphing gaps
-    // so the foam looks like bursting bubbles rather than a sliding texture.
-// =========================================================================
-    // 4. FOAM SYSTEM (Stylized & Solidified)
+                // =========================================================================
+    // 4. FOAM SYSTEM
     // =========================================================================
     float2 foamUV1 = (input.positionWS.xz * _FoamNoiseScale) + (_GlobalUnscaledTime * _FoamNoiseSpeed);
     float2 foamUV2 = (input.positionWS.xz * _FoamNoiseScale * 0.75) + (_GlobalUnscaledTime * _FoamNoiseSpeed * 0.5);
