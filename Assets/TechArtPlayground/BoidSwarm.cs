@@ -104,7 +104,7 @@ namespace TechArtPlayground
         [Header("Flocking Behaviors")] 
         [Range(0.1f, 20f)] [SerializeField] private float speed = 4.0f;
         public float Speed { get => speed; set { speed = value; PushFloat(SpeedID, value); } }
-
+        
         [Range(0.1f, 10f)] [SerializeField] private float sightRadius = 2.5f;
         public float SightRadius { get => sightRadius; set { sightRadius = value; PushFloat(SightRadiusID, value); } }
 

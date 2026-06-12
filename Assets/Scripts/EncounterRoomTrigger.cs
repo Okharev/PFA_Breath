@@ -81,7 +81,7 @@ public class EncounterRoomTrigger : MonoBehaviour
                 door.CloseDoor();
 
         // =========================================================
-        // UPDATED: Broadcast to the Global Weather Manager
+        // Broadcast to the Global Weather Manager
         // =========================================================
         if (GlobalWeatherManager.Instance != null)
             // Transition to Tempest over 5 seconds
@@ -135,7 +135,7 @@ public class EncounterRoomTrigger : MonoBehaviour
                 door.OpenDoor();
 
         // =========================================================
-        // UPDATED: Broadcast to the Global Weather Manager
+        // Broadcast to the Global Weather Manager
         // =========================================================
         if (GlobalWeatherManager.Instance != null)
             // Transition back to Calm over 10 seconds
