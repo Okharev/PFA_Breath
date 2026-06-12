@@ -245,7 +245,7 @@ namespace Ability.NewAbilitySystem
                     currentState?.HandleAbilityInput(this, specialAbility, targetPos);
             
             if (Keyboard.current.rKey.wasPressedThisFrame)
-                if (activeLoadout.TryGetValue(AbilitySlot.Special, out AbilityData specialAbility))
+                if (activeLoadout.TryGetValue(AbilitySlot.Reload, out AbilityData specialAbility))
                     currentState?.HandleAbilityInput(this, specialAbility, targetPos);
         }
 
