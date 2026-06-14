@@ -1,15 +1,19 @@
-﻿using UnityEngine;
+﻿using Ability.NewAbilitySystem;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Dialogues.UI
 {
-    public class DialogueDebugDirectTrigger : MonoBehaviour
+    public class DialogueDebugDirectTrigger : MonoBehaviour, IInteractable
     {
         [Header("Debug Settings")]
         [Tooltip("The key that triggers the conversation.")]
         [SerializeField] private Key debugKey = Key.F9;
     
         [SerializeField] private Conversation debugConversation;
+
+        public bool isEntered;
+        public bool isPlayed = false;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void Update()
@@ -21,6 +25,19 @@ namespace Dialogues.UI
         }
 #endif
     
+        public void Interact(GameObject instigator)
+        {
+            // Play conversation if the player is close enough of the zone
+            // Conversation can only be played once
+            if (!isEntered) return;
+
+            if (!isPlayed) return;
+
+            Debug.Log("[CheckpointDialogue] Dialogue clicked! Opening Conversation.");
+
+            LaunchConversation();
+        }
+
         private void LaunchConversation()
         {
             if (debugConversation == null)
@@ -37,6 +54,25 @@ namespace Dialogues.UI
 
             DialogueManager.Instance.StartConversation(debugConversation, gameObject);
             Debug.Log($"Launched debug conversation: {debugConversation.conversationTitle}");
+            isPlayed = true;
+
+        }
+
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject.CompareTag("Player"))
+            {
+                isEntered = true;
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.gameObject.CompareTag("Player"))
+            {
+                isEntered = false;
+            }
         }
     }
 }
