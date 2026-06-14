@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using Ability.NewAbilitySystem;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Dialogues.UI
 {
-    public class DialogueDebugDirectTrigger : MonoBehaviour
+    public class DialogueDebugDirectTrigger : MonoBehaviour, IInteractable
     {
         [Header("Debug Settings")]
         [Tooltip("The key that triggers the conversation.")]
@@ -21,6 +22,14 @@ namespace Dialogues.UI
         }
 #endif
     
+        public void Interact(GameObject instigator)
+        {
+            Debug.Log("[CheckpointDialogue] Dialogue clicked! Opening Conversation.");
+
+            LaunchConversation();
+
+        }
+
         private void LaunchConversation()
         {
             if (debugConversation == null)
