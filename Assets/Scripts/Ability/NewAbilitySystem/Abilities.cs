@@ -102,10 +102,16 @@ namespace Ability.NewAbilitySystem
 
         public void Execute(AbilityContext context)
         {
-            // Ensure the source has a NavMeshAgent
             if (context.Source.TryGetComponent(out NavMeshAgent agent))
             {
-                // Tell the agent where to go
+                // DEFENSIVE FIX: Catch corrupted agents before issuing asynchronous move commands
+                if (!agent.enabled || !agent.isOnNavMesh)
+                {
+                    Debug.LogError(
+                        $"[MoveEffect] {context.Source.name} failed to move! The NavMeshAgent is either disabled or glitched off the NavMesh bounds.");
+                    return;
+                }
+
                 agent.SetDestination(context.TargetPosition);
                 agent.isStopped = false;
             }
@@ -129,7 +135,7 @@ namespace Ability.NewAbilitySystem
             if (context.Source.TryGetComponent(out AmmoComponent ammo)) ammo.Consume(ammoCost);
         }
     }
-    
+
     [Serializable]
     public class SpawnLaserHazardEffect : IAbilityEffect, IPreviewableEffect
     {
@@ -145,10 +151,10 @@ namespace Ability.NewAbilitySystem
         {
             // Determine origin, falling back to source position if Origin is missing
             Vector3 origin = context.Origin != null ? context.Origin.position : context.Source.transform.position;
-            
+
             // Crucial: We use context.TargetPosition, NOT context.Target.transform.position.
             // This ensures we shoot at the locked coordinate, allowing the player to dodge during the delay!
-            Vector3 target = context.TargetPosition; 
+            Vector3 target = context.TargetPosition;
 
             // Flatten the vertical axis to create a strictly horizontal plane
             if (forcePlanar) target.y = origin.y;
@@ -175,14 +181,14 @@ namespace Ability.NewAbilitySystem
         {
             Vector3 origin = context.Origin != null ? context.Origin.position : context.Source.transform.position;
             Vector3 target = context.TargetPosition;
-            
+
             if (forcePlanar) target.y = origin.y;
 
             // Draw a thick red line
             drawer.DrawLine(origin, target, Color.red);
         }
     }
-    
+
     [Serializable]
     public class SequentialDashEffect : IAbilityEffect, IPreviewableEffect
     {
@@ -193,7 +199,7 @@ namespace Ability.NewAbilitySystem
 
         [Tooltip("Time in seconds the dash takes to complete.")]
         public float dashDuration = 0.25f;
-        
+
         [Tooltip("The maximum distance of the FIRST dash.")]
         public float maxDashDistance = 5f;
 
@@ -202,119 +208,146 @@ namespace Ability.NewAbilitySystem
         public void Execute(AbilityContext context)
         {
             if (!context.Source.TryGetComponent(out AbilityController controller)) return;
-            
-            int currentPhase = controller.GetTransientState(comboKey);
-            float activeDistance = currentPhase == 1 ? (maxDashDistance * 0.5f) : maxDashDistance;
 
-            if (context.Source.TryGetComponent(out MonoBehaviour runner))
-            {
-                controller.StartCoroutine(DashRoutine(context, activeDistance));
-            }
+            int currentPhase = controller.GetTransientState(comboKey);
+            float activeDistance = currentPhase == 1 ? maxDashDistance * 0.5f : maxDashDistance;
+            bool isFinalPhase = currentPhase == 1;
 
             if (currentPhase == 0)
             {
                 // --- PHASE 1 ---
                 controller.SetTransientState(comboKey, 1);
-                controller.RefundCooldown(context.Data); 
-                
-                //  Lock the controller so the player CANNOT shoot or walk.
+                controller.RefundCooldown(context.Data);
+
+                // Lock the controller so the player CANNOT shoot or walk.
                 controller.LockCombo(context.Data);
             }
             else
             {
                 // --- PHASE 2 ---
                 controller.SetTransientState(comboKey, 0);
-                
-                // Unlock the controller so normal gameplay resumes next turn.
-                controller.UnlockCombo();
-                
-                if (TurnManager.Instance != null)
-                {
-                    TurnManager.Instance.RequestTurns(1);
-                }
-            }
-        }
 
-        private IEnumerator DashRoutine(AbilityContext context, float activeDistance)
-        {
-            Debug.Log("--> Coroutine Entered!");
-            
-            GameObject source = context.Source;
-            NavMeshAgent agent = source.GetComponent<NavMeshAgent>();
-            HealthComponent health = source.GetComponent<HealthComponent>(); 
+                // Request turns to advance the combat state
+                if (TurnManager.Instance != null) TurnManager.Instance.RequestTurns(1);
 
-            if (agent != null) agent.enabled = false;
-            if (health != null) health.IsInvincible = true;
-
-            int originalLayer = source.layer;
-            int targetLayer = LayerMask.NameToLayer(ghostLayerName);
-            
-            if (targetLayer != -1) source.layer = targetLayer;
-            else Debug.LogWarning($"Layer '{ghostLayerName}' does not exist in your project settings!");
-
-            Vector3 startPos = source.transform.position;
-            Vector3 direction = (context.TargetPosition - startPos).normalized;
-            float requestedDistance = Vector3.Distance(startPos, context.TargetPosition);
-            float actualDistance = Mathf.Min(requestedDistance, activeDistance);
-            
-            Debug.Log($"Dash Math -> Start: {startPos}, Target: {context.TargetPosition}, Distance to travel: {actualDistance}");
-
-            if (actualDistance <= 0.1f)
-            {
-                Debug.LogWarning("Dash aborted: Target is too close to the player!");
-                Cleanup(source, agent, health, originalLayer);
-                yield break;
-            }
-            
-            Vector3 endPos = startPos + (direction * actualDistance);
-            float elapsed = 0f;
-            int frameCount = 0;
-
-            while (elapsed < dashDuration)
-            {
-                elapsed += Time.unscaledDeltaTime; 
-                float t = Mathf.Clamp01(elapsed / dashDuration);
-                float easedT = 1f - Mathf.Pow(1f - t, 3f); 
-                source.transform.position = Vector3.Lerp(startPos, endPos, easedT);
-                
-                frameCount++;
-                yield return null;
+                // CRITICAL FIX: We DO NOT UnlockCombo() here anymore! 
+                // It is deferred to the end of the Coroutine to prevent the animation race condition.
             }
 
-            Debug.Log($"Dash finished moving over {frameCount} frames. Snapping to end position.");
-            source.transform.position = endPos;
-
-            // NavMesh Validation
-            if (agent != null)
-            {
-                if (NavMesh.SamplePosition(endPos, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
-                {
-                    Debug.Log($"NavMesh Validated at {hit.position}");
-                    source.transform.position = hit.position;
-                }
-                else
-                {
-                    Debug.LogWarning("Ended Dash OFF the NavMesh!");
-                }
-            }
-
-            Cleanup(source, agent, health, originalLayer);
-            Debug.Log("--> Coroutine Exited cleanly.");
-        }
-
-        private void Cleanup(GameObject source, NavMeshAgent agent, HealthComponent health, int originalLayer)
-        {
-            if (agent != null) agent.enabled = true;
-            if (health != null) health.IsInvincible = false;
-            source.layer = originalLayer;
+            // Start the asynchronous movement
+            controller.StartCoroutine(DashRoutine(context, controller, activeDistance, isFinalPhase));
         }
 
         public void DrawPreview(AbilityContext context, IntentDrawer drawer)
         {
-            // Implement me !!!!!!!
+            if (!context.Source.TryGetComponent(out AbilityController controller)) return;
+
+            // Calculate current distance dynamically for the intent visualizer
+            int currentPhase = controller.GetTransientState(comboKey);
+            float activeDistance = currentPhase == 1 ? maxDashDistance * 0.5f : maxDashDistance;
+
+            Vector3 start = context.Source.transform.position;
+            Vector3 targetPos = context.TargetPosition;
+            targetPos.y = start.y;
+
+            Vector3 direction = (targetPos - start).normalized;
+            float dist = Mathf.Min(Vector3.Distance(start, targetPos), activeDistance);
+
+            // Optional UX Polish: Draw Phase 1 as Cyan, and Phase 2 as Yellow to clearly show it's a follow-up combo!
+            Color previewColor = currentPhase == 1 ? Color.yellow : Color.cyan;
+
+            drawer.DrawLine(start, start + direction * dist, previewColor);
+        }
+
+        private IEnumerator DashRoutine(AbilityContext context, AbilityController controller, float activeDistance,
+            bool isFinalPhase)
+        {
+            GameObject source = context.Source;
+
+            // 1. Validate Components
+            if (!source.TryGetComponent(out NavMeshAgent agent) || !agent.isOnNavMesh)
+            {
+                Debug.LogWarning("[Dash] Cannot dash: Agent is missing or detached from NavMesh.");
+                if (isFinalPhase) controller.UnlockCombo();
+                yield break;
+            }
+
+            HealthComponent health = source.GetComponent<HealthComponent>();
+            if (health != null) health.IsInvincible = true;
+
+            int originalLayer = source.layer;
+            int targetLayer = LayerMask.NameToLayer(ghostLayerName);
+            if (targetLayer != -1) source.layer = targetLayer;
+
+            // 2. Soft Decoupling
+            agent.isStopped = true;
+            agent.updatePosition = false;
+            agent.updateRotation = false;
+
+            float originalRadius = agent.radius;
+            agent.radius = 0.01f;
+
+            // 3. Collision Math (Elevated, Flattened, Ignore Triggers)
+            Vector3 startPos = source.transform.position;
+            Vector3 targetPos = context.TargetPosition;
+            targetPos.y = startPos.y;
+
+            Vector3 rawDirection = (targetPos - startPos).normalized;
+            float requestedDistance = Vector3.Distance(startPos, targetPos);
+
+            // Use the dynamically injected activeDistance (Full or Half)
+            float clampedDistance = Mathf.Min(requestedDistance, activeDistance);
+
+            float yOffset = agent.height > 0 ? agent.height * 0.5f : 1f;
+            Vector3 castStart = startPos + Vector3.up * yOffset;
+
+            float actualDistance = clampedDistance;
+            if (Physics.SphereCast(castStart, agent.radius, rawDirection, out RaycastHit hit, clampedDistance,
+                    LayerMask.GetMask("Default", "Obstacles"), QueryTriggerInteraction.Ignore))
+                actualDistance = Mathf.Max(0f, hit.distance - 0.05f);
+
+            Vector3 endPos = startPos + rawDirection * actualDistance;
+
+            // 4. Execute the asynchronous movement
+            float elapsed = 0f;
+            while (elapsed < dashDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / dashDuration);
+                float easedT = 1f - Mathf.Pow(1f - t, 3f);
+                source.transform.position = Vector3.Lerp(startPos, endPos, easedT);
+                yield return null;
+            }
+
+            source.transform.position = endPos;
+
+            // 5. Safe Recoupling
+            Vector3 elevatedEndPos = endPos + Vector3.up * 1f;
+
+            // Restore normal agent control FIRST
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+            agent.radius = originalRadius;
+
+            // Warp across disconnected NavMesh islands
+            if (NavMesh.SamplePosition(elevatedEndPos, out NavMeshHit navHit, 4.0f, NavMesh.AllAreas))
+            {
+                agent.Warp(navHit.position);
+            }
+            else
+            {
+                Debug.LogWarning("[Dash] Dash ended outside NavMesh bounds! Reverting position.");
+                agent.Warp(startPos);
+            }
+
+            if (health != null) health.IsInvincible = false;
+            source.layer = originalLayer;
+
+            // 6. UNLOCK INPUTS: Only free the player to queue their next move if the combo is completely done
+            if (isFinalPhase) controller.UnlockCombo();
         }
     }
-    
+
     [Serializable]
     public class AoEDamageEffect : IAbilityEffect, IPreviewableEffect
     {
@@ -373,7 +406,8 @@ namespace Ability.NewAbilitySystem
 
         [Header("On-Shot Effects")]
         [Tooltip("Triggers exactly when EACH salvo fires (e.g., Consume Ammo, Play Muzzle Flash).")]
-        [SerializeReference, SubclassSelector]
+        [SerializeReference]
+        [SubclassSelector]
         public List<IAbilityEffect> onShotEffects = new();
 
         [Header("Hierarchy Search (By Name)")] public string leftBarrelName = "LeftBarrel";
@@ -560,7 +594,8 @@ namespace Ability.NewAbilitySystem
 
         [Header("On-Shot Effects")]
         [Tooltip("Triggers exactly when EACH bullet fires (e.g., Consume Ammo, Play Muzzle Flash).")]
-        [SerializeReference, SubclassSelector]
+        [SerializeReference]
+        [SubclassSelector]
         public List<IAbilityEffect> onShotEffects = new();
 
         public void Execute(AbilityContext context)
@@ -652,12 +687,12 @@ namespace Ability.NewAbilitySystem
             }
         }
     }
-    
+
     [Serializable]
     public class SafeLandingCondition : IAbilityCondition
     {
         [HideInInspector] public string name = "Safe Landing Check";
-        
+
         [Tooltip("How far down we check for valid ground.")]
         public float dropCheckTolerance = 0.5f;
 
@@ -666,16 +701,17 @@ namespace Ability.NewAbilitySystem
             // Predict the end point based on max dash distance
             Vector3 startPos = context.Source.transform.position;
             Vector3 direction = (context.TargetPosition - startPos).normalized;
-            
+
             // Assuming max distance is 5, you might want to pull this from the effect or hardcode a max sync
             float dist = Mathf.Min(Vector3.Distance(startPos, context.TargetPosition), 5f);
-            Vector3 predictedEndPos = startPos + (direction * dist);
+            Vector3 predictedEndPos = startPos + direction * dist;
 
             // Check if there is valid NavMesh data at the landing zone
             return NavMesh.SamplePosition(predictedEndPos, out _, dropCheckTolerance, NavMesh.AllAreas);
         }
     }
-    
+
+
     [Serializable]
     public class DashEffect : IAbilityEffect, IPreviewableEffect
     {
@@ -683,7 +719,7 @@ namespace Ability.NewAbilitySystem
 
         [Tooltip("Time in seconds the dash takes to complete. Must be less than TurnManager.secondsPerTurn!")]
         public float dashDuration = 0.25f;
-        
+
         [Tooltip("The maximum distance the player can dash.")]
         public float maxDashDistance = 5f;
 
@@ -692,76 +728,124 @@ namespace Ability.NewAbilitySystem
 
         public void Execute(AbilityContext context)
         {
-            if (context.Source.TryGetComponent(out MonoBehaviour runner))
-            {
-                runner.StartCoroutine(DashRoutine(context));
-            }
-        }
-
-        private IEnumerator DashRoutine(AbilityContext context)
-        {
-            GameObject source = context.Source;
-            NavMeshAgent agent = source.GetComponent<NavMeshAgent>();
-            
-            // Assume you have a HealthComponent. We flag it to ignore damage calculations.
-            HealthComponent health = source.GetComponent<HealthComponent>(); 
-
-            // 1. Setup: Disable Agent to cross voids and swap to Ghost Layer
-            if (agent != null) agent.enabled = false;
-            if (health != null) health.IsInvincible = true;
-
-            int originalLayer = source.layer;
-            source.layer = LayerMask.NameToLayer(ghostLayerName);
-
-            // 2. Calculate clamped destination
-            Vector3 startPos = source.transform.position;
-            Vector3 direction = (context.TargetPosition - startPos).normalized;
-            float requestedDistance = Vector3.Distance(startPos, context.TargetPosition);
-            float actualDistance = Mathf.Min(requestedDistance, maxDashDistance);
-            
-            Vector3 endPos = startPos + (direction * actualDistance);
-
-            // 3. Execute Movement
-            float elapsed = 0f;
-            while (elapsed < dashDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / dashDuration);
-                
-                // Using an ease-out curve makes the dash feel punchier
-                float easedT = 1f - Mathf.Pow(1f - t, 3f); 
-                
-                source.transform.position = Vector3.Lerp(startPos, endPos, easedT);
-                yield return null;
-            }
-
-            source.transform.position = endPos;
-
-            // 4. Cleanup: Re-enable Agent securely on the nearest NavMesh
-            if (agent != null)
-            {
-                // Ensure we don't re-enable the agent over a bottomless pit
-                if (NavMesh.SamplePosition(endPos, out NavMeshHit hit, 2.0f, NavMesh.AllAreas))
-                {
-                    source.transform.position = hit.position;
-                }
-                agent.enabled = true;
-            }
-
-            if (health != null) health.IsInvincible = false;
-            source.layer = originalLayer;
+            // Pass the controller into the Coroutine so we can lock inputs
+            if (context.Source.TryGetComponent(out AbilityController controller))
+                controller.StartCoroutine(DashRoutine(context, controller));
         }
 
         public void DrawPreview(AbilityContext context, IntentDrawer drawer)
         {
             Vector3 start = context.Source.transform.position;
-            Vector3 direction = (context.TargetPosition - start).normalized;
-            float dist = Mathf.Min(Vector3.Distance(start, context.TargetPosition), maxDashDistance);
-            
+
+            Vector3 targetPos = context.TargetPosition;
+            targetPos.y = start.y;
+
+            Vector3 direction = (targetPos - start).normalized;
+            float dist = Mathf.Min(Vector3.Distance(start, targetPos), maxDashDistance);
+
             // Draw a bright cyan line to indicate a safe utility dash
-            drawer.DrawLine(start, start + (direction * dist), Color.cyan);
+            drawer.DrawLine(start, start + direction * dist, Color.cyan);
+        }
+
+        private IEnumerator DashRoutine(AbilityContext context, AbilityController controller)
+        {
+            // 1. INPUT LOCK: Prevent 'Move' or 'Shoot' from being queued until the dash is done
+            controller.LockCombo(context.Data);
+
+            GameObject source = context.Source;
+            if (!source.TryGetComponent(out NavMeshAgent agent) || !agent.isOnNavMesh)
+            {
+                controller.UnlockCombo();
+                yield break;
+            }
+
+            HealthComponent health = source.GetComponent<HealthComponent>();
+            if (health != null) health.IsInvincible = true;
+
+            int originalLayer = source.layer;
+            int targetLayer = LayerMask.NameToLayer(ghostLayerName);
+            if (targetLayer != -1) source.layer = targetLayer;
+
+            // 2. SOFT DECOUPLING: Stop the agent from fighting our Lerp
+            agent.isStopped = true;
+            agent.updatePosition = false;
+            agent.updateRotation = false;
+
+            // Prevent enemies from pushing the player during the dash
+            float originalRadius = agent.radius;
+            agent.radius = 0.01f;
+
+            // 3. COLLISION MATH
+            Vector3 startPos = source.transform.position;
+            Vector3 targetPos = context.TargetPosition;
+
+            // Flatten the target position to ensure the dash math is strictly horizontal
+            targetPos.y = startPos.y;
+
+            Vector3 rawDirection = (targetPos - startPos).normalized;
+            float requestedDistance = Vector3.Distance(startPos, targetPos);
+            float clampedDistance = Mathf.Min(requestedDistance, maxDashDistance);
+
+            // Elevate the sweep test to chest-level so it glides over gaps and stairs
+            float yOffset = agent.height > 0 ? agent.height * 0.5f : 1f;
+            Vector3 castStart = startPos + Vector3.up * yOffset;
+
+            float actualDistance = clampedDistance;
+
+            // SphereCast that explicitly ignores invisible triggers (e.g., damage zones in gaps)
+            if (Physics.SphereCast(castStart, agent.radius, rawDirection, out RaycastHit hit, clampedDistance,
+                    LayerMask.GetMask("Default", "Obstacles"), QueryTriggerInteraction.Ignore))
+                // Only stop if we actually hit a wall blocking our body
+                actualDistance = Mathf.Max(0f, hit.distance - 0.05f);
+
+            Vector3 endPos = startPos + rawDirection * actualDistance;
+
+            // 4. EXECUTE MOVEMENT
+            float elapsed = 0f;
+            while (elapsed < dashDuration)
+            {
+                // Unscaled time ensures it processes safely during the paused planning phase
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / dashDuration);
+                float easedT = 1f - Mathf.Pow(1f - t, 3f);
+                source.transform.position = Vector3.Lerp(startPos, endPos, easedT);
+                yield return null;
+            }
+
+            // Force snap to final position to prevent floating point inaccuracies
+            source.transform.position = endPos;
+
+            // 5. RECOUPLING: Sync logic back to visual transform safely
+
+            // Elevate slightly so the SamplePosition raycasts downwards, avoiding "inside the floor" bugs
+            Vector3 elevatedEndPos = endPos + Vector3.up * 1f;
+
+            // Step A: Restore normal agent control FIRST
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+            agent.radius = originalRadius;
+
+            // Step B: Use WARP to cross disconnected NavMesh islands
+            // 4.0f radius aggressively searches for the nearest valid ledge
+            if (NavMesh.SamplePosition(elevatedEndPos, out NavMeshHit navHit, 4.0f, NavMesh.AllAreas))
+            {
+                agent.Warp(navHit.position);
+            }
+            else
+            {
+                // Safety Net: Jumped into the abyss, warp back to start
+                Debug.LogWarning("[Dash] Dash ended completely outside NavMesh bounds! Reverting.");
+                agent.Warp(startPos);
+            }
+
+            if (health != null) health.IsInvincible = false;
+            source.layer = originalLayer;
+
+            // 6. UNLOCK INPUTS: The player is now free to queue their next move
+            controller.UnlockCombo();
         }
     }
+
 
     [Serializable]
     public class TeleportEffect : IAbilityEffect

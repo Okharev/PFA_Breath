@@ -8,7 +8,7 @@ public class PlayerAnimation : MonoBehaviour
 
     public float remainingDistance = 0.05f;
 
-        private void Awake()
+    private void Awake()
     {
         _animator = GetComponentInChildren<Animator>();
         _agent = GetComponent<NavMeshAgent>();
@@ -16,11 +16,16 @@ public class PlayerAnimation : MonoBehaviour
 
     private void Update()
     {
-        if (_animator == null) return;
+        if (_animator == null || _agent == null) return;
 
-        if (!_agent.isActiveAndEnabled) return;
+        // CRITICAL FIX: Ensure the agent is bound to the mesh before querying distance
+        if (!_agent.isActiveAndEnabled || !_agent.isOnNavMesh) 
+        {
+            _animator.SetBool("isWalking", false);
+            return;
+        }
 
-    if (_agent.remainingDistance >= remainingDistance)
+        if (_agent.remainingDistance >= remainingDistance)
         {
             _animator.SetBool("isWalking", true);
         }
@@ -28,5 +33,5 @@ public class PlayerAnimation : MonoBehaviour
         {
             _animator.SetBool("isWalking", false);
         }
-}
+    }
 }
