@@ -9354,43 +9354,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -7587047024317527936, guid: 4297d2f5bf45c75458f17e9db6eac859, type: 3}
---- !u!84 &232145834
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &233526666
 GameObject:
   m_ObjectHideFlags: 0
@@ -10134,6 +10097,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ecb1f77a5dda50142ab3d670f9bc9d74, type: 3}
   m_PrefabInstance: {fileID: 255447305}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &259218653
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 7258060722025492088, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_Name
+      value: DialogueInteract
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 54.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 26.561335
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905609558110795598, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ca6f57d1d53e0614682b2c7f41ff5f8f, type: 3}
 --- !u!1001 &260201297
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -52295,7 +52315,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: 65ecb5bd3ac4ae94e8a2a5404ecb4cd9, type: 3}
     mixer: {fileID: -6103896839496543522, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.2
     pitch: 1
     spatialBlend: 0
     loop: 1
@@ -52626,6 +52646,43 @@ MonoBehaviour:
   yaw: 45
   useSmoothing: 1
   smoothTime: 0.15
+--- !u!84 &962665602
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &963881712
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -53835,8 +53892,8 @@ MonoBehaviour:
   windDirection: {x: -2.4001737, y: -12.000868}
   phillipsAmplitude: 0.002
   choppiness: 0.94
-  displacementMap: {fileID: 1709385646}
-  derivativeMap: {fileID: 232145834}
+  displacementMap: {fileID: 962665602}
+  derivativeMap: {fileID: 1620368591}
 --- !u!114 &985686180
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59265,7 +59322,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4618493869378184167, guid: d36852d1dd062294b9a1576681d06958, type: 3}
       propertyPath: m_Volume
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4618493869378184167, guid: d36852d1dd062294b9a1576681d06958, type: 3}
       propertyPath: m_Resource
@@ -59273,15 +59330,15 @@ PrefabInstance:
       objectReference: {fileID: 8300000, guid: dab425a2f5b80fc4fa44df3b4f8e959f, type: 3}
     - target: {fileID: 4618493869378184167, guid: d36852d1dd062294b9a1576681d06958, type: 3}
       propertyPath: MaxDistance
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 4618493869378184167, guid: d36852d1dd062294b9a1576681d06958, type: 3}
       propertyPath: MinDistance
-      value: 5
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 5747366734917314246, guid: d36852d1dd062294b9a1576681d06958, type: 3}
       propertyPath: m_Name
-      value: SpatialAudio
+      value: SpatialAudioBalcon
       objectReference: {fileID: 0}
     - target: {fileID: 8028093593144818956, guid: d36852d1dd062294b9a1576681d06958, type: 3}
       propertyPath: m_LocalPosition.x
@@ -73761,15 +73818,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -17.75
+      value: 46.2
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.071
+      value: 0.19
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -12.25
+      value: -11.73
       objectReference: {fileID: 0}
     - target: {fileID: 9173007539013564178, guid: 086d40895d7f38d42929edf5e9d9a3c4, type: 3}
       propertyPath: m_LocalRotation.w
@@ -93496,6 +93553,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d5d211023d931ea4cb1444083056cc68, type: 3}
   m_PrefabInstance: {fileID: 1617181144}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &1620368591
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1622140920
 GameObject:
   m_ObjectHideFlags: 0
@@ -97739,43 +97833,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 11895f309665fb048978b65f5432e617, type: 3}
   m_PrefabInstance: {fileID: 1708953833}
   m_PrefabAsset: {fileID: 0}
---- !u!84 &1709385646
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &1711671180
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -120404,7 +120461,6 @@ GameObject:
   - component: {fileID: 2027340463}
   - component: {fileID: 2027340466}
   - component: {fileID: 2027340465}
-  - component: {fileID: 2027340464}
   m_Layer: 0
   m_Name: DialogueUI
   m_TagString: Untagged
@@ -120427,20 +120483,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1329900467}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2027340464
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2027340462}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d077e6e9c4144ef97e01a7861d126da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.UI.DialogueDebugTrigger
-  debugKey: 102
-  debugConversation: {fileID: 11400000, guid: 262648a97441ce24781dbe62df74720d, type: 2}
 --- !u!114 &2027340465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -125116,3 +125158,4 @@ SceneRoots:
   - {fileID: 2125115278}
   - {fileID: 381201488}
   - {fileID: 410655163}
+  - {fileID: 259218653}
