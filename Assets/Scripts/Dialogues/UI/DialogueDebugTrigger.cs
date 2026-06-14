@@ -12,6 +12,9 @@ namespace Dialogues.UI
     
         [SerializeField] private Conversation debugConversation;
 
+        public bool isEntered;
+        public bool isPlayed = false;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void Update()
         {
@@ -24,10 +27,15 @@ namespace Dialogues.UI
     
         public void Interact(GameObject instigator)
         {
+            // Play conversation if the player is close enough of the zone
+            // Conversation can only be played once
+            if (!isEntered) return;
+
+            if (!isPlayed) return;
+
             Debug.Log("[CheckpointDialogue] Dialogue clicked! Opening Conversation.");
 
             LaunchConversation();
-
         }
 
         private void LaunchConversation()
@@ -46,6 +54,25 @@ namespace Dialogues.UI
 
             DialogueManager.Instance.StartConversation(debugConversation, gameObject);
             Debug.Log($"Launched debug conversation: {debugConversation.conversationTitle}");
+            isPlayed = true;
+
+        }
+
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject.CompareTag("Player"))
+            {
+                isEntered = true;
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.gameObject.CompareTag("Player"))
+            {
+                isEntered = false;
+            }
         }
     }
 }
