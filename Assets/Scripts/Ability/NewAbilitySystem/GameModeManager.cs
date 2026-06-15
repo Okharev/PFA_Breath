@@ -31,6 +31,16 @@ namespace Ability.NewAbilitySystem
 
         public static GameModeManager Instance { get; private set; }
 
+        public static void CleanAllHazards(GameMode mode = GameMode.Exploration)
+        {
+            HazardVolume[] allHazards = FindObjectsByType<HazardVolume>();
+
+            foreach (HazardVolume hazard in allHazards)
+            {
+                Destroy(hazard.gameObject);
+            }
+        }
+        
         private void Awake()
         {
             // Standard Singleton enforcement
@@ -51,7 +61,18 @@ namespace Ability.NewAbilitySystem
         {
             // Broadcast the initial state so systems like TurnManager can sync up on launch
             OnGameModeChanged?.Invoke(CurrentMode);
+
         }
+
+        // private void OnEnable()
+        // {
+        //     OnGameModeChanged += CleanAllHazards;
+        // }
+
+        // private void OnDisable()
+        // {
+        //     OnGameModeChanged -= CleanAllHazards;
+        // }
 
 #if UNITY_EDITOR
         private void Update()

@@ -41,9 +41,6 @@ namespace TechArtPlayground.Rain
         public Material rainMaterial;
         public Camera mainCamera;
 
-        [Header("Occlusion Settings")]
-        public LayerMask rainOcclusionLayer;
-        public float occlusionCameraHeight = 150f;
         
         [Header("Weather Settings")]
         public int maxParticleCount = 50000;
@@ -65,6 +62,17 @@ namespace TechArtPlayground.Rain
         public ComputeShader splashCompute;
         public Material splashMaterial;
         public int maxSplashes = 20000;
+        
+        [Header("Occlusion Settings")]
+        public LayerMask rainOcclusionLayer;
+        public float occlusionCameraHeight = 150f;
+
+        [Tooltip("The player transform for the occlusion map to follow. If null, falls back to Main Camera.")]
+        public Transform playerTarget;
+        public float occlusionUpdateInterval = 0.5f;
+
+        private float occlusionTimer = 0f;
+        private Vector3 lastRenderedOcclusionCenter;
 
         private GraphicsBuffer splashRequestsBuffer;
         private GraphicsBuffer splashPoolBuffer;
@@ -172,7 +180,7 @@ namespace TechArtPlayground.Rain
             occlusionCamera.backgroundColor = Color.black; 
             
             occlusionCamera.targetTexture = occlusionTexture;
-            occlusionCamera.enabled = true;
+            occlusionCamera.enabled = false;
 
             UniversalAdditionalCameraData camData = camObj.AddComponent<UniversalAdditionalCameraData>();
             camData.renderShadows = false;
@@ -266,31 +274,45 @@ namespace TechArtPlayground.Rain
             // 1. Get camera forward, flattened to the XZ horizontal plane
             Vector3 camForwardXZ = new Vector3(mainCamera.transform.forward.x, 0, mainCamera.transform.forward.z);
             
-            // 2. Safe normalization (handles the edge case of looking perfectly straight down/up)
             if (camForwardXZ.sqrMagnitude > 0.001f)
-            {
                 camForwardXZ.Normalize();
-            }
             else
-            {
-                // Fallback: If looking straight down, use the camera's UP vector projected to XZ
                 camForwardXZ = new Vector3(mainCamera.transform.up.x, 0, mainCamera.transform.up.z).normalized;
-            }
 
-            // 3. Apply the forward bias (XZ axis)
             Vector3 forwardOffset = camForwardXZ * (_gridSize * forwardBias);
-            
-            // 4. Apply the vertical bias (Y axis)
             Vector3 verticalOffset = Vector3.up * (_gridSize * verticalBias);
             
-            // 5. Calculate the final biased center
+            // The continuous center for the rain grid wrapping (Updates EVERY FRAME)
             Vector3 simulationCenter = cameraPos + verticalOffset + forwardOffset;
 
-            occlusionCamera.transform.position = new Vector3(simulationCenter.x, simulationCenter.y + occlusionCameraHeight, simulationCenter.z);
-            occlusionCamera.transform.rotation = Quaternion.Euler(90, 0, 0);
+            // --- NEW: TIMED OCCLUSION LOGIC ---
+            // Using unscaledDeltaTime so the map still updates if time is paused/slowed
+            occlusionTimer += Time.unscaledDeltaTime; 
+            
+            // Force an immediate update on the very first frame, or when interval is hit
+            if (occlusionTimer >= occlusionUpdateInterval || lastRenderedOcclusionCenter == Vector3.zero)
+            {
+                occlusionTimer = 0f;
 
-            rainCompute.SetVector(OcclusionCenterId, occlusionCamera.transform.position);
-            rainCompute.SetFloat(OcclusionCameraYId, occlusionCamera.transform.position.y);
+                // Base the target on the player if assigned, otherwise fallback to camera logic
+                Vector3 occTargetPos = playerTarget != null ? playerTarget.position + forwardOffset : simulationCenter;
+
+                // Move the occlusion camera
+                occlusionCamera.transform.position = new Vector3(occTargetPos.x, occTargetPos.y + occlusionCameraHeight, occTargetPos.z);
+                occlusionCamera.transform.rotation = Quaternion.Euler(90, 0, 0);
+
+                // Render the depth map manually
+                occlusionCamera.Render();
+
+                // Lock the coordinates
+                lastRenderedOcclusionCenter = occlusionCamera.transform.position;
+
+                // Push the LOCKED coordinates to the Compute Shader.
+                // It is critical this only updates when the camera renders, otherwise the UV mapping shears.
+                rainCompute.SetVector(OcclusionCenterId, lastRenderedOcclusionCenter);
+                rainCompute.SetFloat(OcclusionCameraYId, lastRenderedOcclusionCenter.y);
+            }
+            // -----------------------------------
 
             float blend = GlobalWeatherManager.Instance != null ? GlobalWeatherManager.Instance.currentBlend : 1f;
             float currentFallSpeed = Mathf.Lerp(minFallSpeed, maxFallSpeed, blend);
@@ -302,7 +324,9 @@ namespace TechArtPlayground.Rain
             rainCompute.SetFloat(TimeId, Time.unscaledTime);
             rainCompute.SetVector(RainVelocityId, finalRainVelocity);
             rainMaterial.SetVector(RainVelocityId, finalRainVelocity);
-            rainCompute.SetVector(CameraPosId, simulationCenter);
+            
+            // Note: We still push simulationCenter continuously for the particle wrapping logic
+            rainCompute.SetVector(CameraPosId, simulationCenter); 
 
             rainCompute.Dispatch(kernelID, threadGroups, 1, 1);
             
