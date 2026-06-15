@@ -16,6 +16,8 @@ namespace Dialogues.UI
         public bool isEntered;
         public bool isPlayed = false;
 
+        
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void Update()
         {
@@ -58,7 +60,7 @@ namespace Dialogues.UI
             DialogueManager.Instance.StartConversation(debugConversation, gameObject);
             Debug.Log($"Launched debug conversation: {debugConversation.conversationTitle}");
             isPlayed = true;
-
+                
 
             onCleared ?.Invoke();
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dialogues;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.AI.Navigation;
@@ -15,6 +16,7 @@ namespace RoomBuilding
         [Header("Dependencies")]
         [Tooltip("The trigger that detects when the encounter is finished.")]
         [SerializeField] private EncounterRoomTrigger _encounterTrigger;
+        [SerializeField] private DialogueManager _dialogueManager;
 
         [SerializeField] private List<RoomEncounterController> _roomControllers;
 
@@ -34,6 +36,11 @@ namespace RoomBuilding
             else
             {
                 Debug.LogWarning($"[EncounterRebuildListener] {_encounterTrigger} is missing on {gameObject.name}!");
+            }
+
+            if(_dialogueManager != null) 
+            {
+                _dialogueManager.OnConversationEnded += HandleRoomCleared;
             }
         }
 
