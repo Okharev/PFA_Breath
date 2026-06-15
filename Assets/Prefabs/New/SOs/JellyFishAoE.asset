@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a529fe6cad98467fbee1ccd9e64b92f5, type: 3}
   m_Name: JellyFishAoE
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
+  Icon: {fileID: 0}
   abilityName: JellyFishAoE
+  description: 
   turnCost: 2
   cooldownTurns: 0
   channelTurns: 0
+  executionDelayFraction: 0
   conditions: []
   effects:
   - rid: 996992787387777087
@@ -27,7 +30,7 @@ MonoBehaviour:
       data:
         name: AoE Damage Effect
         radius: 4.5
-        damageAmount: 28
+        damageAmount: 18
         hitMask:
           serializedVersion: 2
           m_Bits: 2048
