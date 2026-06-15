@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
   Icon: {fileID: 21300000, guid: 5013c5ce3f9135d4d81c28ac678552fc, type: 3}
   abilityName: NevroPrimary
+  description: 
   turnCost: 1
   cooldownTurns: 0
   channelTurns: 0
@@ -33,7 +34,7 @@ MonoBehaviour:
         coneAngle: 13.5
         baseAngleOffset: 0
         forcePlanar: 1
-        burstDuration: 1
+        burstDuration: 0.9
         onShotEffects:
         - rid: 996992785912430664
         - rid: 3664169831335723071
