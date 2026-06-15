@@ -12382,43 +12382,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 306477302}
   m_Mesh: {fileID: 7899442648167486593, guid: ecb96c33b63b9b74d89ae8945990a569, type: 3}
---- !u!84 &307015802
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &307316427
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16197,6 +16160,43 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2668535022355767668, guid: 4297d2f5bf45c75458f17e9db6eac859, type: 3}
+--- !u!84 &372616444
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &377966094
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21680,6 +21680,7 @@ GameObject:
   - component: {fileID: 480875611}
   - component: {fileID: 480875610}
   - component: {fileID: 480875609}
+  - component: {fileID: 480875612}
   m_Layer: 0
   m_Name: HUDUI
   m_TagString: Untagged
@@ -21754,6 +21755,23 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &480875612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480875607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: becac2f0c0657d04680483db3acaa08b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorObjectives
+  maxNbRoom: 3
+  currentNbRoom: 0
+  room1: {fileID: 756879259}
+  room2: {fileID: 1795627297}
+  dialogueRoom: {fileID: 496425434}
 --- !u!1 &481152407
 GameObject:
   m_ObjectHideFlags: 0
@@ -52408,7 +52426,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: 74e50756d61ffab4f9158c2fee7a862b, type: 3}
     mixer: {fileID: -6103896839496543522, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.7
     pitch: 1
     spatialBlend: 0
     loop: 0
@@ -53584,6 +53602,43 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -1111806722035132270, guid: 4297d2f5bf45c75458f17e9db6eac859, type: 3}
+--- !u!84 &983554851
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &984337842
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -53894,16 +53949,30 @@ MonoBehaviour:
     choppiness: 1.03
     shallowColor: {r: 0.2, g: 0.6, b: 0.7, a: 1}
     deepColor: {r: 0.02, g: 0.1, b: 0.2, a: 1}
+    depthAbsorption: 0.01
+    sssColor: {r: 0, g: 0, b: 0, a: 0}
+    sssStrength: 0
+    sssPower: 1
+    foamColor: {r: 0, g: 0, b: 0, a: 0}
     foamBias: 0.24
     foamPower: 2.47
+    shorelineFoamCutoff: 0.01
+    causticsStrength: 0
   tempestPreset:
     windSpeed: 12
     phillipsAmplitude: 0.002
     choppiness: 0.94
     shallowColor: {r: 0.1, g: 0.3, b: 0.35, a: 1}
     deepColor: {r: 0.01, g: 0.05, b: 0.1, a: 1}
+    depthAbsorption: 0
+    sssColor: {r: 0, g: 0, b: 0, a: 0}
+    sssStrength: 0
+    sssPower: 0
+    foamColor: {r: 0, g: 0, b: 0, a: 0}
     foamBias: 0.193
     foamPower: 3.05
+    shorelineFoamCutoff: 0
+    causticsStrength: 0
   editorPreviewBlend: 1
 --- !u!114 &985686179
 MonoBehaviour:
@@ -53926,8 +53995,8 @@ MonoBehaviour:
   windDirection: {x: -2.4001737, y: -12.000868}
   phillipsAmplitude: 0.002
   choppiness: 0.94
-  displacementMap: {fileID: 1953497884}
-  derivativeMap: {fileID: 307015802}
+  displacementMap: {fileID: 983554851}
+  derivativeMap: {fileID: 372616444}
 --- !u!114 &985686180
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -112671,43 +112740,6 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!84 &1953497884
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &1955578161
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -125241,6 +125273,10 @@ PrefabInstance:
       propertyPath: enddemo
       value: 
       objectReference: {fileID: 837143021}
+    - target: {fileID: 135758548486660482, guid: 19bfd12fcb1389545b3b3cce2197457b, type: 3}
+      propertyPath: doorObjectives
+      value: 
+      objectReference: {fileID: 480875612}
     - target: {fileID: 135758548486660482, guid: 19bfd12fcb1389545b3b3cce2197457b, type: 3}
       propertyPath: dialogueTrigger
       value: 

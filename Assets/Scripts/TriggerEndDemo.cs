@@ -11,7 +11,8 @@ public class TriggerEndDemo : MonoBehaviour, IInteractable
     public static TriggerEndDemo Instance { get; private set; }
 
     [SerializeField] private EndDemo_Event enddemo;
-    [SerializeField] private DialogueDebugDirectTrigger dialogueTrigger;
+    //[SerializeField] private DialogueDebugDirectTrigger dialogueTrigger;
+    [SerializeField] private DoorObjectives doorObjectives;
 
     public bool isEntered = false;
 
@@ -23,14 +24,15 @@ public class TriggerEndDemo : MonoBehaviour, IInteractable
 
     private void Start()
     {
-        dialogueTrigger.onCleared += activateEndDemoTrigger;
+        //dialogueTrigger.onCleared += activateEndDemoTrigger;
+        doorObjectives.triggerEndLevel += activateEndDemoTrigger;
         // Deactivate the end level at the start of the level
         gameObject.SetActive(false);
     }
 
-    public void activateEndDemoTrigger(bool state)
+    public void activateEndDemoTrigger()
     {
-        gameObject.SetActive(state);
+        gameObject.SetActive(true);
     }
 
     public void EndDemo()

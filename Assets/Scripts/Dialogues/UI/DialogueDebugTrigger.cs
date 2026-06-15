@@ -1,4 +1,5 @@
 ﻿using Ability.NewAbilitySystem;
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -29,14 +30,16 @@ namespace Dialogues.UI
         {
             // Play conversation if the player is close enough of the zone
             // Conversation can only be played once
-            if (!isEntered) return;
+            //if (!isEntered) return;
 
-            if (!isPlayed) return;
+            if (isPlayed) return;
 
             Debug.Log("[CheckpointDialogue] Dialogue clicked! Opening Conversation.");
 
             LaunchConversation();
         }
+
+        public event Action onCleared;
 
         private void LaunchConversation()
         {
@@ -56,23 +59,25 @@ namespace Dialogues.UI
             Debug.Log($"Launched debug conversation: {debugConversation.conversationTitle}");
             isPlayed = true;
 
+
+            onCleared ?.Invoke();
         }
 
 
-        private void OnTriggerEnter(Collider other)
-        {
-            if (other.gameObject.CompareTag("Player"))
-            {
-                isEntered = true;
-            }
-        }
+        //private void OnTriggerEnter(Collider other)
+        //{
+        //    if (other.gameObject.CompareTag("Player"))
+        //    {
+        //        isEntered = true;
+        //    }
+        //}
 
-        private void OnTriggerExit(Collider other)
-        {
-            if (other.gameObject.CompareTag("Player"))
-            {
-                isEntered = false;
-            }
-        }
+        //private void OnTriggerExit(Collider other)
+        //{
+        //    if (other.gameObject.CompareTag("Player"))
+        //    {
+        //        isEntered = false;
+        //    }
+        //}
     }
 }

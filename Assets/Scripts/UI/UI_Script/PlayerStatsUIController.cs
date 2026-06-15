@@ -1,4 +1,6 @@
 ﻿using Ability.NewAbilitySystem;
+using Dialogues.UI;
+using TechArtPlayground.Oasis;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -19,9 +21,15 @@ namespace UI
         [Tooltip("Reference to the player's oxygen component.")] [SerializeField]
         private OxygenComponent playerOxygen;
 
+        private DoorObjectives doorObjectives;
+
+
         // View Elements
         private VisualElement healthBarFill;
         private VisualElement oxygenBarFill;
+
+        private Label roomCleartext;
+
 
         private void OnEnable()
         {
@@ -31,6 +39,7 @@ namespace UI
 
             healthBarFill = root.Q<VisualElement>("health-bar-fill");
             oxygenBarFill = root.Q<VisualElement>("oxygen-bar-fill");
+            roomCleartext = root.Q<Label>("Nmb_Door");
 
             // 2. Subscribe to events (Observer Pattern)
             if (playerHealth != null)
@@ -43,6 +52,13 @@ namespace UI
             {
                 playerOxygen.OnOxygenChanged += UpdateOxygenUI;
                 UpdateOxygenUI(playerOxygen.CurrentOxygen, playerOxygen.maxOxygen); // Init
+            }
+
+            if (roomCleartext != null)
+            {
+                doorObjectives = GetComponent<DoorObjectives>();
+                doorObjectives.onDoorNumberChanged += UpdateDoorNb;
+                UpdateDoorNb(doorObjectives.currentNbRoom, doorObjectives.maxNbRoom); // Init
             }
         }
 
@@ -76,6 +92,18 @@ namespace UI
 
             float percentage = currentOxygen / maxOxygen * 100f;
             oxygenBarFill.style.width = Length.Percent(percentage);
+        }
+
+
+        /// <summary>
+        ///     Add a room unlocked to the final door
+        /// </summary>
+        /// 
+        private void UpdateDoorNb(int currentDoor, int maxDoor)
+        {
+            if (roomCleartext == null || doorObjectives == null) return;
+
+            roomCleartext.text = $"{currentDoor}/{maxDoor}";
         }
     }
 }
