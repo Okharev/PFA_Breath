@@ -51,49 +51,49 @@ Material:
     m_Floats:
     - _CausticsScale: 0.14
     - _CausticsSpeed: 0.39
-    - _CausticsStrength: 0.3
-    - _Choppiness: 0.94
+    - _CausticsStrength: 0.104
+    - _Choppiness: 1.03
     - _CrestGlowPower: 4.07
     - _CrestGlowStrength: 1.99
     - _DepthAbsorption: 0.01
     - _DepthMultiplier: 0.04
     - _DetailScale: 0.1
     - _FFTScale: 0.015625
-    - _FoamBias: 0.52
+    - _FoamBias: 0.242
     - _FoamBlurLod: 1.2
-    - _FoamCutoff: 0.196
+    - _FoamCutoff: 0.664
     - _FoamDistance: 3.1
-    - _FoamNoiseScale: 0.01
-    - _FoamPower: 1.37
+    - _FoamNoiseScale: 0.5
+    - _FoamPower: 1.72
     - _FoamScale: 1.05
     - _FoamSpeed: 5.9
-    - _FresnelPower: 1
+    - _FresnelPower: 1.74
     - _JacobianScale: 1635
-    - _MaxWaveHeight: 1.8788991
+    - _MaxWaveHeight: 0.5
     - _Metallic: 0
     - _NormalScale: 0.23
-    - _NormalStrength: 0.088
+    - _NormalStrength: 0.201
     - _ReflectionStrength: 0.8
-    - _RefractionStrength: 0.011
+    - _RefractionStrength: 0.0131
     - _SSSEmission: 3
-    - _SSSPower: 3.5
+    - _SSSPower: 1
     - _SSSSpread: 0.306
-    - _SSSStrength: 1.44
+    - _SSSStrength: 0
     - _ShadowStrength: 0.75
     - _Smoothness: 0.95
     - _SpecularBoost: 0.1
-    - _SpecularStrength: 0.001
+    - _SpecularStrength: 0.04
     - _WaveNormalScale: 25
     m_Colors:
-    - _DeepColor: {r: 0.26326096, g: 0.48576012, b: 0.6415094, a: 1}
+    - _DeepColor: {r: 0.3949359, g: 0.5439906, b: 0.6698113, a: 1}
     - _DetailSpeed: {r: -0.125, g: 0.125, b: 0, a: 0}
-    - _FoamColor: {r: 0.7783019, g: 1, b: 0.9890406, a: 0}
+    - _FoamColor: {r: 0.8254717, g: 0.9672788, b: 1, a: 0}
     - _FoamNoiseSpeed: {r: 0.02, g: 0.05, b: 0, a: 0}
     - _NormalSpeed: {r: 0.1, g: 0.25, b: 0, a: 0}
     - _SSSColor: {r: 0, g: 0, b: 0, a: 0}
-    - _ShallowColor: {r: 0.6023496, g: 0.8572597, b: 0.9056604, a: 1}
+    - _ShallowColor: {r: 0.5613208, g: 0.934198, b: 1, a: 1}
     - _WaterColor: {r: 0.049999982, g: 0.19999996, b: 0.39999998, a: 1}
-    - _WindDirection1: {r: -0.11766969, g: -0.58834845, b: 0, a: 0}
+    - _WindDirection1: {r: -0.049029034, g: -0.24514517, b: 0, a: 0}
     - _WindDirection2: {r: -0.05, g: 0.15, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

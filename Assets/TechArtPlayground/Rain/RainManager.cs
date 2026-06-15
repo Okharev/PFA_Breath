@@ -148,7 +148,7 @@ namespace TechArtPlayground.Rain
             };
 
             rainCompute.SetFloat(GridSizeId, _gridSize);
-            rainMaterial.SetFloat(GridSizeId, _gridSize);
+            renderParams.matProps.SetFloat(GridSizeId, _gridSize);
 
             if (GlobalWeatherManager.Instance != null)
             {
@@ -196,7 +196,7 @@ namespace TechArtPlayground.Rain
         private void OnWeatherChanged(float blend)
         {
             currentActiveParticles = Mathf.FloorToInt(maxParticleCount * blend);
-
+        
             if (argsBuffer != null && crossMesh != null)
             {
                 GraphicsBuffer.IndirectDrawIndexedArgs[] args = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
@@ -204,12 +204,17 @@ namespace TechArtPlayground.Rain
                 args[0].instanceCount = (uint)currentActiveParticles;
                 argsBuffer.SetData(args);
             }
-
+        
             threadGroups = Mathf.CeilToInt(currentActiveParticles / 128f);
-
+        
             Color adjustedColor = baseRainColor;
             adjustedColor.a *= Mathf.Clamp01(blend * 4f); 
-            rainMaterial.SetColor(RainColorId, adjustedColor);
+            
+            // Push color to the Property Block, NOT the shared material asset
+            if (renderParams.matProps != null)
+            {
+                renderParams.matProps.SetColor(RainColorId, adjustedColor);
+            }
         }
 
         private void InitializeBuffers()
@@ -323,7 +328,7 @@ namespace TechArtPlayground.Rain
             rainCompute.SetFloat(DeltaTimeId, Time.unscaledDeltaTime);
             rainCompute.SetFloat(TimeId, Time.unscaledTime);
             rainCompute.SetVector(RainVelocityId, finalRainVelocity);
-            rainMaterial.SetVector(RainVelocityId, finalRainVelocity);
+            renderParams.matProps.SetVector(RainVelocityId, finalRainVelocity);
             
             // Note: We still push simulationCenter continuously for the particle wrapping logic
             rainCompute.SetVector(CameraPosId, simulationCenter); 
