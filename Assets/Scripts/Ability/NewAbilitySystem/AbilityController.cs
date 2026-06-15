@@ -125,10 +125,19 @@ namespace Ability.NewAbilitySystem
 
         public int GetRemainingCooldown(AbilityData ability)
         {
-            // Just return the raw integer. No more math against CurrentTurn!
-            return activeCooldowns.GetValueOrDefault(ability, 0);
-        }
+            int cd = activeCooldowns.GetValueOrDefault(ability, 0);
 
+            // 1. Hide the +1 padding applied to survive the immediate EndTurn() decrement.
+            if (cd > ability.cooldownTurns) 
+                return ability.cooldownTurns;
+
+            // 2. Hide the buffer during the Execution phase so the UI doesn't visually flicker 
+            // before EndTurn() fires.
+            if (TurnManager.Instance != null && TurnManager.Instance.IsExecuting && cd > 0)
+                return cd - 1;
+
+            return cd;
+        }
         private readonly Dictionary<string, int> transientStates = new();
 
         public int GetTransientState(string key) => transientStates.GetValueOrDefault(key, 0);

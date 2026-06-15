@@ -1,7 +1,6 @@
 using Ability.NewAbilitySystem;
 using System.Collections;
 using UnityEngine;
-using static Autodesk.Fbx.FbxTime;
 
 public class AmbienceMusic : MonoBehaviour
 {

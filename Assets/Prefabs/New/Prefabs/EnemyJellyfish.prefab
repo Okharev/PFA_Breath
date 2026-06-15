@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 6015349057466556885}
   - component: {fileID: 8622098894356469499}
   - component: {fileID: 3669964096201355987}
+  - component: {fileID: -6944908067385657762}
   m_Layer: 10
   m_Name: EnemyJellyfish
   m_TagString: Untagged
@@ -125,7 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4e5a71c79d640db9a50b3ad5d299931, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthComponent
-  maxHealth: 50
+  maxHealth: 36
   OnHealthChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -191,6 +192,20 @@ MonoBehaviour:
   hitSound: hitEnemy
   deathSound: 
   abilityExecuted: 
+--- !u!114 &-6944908067385657762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4805482828720501141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4013db913df23594e91219a92f03e985, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyChangeMaterial
+  _material: {fileID: 2100000, guid: 0aad921c0c111844f8e397d49049ae6f, type: 2}
+  renderer: {fileID: 0}
 --- !u!1 &6359587058521299137
 GameObject:
   m_ObjectHideFlags: 0

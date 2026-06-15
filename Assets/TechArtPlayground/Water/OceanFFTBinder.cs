@@ -181,18 +181,21 @@ namespace TechArtPlayground.Water
 
         private void Update()
         {
-            // Polling Firewall: Property setter inherently blocks unchanged values
-            if (GlobalWeatherManager.Instance != null)
-            {
-                Vector3 globalDir = GlobalWeatherManager.Instance.CurrentWindVelocity;
-                Vector2 globalWind2D = new Vector2(globalDir.x, globalDir.z);
-
-                if (globalWind2D.sqrMagnitude > 0.001f)
-                    WindDirection = globalWind2D;
-            }
-
+            // REMOVED: GlobalWeatherManager polling. 
+            // The system is now 100% event-driven through OceanWeatherController!
+            
+            // This MUST remain to animate the water over time.
+            DispatchFFT(); 
+        }
+        
+#if UNITY_EDITOR
+        // Expose a safe method to force a compute shader pass in Edit Mode
+        // whenever the OceanWeatherController's OnValidate fires.
+        public void EditorForceUpdate()
+        {
             DispatchFFT();
         }
+#endif
 
         private void DispatchFFT()
         {

@@ -324,17 +324,18 @@ namespace Ability.NewAbilitySystem
             player.Agent.ResetPath();
         }
     }
-
+    
+    
     public class PlayerCombatState : IPlayerState
     {
         public void Enter(PlayerController player)
         {
-            player.Agent.isStopped = true;
+            SetAgentStoppedSafely(player.Agent, true);
         }
 
         public void ExecuteTurn(PlayerController player)
         {
-            player.Agent.isStopped = false;
+            SetAgentStoppedSafely(player.Agent, false);
             player.Abilities.ExecuteAction();
         }
 
@@ -355,32 +356,32 @@ namespace Ability.NewAbilitySystem
 
         public void HandleMoveInput(PlayerController player, Vector3 destination)
         {
+            // FIX: Do not allow move inputs while the turn is actively playing out!
+            if (TurnManager.Instance.IsExecuting) return;
+
             if (player.BasicMoveAbility == null) return;
             AbilityContext context = new(player.BasicMoveAbility, player.gameObject, targetPosition: destination);
 
             if (player.Abilities.QueueAbility(player.BasicMoveAbility, context))
                 TurnManager.Instance.RequestTurns(1);
         }
-
+        
         public void HandleAbilityInput(PlayerController player, AbilityData ability, Vector3 targetPosition)
         {
+            // FIX: Do not allow ability inputs while the turn is actively playing out!
+            if (TurnManager.Instance.IsExecuting) return;
+
             if (ability == null) return;
             AbilityContext context = new(ability, player.gameObject, player.FirePoint, null, targetPosition);
 
-            // --- ROUTING BASED ON TURN COST ---
             if (ability.turnCost == 0)
             {
-                // Path A: Free Action (e.g., Phase 1 Dash)
-                // Executes immediately during the paused planning phase. 
-                // The TurnManager is NOT told to advance time.
                 player.Abilities.TryExecuteImmediate(ability, context);
             }
             else
             {
-                // Path B: Standard Turn-Ending Action
                 if (player.Abilities.QueueAbility(ability, context))
                 {
-                    // Dynamically request turns based on the ability's actual cost
                     TurnManager.Instance.RequestTurns(ability.turnCost);
                 }
             }
@@ -388,9 +389,25 @@ namespace Ability.NewAbilitySystem
 
         public void EndTurn(PlayerController player)
         {
-            player.Agent.isStopped = true;
-            if (player.Agent.hasPath) player.Agent.ResetPath();
+            SetAgentStoppedSafely(player.Agent, true);
+            
+            // Safely reset the path
+            if (player.Agent != null && player.Agent.isActiveAndEnabled && player.Agent.isOnNavMesh)
+            {
+                if (player.Agent.hasPath) player.Agent.ResetPath();
+            }
+            
             player.Abilities.EndTurn();
+        }
+
+        // --- DEFENSIVE ARCHITECTURE ---
+        private void SetAgentStoppedSafely(NavMeshAgent agent, bool stop)
+        {
+            // We verify the agent exists, is active, AND is successfully bound to the NavMesh
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = stop;
+            }
         }
     }
 }
