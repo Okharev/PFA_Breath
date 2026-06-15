@@ -1,0 +1,1161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-9014751930916536283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "Ses mots ont fa\xE7onn\xE9 le monde"
+  nextNode: {fileID: -7185939155822977019}
+  position: {x: 5388, y: 1050}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-8973589388903960247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "Ch\xE9ri, tu te rappelles de la chambre ?"
+  nextNode: {fileID: 0}
+  position: {x: 3764, y: 343}
+  choices:
+  - choiceText: Je me rappelle des sons
+    nextNode: {fileID: 2091022389142920776}
+    conditions: []
+    choiceEffects: []
+  - choiceText: "J'\xE9tais petit \xE0 ce moment l\xE0"
+    nextNode: {fileID: 5458475804416490968}
+    conditions: []
+    choiceEffects: []
+  - choiceText: Tout est de notre faute
+    nextNode: {fileID: -5289935041068292197}
+    conditions: []
+    choiceEffects: []
+  - choiceText: "Comment \xE9tait la vie, avant ses mots?"
+    nextNode: {fileID: 3867892947391829027}
+    conditions:
+    - rid: 1439626105688948809
+    - rid: 1439626105688948810
+    - rid: 1439626105688948811
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948809
+      type: {class: RequirePreviousChoiceCondition, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        requiredChoiceId: Phase2_Sound
+        invertCheck: 0
+    - rid: 1439626105688948810
+      type: {class: RequirePreviousChoiceCondition, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        requiredChoiceId: Phase2_Small
+        invertCheck: 0
+    - rid: 1439626105688948811
+      type: {class: RequirePreviousChoiceCondition, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        requiredChoiceId: Phase2_Fault
+        invertCheck: 0
+--- !u!114 &-8826774229124849247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "Ca y est, Nervosit\xE9 p\xE8te les plombs. C'est not\xE9."
+  nextNode: {fileID: 7802566276363345826}
+  position: {x: 4421, y: 714}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-8789237492913422640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "On a assez endur\xE9 comme \xE7a"
+  nextNode: {fileID: -8973589388903960247}
+  position: {x: 4725, y: 502}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-8565287203402747608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "Cette voix ressemble \xE0 celle de la personne en qui on avait le plus confiance,
+    ch\xE9ri.. Celle qui \xE9tait l\xE0 depuis le d\xE9but."
+  nextNode: {fileID: -8973589388903960247}
+  position: {x: 5056, y: 334}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-8343732246513034921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "On \xE9tait si vuln\xE9rable, si na\xEFf\u2026 On ne pouvait pas comprendre "
+  nextNode: {fileID: -8789237492913422640}
+  position: {x: 4385, y: 523}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-7986516154205061879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Ok, ok (on l'a fait) (on l'a vraiment fait\u2026 on l' fait). Pourquoi on
+    est toujours coinc\xE9 avec lui ?"
+  nextNode: {fileID: -2760618989452385233}
+  position: {x: 168, y: 223}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-7806596996500614675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Oui\u2026 Elle rab\xE2che toujours les m\xEAmes choses : \"Tu aurais pu
+    faire mieux\u2026 T'es pas assez\u2026. ( - Ma vie aurait \xE9tait tellement
+    mieux si tu n'avais pas \xE9t\xE9 l\xE0) "
+  nextNode: {fileID: 8580182924079557654}
+  position: {x: 4458, y: 338}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-7446386652919575502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Ce que tu ne peux pas contr\xF4ler ne devrait pas te consumer. Mes vieux
+    os le savent maintenant. "
+  nextNode: {fileID: 0}
+  position: {x: 10282, y: 1258}
+  choices: []
+  enterEffects:
+  - rid: 1439626105688948812
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948812
+      type: {class: GrantEmotionPointsEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        emotionType: 3
+        amount: 1
+--- !u!114 &-7352791820482004563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "Mon Dieu, il ne se rend m\xEAme pas compte qu'on se moque de lui\u2026"
+  nextNode: {fileID: 9120852004325181258}
+  position: {x: 1987, y: 322}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-7185939155822977019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: Les mots sont des outils puissants, et elle, elle s'en est servi comme du
+    venin.
+  nextNode: {fileID: 0}
+  position: {x: 5687, y: 1065}
+  choices:
+  - choiceText: Qui es-tu quand personne ne te regarde ?
+    nextNode: {fileID: -4656968100211259163}
+    conditions: []
+    choiceEffects: []
+  - choiceText: Est-ce que vivre te fait tellement souffrir, que tu le sens dans
+      tes tripes?
+    nextNode: {fileID: -631641085157314927}
+    conditions: []
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-7165938493653994498
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: Non mais je pense que quelque chose ne va pas (Il est perdu?) il semble chercher
+    quelque chose
+  nextNode: {fileID: -59953663363963396}
+  position: {x: 2782, y: 350}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-6663430760397525646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Mais c'\xE9tait il y a tr\xE8s longtemps non ? (un temps qui semble \xEAtre
+    une \xE9ternit\xE9) il y a 25 ou 30 ans?"
+  nextNode: {fileID: 0}
+  position: {x: 5032, y: 1022}
+  choices:
+  - choiceText: "C'est l\xE0 que tout a commenc\xE9"
+    nextNode: {fileID: -9014751930916536283}
+    conditions: []
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-6299995327039634063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Pas de ponts bris\xE9s, pas de terres d\xE9vast\xE9es !"
+  nextNode: {fileID: -3548920992261646744}
+  position: {x: 4459, y: 969}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-6231086082143278553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: (Je me rappelle maintenant) (je me rappelle) (ok) (ok, je me rappelle)
+  nextNode: {fileID: -5490775758751555771}
+  position: {x: 9555, y: 1248}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-5561674351029705082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: Je me rappelle maintenant.
+  nextNode: {fileID: -6231086082143278553}
+  position: {x: 9324, y: 1248}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-5512483433569452920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Allez faut qu'on se le rentre dans le cr\xE2ne une bonne fois pour toute
+    ! C'est pas de sa faute !"
+  nextNode: {fileID: -5076623766044152269}
+  position: {x: 6559, y: 1295}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-5490775758751555771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "On se rappelle maintenant, ch\xE9ri. "
+  nextNode: {fileID: 0}
+  position: {x: 9903, y: 1267}
+  choices:
+  - choiceText: "C'\xE9tait vrai."
+    nextNode: {fileID: -7446386652919575502}
+    conditions: []
+    choiceEffects: []
+  - choiceText: Ca fait encore mal.
+    nextNode: {fileID: -1993701923927617198}
+    conditions: []
+    choiceEffects: []
+  - choiceText: "Je suis toujours l\xE0."
+    nextNode: {fileID: 1089970084887934515}
+    conditions: []
+    choiceEffects: []
+  - choiceText: Qu'est ce que je fais maintenant ?
+    nextNode: {fileID: 5473608133173878574}
+    conditions: []
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-5289935041068292197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Tout est de ma faute (ma faute ma faute), attends \xE7a l'est vraiment ?
+    (je sais pas je sais pas)"
+  nextNode: {fileID: -8826774229124849247}
+  position: {x: 4128, y: 712}
+  choices: []
+  enterEffects:
+  - rid: 1439626105688948808
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948808
+      type: {class: RecordLocalChoiceEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        choiceId: Phase2_Fault
+--- !u!114 &-5076623766044152269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Le poids de ses mots \xE9taient si\u2026 si lourd (et \xE7a dure depuis
+    trop longtemps\u2026)"
+  nextNode: {fileID: 7187363743415883591}
+  position: {x: 6925, y: 1321}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-4656968100211259163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Pas celui qu'on te disait d'\xEAtre. Qui es-tu vraiment, quand tout est
+    calme, quand tu n'as pas besoin de jouer la com\xE9die ?"
+  nextNode: {fileID: -4075400455773592601}
+  position: {x: 6199, y: 1048}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-4075400455773592601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: On fait fausse route depuis un moment.
+  nextNode: {fileID: 7845410312887468333}
+  position: {x: 6483, y: 1063}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-3907467926077003685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Tu peux souffler maintenant. Tu peux arr\xEAter de porter \xE7a sur tes
+    \xE9paules."
+  nextNode: {fileID: -5561674351029705082}
+  position: {x: 8963, y: 1201}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-3548920992261646744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "La mer n'avait pas encore d\xE9bord\xE9e, on pouvait se balader de partout"
+  nextNode: {fileID: -6663430760397525646}
+  position: {x: 4779, y: 996}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-2760618989452385233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "J'aimerai faire remarquer qu'effectivement, il a bien gal\xE9r\xE9 sur le
+    combat d'aujourd'hui."
+  nextNode: {fileID: 998740993457969991}
+  position: {x: 522, y: 231}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-2060049480471558956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "C'\xE9tait pas juste, ce qu'elle a dit. C'\xE9tait pas juste, et personne
+    ne l'a fait remarquer"
+  nextNode: {fileID: -8973589388903960247}
+  position: {x: 5300, y: 757}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-1993701923927617198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Ce que tu ne peux pas contr\xF4ler ne devrait pas te consumer. Mes vieux
+    os le savent maintenant. "
+  nextNode: {fileID: 0}
+  position: {x: 10288, y: 1435}
+  choices: []
+  enterEffects:
+  - rid: 1439626105688948813
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948813
+      type: {class: GrantEmotionPointsEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        emotionType: 0
+        amount: 1
+--- !u!114 &-631641085157314927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "La vie n'est que souffrance, ch\xE9ri."
+  nextNode: {fileID: -5512483433569452920}
+  position: {x: 6239, y: 1235}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-606458228070908676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "Il est adorable, mais il  met du temps \xE0 percuter\u2026"
+  nextNode: {fileID: 4548739437749643691}
+  position: {x: 1240, y: 257}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &-59953663363963396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "Le souvenir en question est\u2026 r\xE9sistant. Plus on se rapproche, plus
+    \xE7a nous file entre les doigts\u2026"
+  nextNode: {fileID: 4287412615444322940}
+  position: {x: 3081, y: 325}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 221ded2a86284bd8af3d68ba095cedeb, type: 3}
+  m_Name: DialogueFr
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.Conversation
+  conversationTitle: 
+  startingNode: {fileID: -7986516154205061879}
+--- !u!114 &66730552588027249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Non mon grand, \xE7a ne l'\xE9tait pas. Il n'\xE9tait encore qu'un enfant."
+  nextNode: {fileID: 3097869307046991396}
+  position: {x: 8354, y: 1131}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &453054223797035201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "Ch\xE9ri, pense \xE0 tout \xE7a. On a fait toutes ces choses -"
+  nextNode: {fileID: -2060049480471558956}
+  position: {x: 4954, y: 720}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &998740993457969991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Il est juste pas \xE0 la hauteur, j'dis \xE7a j'dis rien."
+  nextNode: {fileID: -606458228070908676}
+  position: {x: 889, y: 217}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &1089970084887934515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Ce que tu ne peux pas contr\xF4ler ne devrait pas te consumer. Mes vieux
+    os le savent maintenant. "
+  nextNode: {fileID: 0}
+  position: {x: 10321, y: 1683}
+  choices: []
+  enterEffects:
+  - rid: 1439626105688948814
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948814
+      type: {class: GrantEmotionPointsEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        emotionType: 1
+        amount: 1
+--- !u!114 &2081619820387256291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: (donc c'est pas -) c'est pas de notre faute ( il a pas -)
+  nextNode: {fileID: 66730552588027249}
+  position: {x: 7999, y: 1079}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &2091022389142920776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "Ca ressemble \xE0 une voix. Je peux encore l'entendre dans mes r\xEAves"
+  nextNode: {fileID: -7806596996500614675}
+  position: {x: 4127, y: 332}
+  choices: []
+  enterEffects:
+  - rid: 1439626105688948806
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948806
+      type: {class: RecordLocalChoiceEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        choiceId: Phase2_Sound
+--- !u!114 &3097869307046991396
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Serenity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
+  text: "S'oublier pour les autres, c'est finir par dispara\xEEtre... Tu n'as plus
+    \xE0 le faire\u2026 Tu n'as jamais eu \xE0 le faire."
+  nextNode: {fileID: -3907467926077003685}
+  position: {x: 8652, y: 1152}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &3867892947391829027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "(Je me rappelle). Je me rappelle d'une terre fleurie, et de prairies ensoleill\xE9es
+    (comme un printemps \xE9ternel)"
+  nextNode: {fileID: -6299995327039634063}
+  position: {x: 4110, y: 908}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &4287412615444322940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "C'est parce qu'il n'est pas pr\xEAt. C'est aussi simple que \xE7a."
+  nextNode: {fileID: -8973589388903960247}
+  position: {x: 3444, y: 344}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &4548739437749643691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Ah !  Quel empot\xE9  ! (toujours un simplet)"
+  nextNode: {fileID: 0}
+  position: {x: 1564, y: 296}
+  choices:
+  - choiceText: "Ouais ! Un vrai cr\xE9tin !"
+    nextNode: {fileID: -7352791820482004563}
+    conditions: []
+    choiceEffects: []
+  - choiceText: "C'est pas le couteau le plus aiguis\xE9 du tiroir\u2026"
+    nextNode: {fileID: -7352791820482004563}
+    conditions: []
+    choiceEffects: []
+  - choiceText: "Peut-\xEAtre, le paysage \xE9tait vraiment beau\u2026"
+    nextNode: {fileID: -7352791820482004563}
+    conditions: []
+    choiceEffects: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &5458475804416490968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Nervosity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
+  text: "Pourquoi \xE7a semble si important ? (\xE9trangement, \xE7a m'a l'air important)..."
+  nextNode: {fileID: -8343732246513034921}
+  position: {x: 4108, y: 503}
+  choices: []
+  enterEffects:
+  - rid: 1439626105688948807
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948807
+      type: {class: RecordLocalChoiceEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        choiceId: Phase2_Small
+--- !u!114 &5473608133173878574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Ce que tu ne peux pas contr\xF4ler ne devrait pas te consumer. Mes vieux
+    os le savent maintenant. "
+  nextNode: {fileID: 0}
+  position: {x: 10339, y: 1890}
+  choices: []
+  enterEffects:
+  - rid: 1439626105688948815
+  references:
+    version: 2
+    RefIds:
+    - rid: 1439626105688948815
+      type: {class: GrantEmotionPointsEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        emotionType: 2
+        amount: 1
+--- !u!114 &7187363743415883591
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "La source du probl\xE8me venait de l'ext\xE9rieur. C'est la conlusion.."
+  nextNode: {fileID: 7367913638083280050}
+  position: {x: 7299, y: 1377}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &7367913638083280050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "Pour \xEAtre pr\xE9cis, ce qu'il s'est pass\xE9 n'\xE9tait pas juste. Ce
+    qu'elle a dit n'\xE9tait pas juste."
+  nextNode: {fileID: 2081619820387256291}
+  position: {x: 7692, y: 1092}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &7802566276363345826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: On a rien fait putain.
+  nextNode: {fileID: 453054223797035201}
+  position: {x: 4735, y: 718}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &7845410312887468333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "Notre perception des \xE9v\xE8nements a peut \xEAtre \xE9t\xE9 alt\xE9r\xE9 "
+  nextNode: {fileID: 7367913638083280050}
+  position: {x: 6812, y: 1077}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &8580182924079557654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Loneliness
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
+  text: "Je suis perdu\u2026 A qui appartient cette voix ?"
+  nextNode: {fileID: -8565287203402747608}
+  position: {x: 4746, y: 338}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &9120852004325181258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c7fcd37765e46e2b5a24bd2652ca069, type: 3}
+  m_Name: Agressivity
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.DialogueNode
+  speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
+  text: "Ce minable sait tr\xE8s bien qu'on parle de lui, il a toujours besoin de
+    faire son int\xE9ressant"
+  nextNode: {fileID: -7165938493653994498}
+  position: {x: 2358, y: 312}
+  choices: []
+  enterEffects: []
+  references:
+    version: 2
+    RefIds: []
