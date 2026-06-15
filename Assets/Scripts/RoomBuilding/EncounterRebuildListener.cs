@@ -76,8 +76,9 @@ namespace RoomBuilding
         private IEnumerator RebuildRoom()
         {
             yield return new WaitForSeconds(5f);
-            Debug.Log("Rebaking NavMesh");
-            //navMeshSurface.BuildNavMesh();
+            
+            //navMeshSurface.UpdateNavMesh(navMeshSurface.navMeshData);
+            navMeshSurface.BuildNavMesh(); 
         }
     }
 }
