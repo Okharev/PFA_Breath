@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
   Icon: {fileID: 21300000, guid: 7109790b1661cb6469e1e296a1e0e47a, type: 3}
   abilityName: NevroUltimate
+  description: 
   turnCost: 1
   cooldownTurns: 5
   channelTurns: 0
@@ -34,4 +35,4 @@ MonoBehaviour:
       type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
       data:
         name: Consume Oxygen
-        oxygenCost: 10
+        oxygenCost: 15

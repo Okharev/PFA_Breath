@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
   Icon: {fileID: 21300000, guid: 6b8e37558f787af45bc017c29ebaaf5e, type: 3}
   abilityName: NevroSecondary
+  description: 
   turnCost: 1
   cooldownTurns: 2
   channelTurns: 0
@@ -21,6 +22,7 @@ MonoBehaviour:
   conditions: []
   effects:
   - rid: 996992785912430665
+  - rid: 3664170125683851429
   references:
     version: 2
     RefIds:
@@ -47,6 +49,11 @@ MonoBehaviour:
         name: Consume Ammo effect
         ammoCost: 1
     - rid: 3664169899590942720
+      type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Consume Oxygen
+        oxygenCost: 6
+    - rid: 3664170125683851429
       type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
       data:
         name: Consume Oxygen
