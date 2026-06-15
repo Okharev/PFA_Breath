@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace RoomBuilding
 {
@@ -6,20 +7,14 @@ namespace RoomBuilding
     /// Acts as a Bridge (Observer Pattern) connecting the combat encounter system
     /// to the room rebuilding system without tightly coupling them.
     /// </summary>
-    [RequireComponent(typeof(RoomEncounterController))]
     public class EncounterRebuildListener : MonoBehaviour
     {
         [Header("Dependencies")]
         [Tooltip("The trigger that detects when the encounter is finished.")]
         [SerializeField] private EncounterRoomTrigger _encounterTrigger;
 
-        private RoomEncounterController _roomController;
+        [SerializeField] private List<RoomEncounterController> _roomControllers;
 
-        private void Awake()
-        {
-            // O(1) component retrieval cache
-            _roomController = GetComponent<RoomEncounterController>();
-        }
 
         private void OnEnable()
         {
@@ -55,7 +50,10 @@ namespace RoomBuilding
             Debug.Log("[EncounterRebuildListener] Encounter cleared event received. Triggering rebuild.");
             
             // Execute the rebuilding sequence
-            _roomController.OnRoomCleared();
+            foreach (RoomEncounterController room in _roomControllers)
+            {
+                room.OnRoomCleared();
+            }
         }
     }
 }
