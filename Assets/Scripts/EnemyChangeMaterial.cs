@@ -10,6 +10,7 @@ public class EnemyChangeMaterial : MonoBehaviour
     private NavMeshAgent navMeshAgent;
     private HealthComponent healthComponent;
     private EnemyHealthPresenter presenter;
+    private CapsuleCollider collider;
     public MeshRenderer renderer;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -20,6 +21,7 @@ public class EnemyChangeMaterial : MonoBehaviour
         presenter = GetComponent<EnemyHealthPresenter>();
         healthComponent = GetComponent<HealthComponent>();
         renderer = GetComponentInChildren<MeshRenderer>();
+        collider = GetComponent<CapsuleCollider>();
 
         healthComponent.OnDeath += ChangeEnemyMat;
 
@@ -34,6 +36,7 @@ public class EnemyChangeMaterial : MonoBehaviour
         Destroy(aiController);
         Destroy(navMeshAgent);
         Destroy(presenter);
+        Destroy(collider);
     }
 
 }
