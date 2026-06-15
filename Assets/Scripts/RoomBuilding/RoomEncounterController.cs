@@ -9,7 +9,7 @@ namespace RoomBuilding
         [SerializeField] [Tooltip("Assign the parent object holding all the props.")]
         private Transform _propParent;
 
-        private RoomRebuilder _rebuilder;
+        public RoomRebuilder _rebuilder;
 
         private void Awake()
         {
