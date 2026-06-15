@@ -146,7 +146,7 @@ namespace Ability.NewAbilitySystem
             Payload.ApplyTo(hitObject);
             CurrentPierces++;
 
-            if (CurrentPierces > maxPierces || hitObject.CompareTag("Environment")) 
+            if (CurrentPierces > maxPierces) 
             {
                 Destroy(gameObject);
             }
