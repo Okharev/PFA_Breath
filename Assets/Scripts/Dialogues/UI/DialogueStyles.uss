@@ -5,63 +5,51 @@
     padding-bottom: 50px;
 }
 
-/* Speaker Header Area */
 .speakers-container {
     flex-direction: row;
     justify-content: center;
-
-    /* Anchors the portraits to the bottom of this container */
     align-items: flex-end;
-
-    /* Increased height significantly to accommodate large emotions */
-    height: 300px;
-
-    /* CRITICAL: A negative bottom margin pulls the Dialogue Box UP, 
-       causing it to overlap and cover the bottom of the portraits. */
+    height: 1000px;
     margin-bottom: -40px;
 }
 
 .speaker-portrait {
-    width: 250px;
-    height: 250px;
+    width: 600px;
+    height: 600px;
     margin: 0 -20px;
     border-radius: 15px;
     background-color: rgba(0, 0, 0, 0);
     -unity-background-scale-mode: scale-to-fit;
-
-    /* ADDED translate to the transition properties */
     transition-property: scale, opacity, translate;
-
-    /* Slightly longer duration for the translation feels more elegant */
     transition-duration: 0.3s, 0.3s, 0.5s;
-
-    /* ease-out-back gives the slide a tiny, satisfying "bounce" at the end */
     transition-timing-function: ease-in-out, ease-in-out, ease-out-back;
+    margin-right: -100px;
+    margin-left: -100px;
+    margin-bottom: 0;
 }
 
 .speaker-hidden {
     scale: 0.5 0.5;
     opacity: 0;
-    /* Pushed 80 pixels to the left. It will slide to 0 when activated. */
     translate: -80px 0;
 }
 
 .speaker-active {
     scale: 1.15 1.15;
     opacity: 1;
-    translate: 0 0; /* Rests at origin */
+    translate: 0 0;
 }
 
 .speaker-inactive {
     scale: 0.85 0.85;
     opacity: 0.4;
-    translate: 0 0; /* Rests at origin */
+    translate: 0 0;
 }
 
-/* Dialogue Box */
-.dialogue-box, .choices-box {
-    width: 70%;
-    max-width: 900px;
+.dialogue-box,
+.choices-box {
+    width: 90%;
+    max-width: 1080px;
     background-color: rgba(15, 15, 15, 0.95);
     border-radius: 12px;
     padding: 25px;
@@ -78,14 +66,13 @@
 
 .dialogue-text-container {
     flex-direction: row;
-    flex-wrap: wrap; /* Acts like word-wrap */
+    flex-wrap: wrap;
     margin-bottom: 20px;
 }
 
 .dialogue-word {
     font-size: 20px;
     color: rgb(240, 240, 240);
-    /* Add a tiny bit of right margin for spaces between words */
     margin-right: 6px;
     margin-bottom: 4px;
 }
@@ -106,7 +93,6 @@
     background-color: rgb(70, 70, 70);
 }
 
-/* Choices View */
 .choices-box {
     flex-direction: column;
     justify-content: center;

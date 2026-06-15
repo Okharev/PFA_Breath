@@ -1,7 +1,10 @@
 ﻿using Ability.NewAbilitySystem;
 using System;
+using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.VFX;
 
 namespace Dialogues.UI
 {
@@ -13,8 +16,14 @@ namespace Dialogues.UI
     
         [SerializeField] private Conversation debugConversation;
 
+        [Tooltip("The effect that needs to go when triggered")]
+        [SerializeField] private GameObject fxGroup;
+        [Tooltip("Disappearance of the effect")]
+        [SerializeField] private float speed;
+
         public bool isEntered;
         public bool isPlayed = false;
+        
 
         
 
@@ -63,8 +72,30 @@ namespace Dialogues.UI
                 
 
             onCleared ?.Invoke();
+
+            if (fxGroup != null)
+            {
+                StartCoroutine(DestroyFx());
+            }
         }
 
+        private IEnumerator DestroyFx()
+        {
+            float elapsedTime = 0f;
+
+            while (elapsedTime < speed)
+            {
+                VisualEffect vfx = fxGroup.GetComponentInChildren<VisualEffect>();
+
+                vfx.transform.localScale -= new Vector3(elapsedTime, elapsedTime, elapsedTime);
+
+                yield return null;
+                elapsedTime += Time.unscaledDeltaTime;
+            }
+
+            Destroy(fxGroup);
+
+        }
 
         //private void OnTriggerEnter(Collider other)
         //{
