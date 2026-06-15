@@ -17,17 +17,16 @@ namespace Ability.NewAbilitySystem
     [DefaultExecutionOrder(-50)]
     public class TurnManager : MonoBehaviour
     {
-        [Header("Turn Settings")] 
-        [Tooltip("Real-time seconds one turn takes to execute.")]
+        [Header("Turn Settings")] [Tooltip("Real-time seconds one turn takes to execute.")]
         public float secondsPerTurn = 1.0f;
 
         [Header("Time Scale Transitions")]
         [Tooltip("Percentage of the turn duration spent ramping up to 1x speed.")]
-        [Range(0f, 0.5f)] // Capped at 0.5 (50%) so ramp up/down can never exceed 100% combined
+        [Range(0f, 0.5f)]
+        // Capped at 0.5 (50%) so ramp up/down can never exceed 100% combined
         public float rampUpPercentage = 0.10f; // 10% default
 
-        [Tooltip("Percentage of the turn duration spent ramping down to 0x speed.")]
-        [Range(0f, 0.5f)]
+        [Tooltip("Percentage of the turn duration spent ramping down to 0x speed.")] [Range(0f, 0.5f)]
         public float rampDownPercentage = 0.01f; // 1% default
 
         // O(1) Add/Remove, but we need safe iteration.
@@ -71,13 +70,27 @@ namespace Ability.NewAbilitySystem
             }
         }
 
-        private void OnEnable() => GameModeManager.OnGameModeChanged += HandleGameModeChanged;
-        private void OnDisable() => GameModeManager.OnGameModeChanged -= HandleGameModeChanged;
+        private void OnEnable()
+        {
+            GameModeManager.OnGameModeChanged += HandleGameModeChanged;
+        }
+
+        private void OnDisable()
+        {
+            GameModeManager.OnGameModeChanged -= HandleGameModeChanged;
+        }
 
         public static event Action<int> OnTurnTicked;
 
-        public void RegisterEntity(ITurnEntity entity) => activeTurnEntities.Add(entity);
-        public void UnregisterEntity(ITurnEntity entity) => activeTurnEntities.Remove(entity);
+        public void RegisterEntity(ITurnEntity entity)
+        {
+            activeTurnEntities.Add(entity);
+        }
+
+        public void UnregisterEntity(ITurnEntity entity)
+        {
+            activeTurnEntities.Remove(entity);
+        }
 
         public void RequestTurns(int turnCost)
         {
@@ -91,7 +104,7 @@ namespace Ability.NewAbilitySystem
             // 1. Prepare and Execute Intended Actions
             PrepareIterationBuffer();
             foreach (ITurnEntity entity in entityIterationBuffer)
-                entity.ExecuteAction(); 
+                entity.ExecuteAction();
 
             // Calculate exact real-time duration of our 3 phases
             float rampUpDuration = secondsPerTurn * rampUpPercentage;
@@ -105,9 +118,9 @@ namespace Ability.NewAbilitySystem
                 // O(1) operation per frame. Binds strictly to unscaled time to avoid time dilation logic loops.
                 while (elapsed < rampUpDuration)
                 {
-                    elapsed += Time.unscaledDeltaTime; 
+                    elapsed += Time.unscaledDeltaTime;
                     SetTimeScale(Mathf.Lerp(0f, 1f, elapsed / rampUpDuration));
-                    yield return null; 
+                    yield return null;
                 }
             }
 
@@ -116,10 +129,8 @@ namespace Ability.NewAbilitySystem
 
             // --- PHASE 2: HOLD ---
             if (holdDuration > 0f)
-            {
                 // We MUST use real-time here because our timeScale is actively fluctuating during the routine
                 yield return new WaitForSecondsRealtime(holdDuration);
-            }
 
             // --- PHASE 3: RAMP DOWN ---
             if (rampDownDuration > 0f)
@@ -139,7 +150,7 @@ namespace Ability.NewAbilitySystem
             // --- ARCHITECTURAL FIX: MUTATE STATE BEFORE UPDATING UI ---
             PrepareIterationBuffer();
             foreach (ITurnEntity entity in entityIterationBuffer) entity.EndTurn();
-        
+
             OnTurnTicked?.Invoke(CurrentTurn);
 
             IsExecuting = false;
@@ -157,6 +168,7 @@ namespace Ability.NewAbilitySystem
                         IsExecuting = false;
                         pendingTurnCost = 0;
                     }
+
                     if (IntentDrawer.Instance != null) IntentDrawer.Instance.ClearAll();
                     SetTimeScale(1f); // Hard snap to 1 so the player immediately resumes control
                     break;
