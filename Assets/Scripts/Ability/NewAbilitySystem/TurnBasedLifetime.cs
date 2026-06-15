@@ -12,10 +12,10 @@ namespace Ability.NewAbilitySystem
 
         private void Start()
         {
-            // Record the turn we were spawned on[cite: 7]
+            // Record the turn we were spawned on
             spawnTurn = TurnManager.Instance.CurrentTurn;
 
-            // Subscribe to the TurnManager event (Observer Pattern)[cite: 7]
+            // Subscribe to the TurnManager event (Observer Pattern)
             TurnManager.OnTurnTicked += HandleTurnTicked;
         }
 

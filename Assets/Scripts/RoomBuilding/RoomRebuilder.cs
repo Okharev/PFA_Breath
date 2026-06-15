@@ -220,9 +220,17 @@ namespace RoomBuilding
             CaptureCurrentAsDestroyedState();
         }
 
+
         public void TriggerRebuild()
         {
-            if (_propsData == null || _propCount == 0) return;
+            if (_propsData == null || _propCount == 0) 
+            {
+                Debug.LogWarning($"[RoomRebuilder] No props found on {gameObject.name}. Instantly completing.");
+                // Fire the event immediately so the Listener isn't waiting forever
+                OnRebuildComplete?.Invoke();
+                return; 
+            }
+    
             _isRebuilding = true;
         }
 

@@ -90,7 +90,7 @@ public class EncounterRoomTrigger : MonoBehaviour
         GameModeManager.Instance.SetGameMode(GameMode.Combat);
         SpawnEnemies();
 
-        OnRoomTriggered?.Invoke();  //LPA+
+        OnRoomTriggered?.Invoke();  // LPA+
     }
 
     private void SpawnEnemies()
