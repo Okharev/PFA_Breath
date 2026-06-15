@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Skills.SkillTreeGraph
   AllNodes:
   - rid: 6047565780272807999
-  - rid: 6047565780272808000
   - rid: 3664170125683851547
   - rid: 3664170125683851548
-  - rid: 6047565780272808001
-  - rid: 6047565780272808002
   - rid: 3664170125683851549
   - rid: 3664170125683851553
   - rid: 3664170125683851550
   - rid: 3664170125683851551
   - rid: 3664170125683851552
+  - rid: 6047565780272808000
+  - rid: 6047565780272808002
+  - rid: 6047565780272808001
   references:
     version: 2
     RefIds:
@@ -170,8 +170,8 @@ MonoBehaviour:
         GUID: 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
         Position:
           serializedVersion: 2
-          x: 1350
-          y: 625
+          x: 1325
+          y: 650
           width: 161
           height: 77
         NodeName: Nevro Primary
@@ -205,8 +205,8 @@ MonoBehaviour:
         RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
-        OrbitRotation: 360
-        OrbitSpan: 140.2
+        OrbitRotation: 284
+        OrbitSpan: 110
         UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: 9ba9829911d79454db7093aa65595c8e, type: 2}
         IntendedSlot: 1
@@ -230,7 +230,7 @@ MonoBehaviour:
         RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
-        OrbitRotation: 324
+        OrbitRotation: 230
         OrbitSpan: 125.5
         UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: d11bba529bd19194899aec5d5daf52e1, type: 2}
