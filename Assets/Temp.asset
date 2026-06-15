@@ -15,21 +15,150 @@ MonoBehaviour:
   AllNodes:
   - rid: 6047565780272807999
   - rid: 6047565780272808000
+  - rid: 3664170125683851547
+  - rid: 3664170125683851549
+  - rid: 3664170125683851548
   - rid: 6047565780272808001
+  - rid: 3664170125683851550
+  - rid: 3664170125683851553
   - rid: 6047565780272808002
+  - rid: 3664170125683851552
+  - rid: 3664170125683851551
   references:
     version: 2
     RefIds:
+    - rid: 3664170125683851547
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: a075b31f-a34a-41e2-959b-ee5023ce9684
+        Position:
+          serializedVersion: 2
+          x: 1150
+          y: 725
+          width: 161
+          height: 77
+        NodeName: Damage
+        Description: 
+        PrerequisiteGUIDs:
+        - 517dfec0-487d-4a65-ab57-54a988a0e859
+        GenericCost: 0
+        GrantedStats: []
+    - rid: 3664170125683851548
+      type: {class: EmotionNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 5839bfa4-fda9-47b7-9b6e-ebc2a9a9202d
+        Position:
+          serializedVersion: 2
+          x: 1150
+          y: 525
+          width: 161
+          height: 77
+        NodeName: Nevro Dash
+        Description: 
+        PrerequisiteGUIDs:
+        - a075b31f-a34a-41e2-959b-ee5023ce9684
+        RequiredEmotion: 2
+        BaseEmotionCost: 0
+        MaxLevel: 4
+        OrbitRotation: 135
+        OrbitSpan: 90
+        UnlocksAbility: 0
+        GrantedAbility: {fileID: 11400000, guid: 514ab73a710a2214c97a3a7c120554ac, type: 2}
+        IntendedSlot: 4
+        GrantedStats: []
+    - rid: 3664170125683851549
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 6a863c82-76d7-4c94-90fb-05ec62a09b00
+        Position:
+          serializedVersion: 2
+          x: 1250
+          y: 425
+          width: 161
+          height: 77
+        NodeName: Oxygen
+        Description: 
+        PrerequisiteGUIDs:
+        - 5839bfa4-fda9-47b7-9b6e-ebc2a9a9202d
+        GenericCost: 0
+        GrantedStats:
+        - Stat: 0
+          Type: 100
+          Value: 0
+    - rid: 3664170125683851550
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 70b1c0af-e121-40ac-91ed-4b1d4682b80e
+        Position:
+          serializedVersion: 2
+          x: 1475
+          y: 725
+          width: 161
+          height: 77
+        NodeName: New Generic Skill
+        Description: 
+        PrerequisiteGUIDs:
+        - 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
+        GenericCost: 0
+        GrantedStats: []
+    - rid: 3664170125683851551
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: b4f2c024-0790-4498-806c-f2f4a42bd19d
+        Position:
+          serializedVersion: 2
+          x: 1450
+          y: 550
+          width: 161
+          height: 77
+        NodeName: New Generic Skill
+        Description: 
+        PrerequisiteGUIDs:
+        - 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
+        GenericCost: 0
+        GrantedStats: []
+    - rid: 3664170125683851552
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 69f935b3-6933-435a-b40c-f203613fb204
+        Position:
+          serializedVersion: 2
+          x: 1575
+          y: 625
+          width: 161
+          height: 77
+        NodeName: New Generic Skill
+        Description: 
+        PrerequisiteGUIDs:
+        - 8c3abeb7-bb2d-40fd-851c-a8b2af527572
+        GenericCost: 0
+        GrantedStats: []
+    - rid: 3664170125683851553
+      type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
+      data:
+        GUID: 12473ced-b977-4da5-a774-58b2e9c61797
+        Position:
+          serializedVersion: 2
+          x: 1325
+          y: 850
+          width: 161
+          height: 77
+        NodeName: New Generic Skill
+        Description: 
+        PrerequisiteGUIDs:
+        - a075b31f-a34a-41e2-959b-ee5023ce9684
+        GenericCost: 0
+        GrantedStats: []
     - rid: 6047565780272807999
       type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
         GUID: 517dfec0-487d-4a65-ab57-54a988a0e859
         Position:
           serializedVersion: 2
-          x: 924.8
+          x: 925
           y: 800
-          width: 160.79999
-          height: 76.79999
+          width: 161
+          height: 77
         NodeName: Test skill
         Description: 
         PrerequisiteGUIDs: []
@@ -41,18 +170,18 @@ MonoBehaviour:
         GUID: 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
         Position:
           serializedVersion: 2
-          x: 1100
-          y: 649.6
-          width: 160.80005
-          height: 76.79999
+          x: 1350
+          y: 625
+          width: 161
+          height: 77
         NodeName: Nevro Primary
         Description: 
         PrerequisiteGUIDs:
-        - 517dfec0-487d-4a65-ab57-54a988a0e859
+        - a075b31f-a34a-41e2-959b-ee5023ce9684
         RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
-        OrbitRotation: 8
+        OrbitRotation: 174.6
         OrbitSpan: 114.8
         UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: 086a16a0f04c42a45ad7f550477e9e0c, type: 2}
@@ -64,18 +193,19 @@ MonoBehaviour:
         GUID: 8c3abeb7-bb2d-40fd-851c-a8b2af527572
         Position:
           serializedVersion: 2
-          x: 1100
-          y: 500
-          width: 160.80005
-          height: 76.79999
+          x: 1650
+          y: 750
+          width: 161
+          height: 77
         NodeName: Nevro Secondary
         Description: 
         PrerequisiteGUIDs:
-        - 517dfec0-487d-4a65-ab57-54a988a0e859
+        - 70b1c0af-e121-40ac-91ed-4b1d4682b80e
+        - 12473ced-b977-4da5-a774-58b2e9c61797
         RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
-        OrbitRotation: 164
+        OrbitRotation: 360
         OrbitSpan: 140.2
         UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: 9ba9829911d79454db7093aa65595c8e, type: 2}
@@ -87,15 +217,16 @@ MonoBehaviour:
         GUID: 723c2c9b-5ca7-4f8e-b45e-2df518c0c12f
         Position:
           serializedVersion: 2
-          x: 1324.8
-          y: 575.2
-          width: 160.79993
-          height: 76.79999
-        NodeName: Nevro ultimate
+          x: 1500
+          y: 425
+          width: 161
+          height: 77
+        NodeName: Nevro Ultimate
         Description: 
         PrerequisiteGUIDs:
-        - 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
-        - 8c3abeb7-bb2d-40fd-851c-a8b2af527572
+        - 6a863c82-76d7-4c94-90fb-05ec62a09b00
+        - b4f2c024-0790-4498-806c-f2f4a42bd19d
+        - 69f935b3-6933-435a-b40c-f203613fb204
         RequiredEmotion: 2
         BaseEmotionCost: 1
         MaxLevel: 4
