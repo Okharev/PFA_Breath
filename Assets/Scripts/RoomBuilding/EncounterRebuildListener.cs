@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using Unity.AI.Navigation;
 using UnityEngine;
 
 namespace RoomBuilding
@@ -15,6 +18,7 @@ namespace RoomBuilding
 
         [SerializeField] private List<RoomEncounterController> _roomControllers;
 
+        [SerializeField] private NavMeshSurface navMeshSurface;
 
         private void OnEnable()
         {
@@ -24,10 +28,20 @@ namespace RoomBuilding
                 // Subscribe to the event. 
                 // Time Complexity: O(1) delegate addition
                 _encounterTrigger.OnRoomCleared += HandleRoomCleared;
+                
+
             }
             else
             {
                 Debug.LogWarning($"[EncounterRebuildListener] {_encounterTrigger} is missing on {gameObject.name}!");
+            }
+        }
+
+        private void Start()
+        {
+            foreach (RoomEncounterController room in _roomControllers)
+            {
+                //room._rebuilder.OnRebuildComplete += RebuildRoom;
             }
         }
 
@@ -54,6 +68,16 @@ namespace RoomBuilding
             {
                 room.OnRoomCleared();
             }
+
+
+            StartCoroutine(RebuildRoom());
+        }
+
+        private IEnumerator RebuildRoom()
+        {
+            yield return new WaitForSeconds(5f);
+            Debug.Log("Rebaking NavMesh");
+            //navMeshSurface.BuildNavMesh();
         }
     }
 }
