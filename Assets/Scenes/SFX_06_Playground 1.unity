@@ -26014,7 +26014,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: 65ecb5bd3ac4ae94e8a2a5404ecb4cd9, type: 3}
     mixer: {fileID: -6103896839496543522, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.515
+    volume: 0.442
     pitch: 1
     spatialBlend: 0
     loop: 1
@@ -26025,7 +26025,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: c7722c6b8f8145b4c8b432ed91750457, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.515
+    volume: 0.411
     pitch: 1
     spatialBlend: 0
     loop: 1
@@ -26036,7 +26036,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: f85300bd1815418429594e7d1a71c320, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.351
+    volume: 0.523
     pitch: 1.01
     spatialBlend: 0
     loop: 0
@@ -26058,7 +26058,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: 74e50756d61ffab4f9158c2fee7a862b, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.669
+    volume: 0.589
     pitch: 1
     spatialBlend: 0
     loop: 0
@@ -26069,7 +26069,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: eec1e47a8aa57d94fbe47b598af4f31a, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.533
     pitch: 1
     spatialBlend: 0
     loop: 0
@@ -26080,7 +26080,7 @@ MonoBehaviour:
     typeMusic: 0
     clip: {fileID: 8300000, guid: 3cf828a3b7637404d870849d34ea531f, type: 3}
     mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
+    volume: 0.513
     pitch: 1
     spatialBlend: 0
     loop: 0
@@ -49805,43 +49805,6 @@ Transform:
   - {fileID: 847404265}
   m_Father: {fileID: 1881694284}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!84 &872601769
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &875803653
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -55910,16 +55873,30 @@ MonoBehaviour:
     choppiness: 1.03
     shallowColor: {r: 0.2, g: 0.6, b: 0.7, a: 1}
     deepColor: {r: 0.02, g: 0.1, b: 0.2, a: 1}
+    depthAbsorption: 0
+    sssColor: {r: 0, g: 0, b: 0, a: 0}
+    sssStrength: 0
+    sssPower: 0
+    foamColor: {r: 0, g: 0, b: 0, a: 0}
     foamBias: 0.24
     foamPower: 2.47
+    shorelineFoamCutoff: 0
+    causticsStrength: 0
   tempestPreset:
     windSpeed: 12
     phillipsAmplitude: 0.002
     choppiness: 0.94
     shallowColor: {r: 0.1, g: 0.3, b: 0.35, a: 1}
     deepColor: {r: 0.01, g: 0.05, b: 0.1, a: 1}
+    depthAbsorption: 0
+    sssColor: {r: 0, g: 0, b: 0, a: 0}
+    sssStrength: 0
+    sssPower: 0
+    foamColor: {r: 0, g: 0, b: 0, a: 0}
     foamBias: 0.193
     foamPower: 3.05
+    shorelineFoamCutoff: 0
+    causticsStrength: 0
   editorPreviewBlend: 1
 --- !u!114 &985686179
 MonoBehaviour:
@@ -55942,8 +55919,8 @@ MonoBehaviour:
   windDirection: {x: -2.4001737, y: -12.000868}
   phillipsAmplitude: 0.002
   choppiness: 0.94
-  displacementMap: {fileID: 1752011587}
-  derivativeMap: {fileID: 872601769}
+  displacementMap: {fileID: 2082065893}
+  derivativeMap: {fileID: 1505030202}
 --- !u!114 &985686180
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82288,6 +82265,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 665b82e7a9534eb4b90fd9b49a874b1d, type: 3}
   m_PrefabInstance: {fileID: 1504302619}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &1505030202
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &1506731453
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -92534,43 +92548,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f02207c07e4f7a246bfe7f794f084ee4, type: 3}
   m_PrefabInstance: {fileID: 1750762323}
   m_PrefabAsset: {fileID: 0}
---- !u!84 &1752011587
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &1752219776
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -105871,6 +105848,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dialogues.UI.DialogueDebugTrigger
   debugKey: 102
   debugConversation: {fileID: 11400000, guid: 262648a97441ce24781dbe62df74720d, type: 2}
+  isEntered: 0
+  isPlayed: 0
 --- !u!114 &2027340465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108650,6 +108629,43 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.IntentDrawer
   linePrefab: {fileID: 3088947796837880931, guid: ab7bdd7d00caf094d91378dca0322d30, type: 3}
   decalProjectorPrefab: {fileID: 2624761715801240797, guid: 7b7806311051f904da8a7600534fe076, type: 3}
+--- !u!84 &2082065893
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &2088188178
 PrefabInstance:
   m_ObjectHideFlags: 0
