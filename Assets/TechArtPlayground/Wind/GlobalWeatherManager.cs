@@ -63,6 +63,17 @@ namespace TechArtPlayground.Wind
                 _lastBlend = currentBlend;
             }
         }
+        
+        /// <summary>
+        /// Triggers a smooth weather transition to a specific blend percentage.
+        /// </summary>
+        /// <param name="targetBlend">0f for Calm, 1f for Tempest.</param>
+        /// <param name="duration">Time in seconds for the transition to complete.</param>
+        public void TransitionToBlend(float targetBlend, float duration = 5f)
+        {
+            // Clamp to ensure we don't pass invalid values to the shader
+            StartTransition(Mathf.Clamp01(targetBlend), duration);
+        }
 
         public void TransitionToTempest(float duration = 5f) => StartTransition(1f, duration);
         public void TransitionToCalm(float duration = 10f) => StartTransition(0f, duration);

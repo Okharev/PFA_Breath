@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Skills;
+using TechArtPlayground.Wind;
 using UnityEngine;
 
 namespace Dialogues
@@ -66,6 +67,37 @@ namespace Dialogues
             else
             {
                 Debug.LogError("[Dialogue Effect] Failed to grant points. SkillTreeManager.Instance is null! Ensure it exists in the scene.");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Executes a command to transition global weather during dialogue.
+    /// Time Complexity: O(1) invocation. The actual transition runs asynchronously via Coroutine.
+    /// Space Complexity: O(1).
+    /// </summary>
+    [System.Serializable]
+    public class SetWeatherBlendEffect : IDialogueEffect
+    {
+        [Tooltip("The target weather blend percentage (0 = Calm, 1 = Tempest).")]
+        [Range(0f, 1f)]
+        public float targetBlend;
+
+        [Tooltip("How long the transition should take in seconds.")]
+        [Min(0f)]
+        public float transitionDuration = 2f;
+
+        public void Execute(DialogueContext context)
+        {
+            // Safety check: Ensure the Singleton is alive before invoking
+            if (GlobalWeatherManager.Instance != null)
+            {
+                GlobalWeatherManager.Instance.TransitionToBlend(targetBlend, transitionDuration);
+                Debug.Log($"[Dialogue Effect] Weather transitioning to {targetBlend * 100}% over {transitionDuration}s.");
+            }
+            else
+            {
+                Debug.LogWarning("[Dialogue Effect] GlobalWeatherManager is missing from the scene!");
             }
         }
     }
