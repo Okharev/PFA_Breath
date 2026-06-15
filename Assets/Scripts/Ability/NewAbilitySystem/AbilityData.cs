@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿// Updated AbilityData.cs
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Ability.NewAbilitySystem
@@ -9,6 +10,12 @@ namespace Ability.NewAbilitySystem
         public Sprite Icon;
         
         public string abilityName;
+        
+        // --- ADDED: Ability Description ---
+        [TextArea(3, 5)]
+        [Tooltip("The mechanical description of what this ability does in combat.")]
+        public string description; 
+        
         public int turnCost = 1;
         public int cooldownTurns = 3;
         public int channelTurns;

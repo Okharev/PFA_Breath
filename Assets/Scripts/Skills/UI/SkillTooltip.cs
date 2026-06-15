@@ -177,44 +177,72 @@ namespace Skills.UI
             }
         }
 
-        private void ExecuteDisplay()
+private void ExecuteDisplay()
+{
+    // O(1) Type Pattern Matching to populate the UI
+    if (pendingNode is EmotionNodeData emotionNode)
+    {
+        typeLabel.text = emotionNode.UnlocksAbility ? "ACTIVE ABILITY" : "PASSIVE UPGRADE";
+        nameLabel.text = emotionNode.NodeName.ToUpper();
+        
+        // Set the badge to show Emotion Cost
+        badgeLabel.text = emotionNode.BaseEmotionCost.ToString();
+        badgeElement.style.display = DisplayStyle.Flex;
+
+        // 1. Start with the Skill Node's base flavor/lore description
+        string fullDescription = emotionNode.Description;
+
+        // 2. Dynamically append Ability-specific mechanics if it grants one
+        if (emotionNode.GrantedAbility != null)
         {
-            // O(1) Type Pattern Matching to populate the UI
-            if (pendingNode is EmotionNodeData emotionNode)
+            // Append the Ability's unique description in italics
+            if (!string.IsNullOrEmpty(emotionNode.GrantedAbility.description))
             {
-                typeLabel.text = emotionNode.UnlocksAbility ? "ACTIVE" : "PASSIVE UPGRADE";
-                nameLabel.text = emotionNode.NodeName.ToUpper();
-                
-                // Set the badge to show Emotion Cost (or ability Cooldown if you map it)
-                badgeLabel.text = emotionNode.BaseEmotionCost.ToString();
-                badgeElement.style.display = DisplayStyle.Flex;
-
-                string fullDescription = emotionNode.Description;
-
-                // Example of dynamically appending Cooldowns if it's an Active Ability
-                // Note: Ensure your AbilityData has a Cooldown float property!
-                if (emotionNode.GrantedAbility != null)
-                {
-                    // Uncomment/modify based on your AbilityData fields:
-                    fullDescription += "\n\n<b>Cooldown:</b> " + emotionNode.GrantedAbility.cooldownTurns;
-                }
-
-                descriptionLabel.text = fullDescription;
-            }
-            else if (pendingNode is GenericNodeData genericNode)
-            {
-                typeLabel.text = "PASSIVE";
-                nameLabel.text = genericNode.NodeName.ToUpper();
-                
-                // Show generic point cost in the badge
-                badgeLabel.text = genericNode.GenericCost.ToString();
-                badgeElement.style.display = DisplayStyle.Flex;
-                
-                descriptionLabel.text = genericNode.Description;
+                fullDescription += $"\n\n<i>{emotionNode.GrantedAbility.description}</i>";
             }
 
-            style.opacity = 1f;
+            // Append a formatted tactical data block
+            fullDescription += "\n\n<b><color=#FFD700>TACTICAL DATA:</color></b>";
+            fullDescription += $"\n• Turn Cost: {emotionNode.GrantedAbility.turnCost}";
+            
+            if (emotionNode.GrantedAbility.cooldownTurns > 0)
+                fullDescription += $"\n• Cooldown: {emotionNode.GrantedAbility.cooldownTurns} Turns";
+                
+            if (emotionNode.GrantedAbility.channelTurns > 0)
+                fullDescription += $"\n• Channel Time: {emotionNode.GrantedAbility.channelTurns} Turns";
         }
+
+        descriptionLabel.text = fullDescription;
+    }
+    else if (pendingNode is GenericNodeData genericNode)
+    {
+        typeLabel.text = "PASSIVE STATS";
+        nameLabel.text = genericNode.NodeName.ToUpper();
+        
+        // Show generic point cost in the badge
+        badgeLabel.text = genericNode.GenericCost.ToString();
+        badgeElement.style.display = DisplayStyle.Flex;
+        
+        // 1. Start with the Generic Node's description
+        string fullDescription = genericNode.Description;
+
+        // 2. (Optional) You can dynamically read the granted stats here in the future
+        if (genericNode.GrantedStats != null && genericNode.GrantedStats.Count > 0)
+        {
+            fullDescription += "\n\n<b><color=#42f5aa>GRANTED STATS:</color></b>";
+            foreach (var statMod in genericNode.GrantedStats)
+            {
+                string sign = statMod.Value >= 0 ? "+" : "";
+                string percent = statMod.Type == ModifierType.Flat ? "" : "%";
+                fullDescription += $"\n• {statMod.Stat}: {sign}{statMod.Value}{percent}";
+            }
+        }
+
+        descriptionLabel.text = fullDescription;
+    }
+
+    style.opacity = 1f;
+}
 
         private void Hide()
         {
