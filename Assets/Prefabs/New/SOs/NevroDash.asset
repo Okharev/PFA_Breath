@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Ability.NewAbilitySystem.AbilityData
   Icon: {fileID: 21300000, guid: fadc58599936e9d45ac4c4b8e3739bca, type: 3}
   abilityName: NevroDash
+  description: 
   turnCost: 0
   cooldownTurns: 0
   channelTurns: 0
@@ -21,9 +22,15 @@ MonoBehaviour:
   conditions: []
   effects:
   - rid: 8373033023233065029
+  - rid: 3664170125683851430
   references:
     version: 2
     RefIds:
+    - rid: 3664170125683851430
+      type: {class: ConsumeOxygenEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Consume Oxygen
+        oxygenCost: 4
     - rid: 8373033023233065029
       type: {class: SequentialDashEffect, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
       data:
