@@ -1,5 +1,38 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2234556609569422995
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2643958543119423741}
+  m_Layer: 13
+  m_Name: Fx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2643958543119423741
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2234556609569422995}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6565121286463751765}
+  - {fileID: 736062710505076857}
+  m_Father: {fileID: 8905609558110795598}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2570213551282334036
 GameObject:
   m_ObjectHideFlags: 0
@@ -27,12 +60,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2570213551282334036}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 8905609558110795598}
+  m_Father: {fileID: 2643958543119423741}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!2083052967 &3569818821383183009
 VisualEffect:
@@ -57,7 +90,10 @@ VisualEffect:
     m_Vector3f:
       m_Array: []
     m_Vector4f:
-      m_Array: []
+      m_Array:
+      - m_Value: {x: 13.735849, y: 3.1562212, z: 0.71270925, w: 0}
+        m_Name: Color
+        m_Overridden: 0
     m_Uint:
       m_Array: []
     m_Int:
@@ -159,12 +195,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5065799265976655172}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: -0.25, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 8905609558110795598}
+  m_Father: {fileID: 2643958543119423741}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &350683744638722019
 MonoBehaviour:
@@ -298,6 +334,7 @@ GameObject:
   - component: {fileID: 2443561362872079607}
   - component: {fileID: 3435550958736354265}
   - component: {fileID: 7821015892933611086}
+  - component: {fileID: 6942570630003897865}
   m_Layer: 13
   m_Name: DialogueInteract
   m_TagString: Untagged
@@ -318,8 +355,7 @@ Transform:
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children:
-  - {fileID: 6565121286463751765}
-  - {fileID: 736062710505076857}
+  - {fileID: 2643958543119423741}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2443561362872079607
@@ -362,6 +398,30 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d077e6e9c4144ef97e01a7861d126da, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.UI.DialogueDebugTrigger
+  m_EditorClassIdentifier: Assembly-CSharp::Dialogues.UI.DialogueDebugDirectTrigger
   debugKey: 102
   debugConversation: {fileID: 11400000, guid: 6e9ddd2042418154f9382b7bd5343426, type: 2}
+  fxGroup: {fileID: 2234556609569422995}
+  speed: 0.2
+  isEntered: 0
+  isPlayed: 0
+--- !u!114 &6942570630003897865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7258060722025492088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5480698e2f754826949f45467512a02f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RoomBuilding.EncounterRebuildListener
+  _encounterTrigger: {fileID: 0}
+  _dialogueManager: {fileID: 0}
+  _roomControllers:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  _navMeshSurface: {fileID: 0}

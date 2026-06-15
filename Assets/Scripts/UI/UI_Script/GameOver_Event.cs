@@ -1,3 +1,5 @@
+using Ability.NewAbilitySystem;
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -37,6 +39,10 @@ public class GameOver_Event : MonoBehaviour
  
     private void OnTryAgain(ClickEvent evt)
     {
+        // Set the game mode to exploration 
+        // Fix bug with delta time = 0
+        GameModeManager.Instance.SetGameMode(GameMode.Exploration);
+
         SceneManager.LoadScene("01_Level");
     }
     private void BackOnMenu(ClickEvent evt)
