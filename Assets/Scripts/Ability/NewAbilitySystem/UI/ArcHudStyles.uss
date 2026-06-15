@@ -69,36 +69,39 @@
     -unity-text-align: middle-center;
 }
 
-.spell-slot.stacked-active {
-    scale: 1;
-    /* Keeps it perfectly centered on the mathematical node */
-    translate: -50% -50%;
-    opacity: 1;
-    -unity-background-image-tint-color: #FFFFFF;
+.skip-turn-button {
+    /* Set equal dimensions for a perfect circle */
+    width: 50px;
+    height: 50px;
+    /* 50% of the width/height creates a mathematically perfect circle */
+    border-radius: 25px;
+
+    /* Clean, semi-transparent white base */
+    background-color: rgba(255, 255, 255, 0.85);
+    border-width: 2px;
+    border-color: #FFFFFF;
+
+    /* Dark text for high contrast against the white background */
+    color: #1a1a1a;
+    -unity-font-style: bold;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+
+    transition-property: scale, background-color, border-color;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out-back;
 }
 
-.spell-slot.stacked-inactive {
-    /* Shrink the inactive ability */
-    scale: 0.65;
-
-    /* Offsets the pivot. Because the element is rotated toward the corner, 
-       this pushes it deeper into the screen corner and slightly sideways so it peeks out.
-       Tweak these percentages to change which direction it peeks! */
-    translate: -20% -80%;
-
-    /* Darken and fade */
-    -unity-background-image-tint-color: rgb(80, 80, 80);
-    opacity: 0.85;
+.skip-turn-button:hover {
+    scale: 1.15;
+    /* Solidify the white and add an orange border to visually tie it to the Ammo Display */
+    background-color: #FFFFFF;
+    border-color: #ffaa00;
 }
 
-/* Disable hover effects for the inactive weapon in the stack */
-.spell-slot.stacked-inactive:hover {
-    scale: 0.65;
-    translate: -20% -80%;
-    border-color: #A0A0A0;
-}
-
-/* Hide the hotkey text for the inactive ability to prevent visual clutter */
-.spell-slot.stacked-inactive .hotkey-text {
-    display: none;
+.skip-turn-button:active {
+    scale: 0.95;
+    /* Slightly darken the white to simulate a physical press */
+    background-color: #e0e0e0;
+    border-color: #FFFFFF;
 }

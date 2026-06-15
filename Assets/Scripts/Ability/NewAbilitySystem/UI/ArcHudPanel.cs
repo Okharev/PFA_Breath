@@ -4,18 +4,8 @@ using UnityEngine.UIElements;
 
 namespace Ability.NewAbilitySystem.UI
 {
-    public enum ScreenCorner
-    {
-        TopLeft,
-        TopRight,
-        BottomLeft,
-        BottomRight
-    }
+public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
 
-    /// <summary>
-    /// A procedural UI Toolkit component that arranges child elements along an arc
-    /// and feeds coordinate data to a Shader Graph for "neural" connections.
-    /// </summary>
     [UxmlElement]
     public partial class ArcHudPanel : VisualElement
     {
@@ -66,13 +56,39 @@ namespace Ability.NewAbilitySystem.UI
         [UxmlAttribute("neural-material")]
         public Material NeuralMaterialAsset { get; set; }
 
+        // NEW: Background Image Property
+        private Texture2D _backgroundImage;
+        [UxmlAttribute("background-image")]
+        public Texture2D BackgroundImage
+        {
+            get => _backgroundImage;
+            set { _backgroundImage = value; UpdateBackgroundImage(); }
+        }
+        
+        private float _backgroundSize = 250f;
+        [UxmlAttribute("background-size")]
+        public float BackgroundSize
+        {
+            get => _backgroundSize;
+            set { _backgroundSize = value; UpdateLayout(); }
+        }
+
+        private Vector2 _backgroundOffset = Vector2.zero;
+        [UxmlAttribute("background-offset")]
+        public Vector2 BackgroundOffset
+        {
+            get => _backgroundOffset;
+            set { _backgroundOffset = value; UpdateLayout(); }
+        }
+
         // --- INTERNAL STATE ---
 
         private readonly List<SpellSlot> m_spellSlots = new List<SpellSlot>();
         private AmmoDisplay m_ammoDisplay;
+        private Button m_skipTurnButton;
         
-        // Shader Integration
         private VisualElement m_neuralBackground;
+        private VisualElement m_backgroundImageElement; // NEW
         private Material m_instancedNeuralMaterial;
         
         private static readonly int s_NodeCount = Shader.PropertyToID("_NodeCount");
@@ -87,17 +103,27 @@ namespace Ability.NewAbilitySystem.UI
         public ArcHudPanel()
         {
             AddToClassList(s_className);
-            
+    
+            SetupBackgroundImage(); // NEW: Must be created first so it sits at the back
             SetupNeuralBackground();
             CreateAmmoDisplay();
             RebuildSlots();
 
-            // Re-calculate positions whenever the geometry changes (e.g., screen resize)
             RegisterCallback<GeometryChangedEvent>(evt => PositionChildElements());
         }
-
-        // --- PUBLIC API FOR CONTROLLER ---
         
+        private void SetupBackgroundImage()
+        {
+            m_backgroundImageElement = new VisualElement();
+            m_backgroundImageElement.style.position = Position.Absolute;
+    
+            // Optional: Add a subtle scaling transition if you want it to pop in
+            // m_backgroundImageElement.style.transitionProperty = new List<StylePropertyName> { new StylePropertyName("scale") };
+            // m_backgroundImageElement.style.transitionDuration = new List<TimeValue> { new TimeValue(0.2f, TimeUnit.Second) };
+
+            Insert(0, m_backgroundImageElement); 
+        }
+
         public SpellSlot GetSlot(int index)
         {
             if (index >= 0 && index < m_spellSlots.Count)
@@ -106,8 +132,7 @@ namespace Ability.NewAbilitySystem.UI
         }
         
         public AmmoDisplay GetAmmoDisplay() => m_ammoDisplay;
-
-        // --- INITIALIZATION ---
+        public Button GetSkipTurnButton() => m_skipTurnButton;
 
         private void SetupNeuralBackground()
         {
@@ -115,20 +140,19 @@ namespace Ability.NewAbilitySystem.UI
             m_neuralBackground.style.position = Position.Absolute;
             m_neuralBackground.style.width = Length.Percent(100);
             m_neuralBackground.style.height = Length.Percent(100);
-            
             Insert(0, m_neuralBackground); 
         }
 
         private void RebuildSlots()
         {
-            foreach (var slot in m_spellSlots) Remove(slot);
+            foreach (SpellSlot slot in m_spellSlots) Remove(slot);
             m_spellSlots.Clear();
 
             for (int i = 0; i < NumSlots; i++)
             {
-                var slot = new SpellSlot { SlotIndex = i };
+                SpellSlot slot = new SpellSlot { SlotIndex = i };
                 m_spellSlots.Add(slot);
-                Add(slot); // Add on top of the neural background
+                Add(slot); 
             }
             
             UpdateLayout();
@@ -138,23 +162,36 @@ namespace Ability.NewAbilitySystem.UI
         {
             m_ammoDisplay = new AmmoDisplay();
             Add(m_ammoDisplay);
+
+            // NEW: Create and add the skip turn button
+            m_skipTurnButton = new Button { text = "SKIP", name = "skip-turn-button" };
+            m_skipTurnButton.AddToClassList("skip-turn-button");
+            m_skipTurnButton.style.position = Position.Absolute;
+            Add(m_skipTurnButton);
+        }
+
+        // NEW: Updates the UI Toolkit background image dynamically
+        private void UpdateBackgroundImage()
+        {
+            if (m_backgroundImageElement != null)
+            {
+                m_backgroundImageElement.style.backgroundImage = _backgroundImage != null 
+                    ? new StyleBackground(_backgroundImage) 
+                    : new StyleBackground(StyleKeyword.Null);
+            }
         }
 
         private void UpdateLayout()
         {
-            // Instantiate material if it was set via inspector after construction
             if (m_instancedNeuralMaterial == null && NeuralMaterialAsset != null)
             {
                 m_instancedNeuralMaterial = new Material(NeuralMaterialAsset);
                 m_neuralBackground.style.unityMaterial = m_instancedNeuralMaterial;
-                
             }
 
             MarkDirtyRepaint();
             PositionChildElements();
         }
-
-        // --- MATHEMATICAL LAYOUT ---
 
         private void GetAngleRange(out float startAngle, out float endAngle)
         {
@@ -181,7 +218,7 @@ namespace Ability.NewAbilitySystem.UI
             };
         }
 
-private void PositionChildElements()
+        private void PositionChildElements()
         {
             if (NumSlots < 1 || float.IsNaN(contentRect.width)) return;
 
@@ -193,23 +230,51 @@ private void PositionChildElements()
             float effectiveStart = startAngle + AngularPadding;
             float effectiveEnd = endAngle - AngularPadding;
             
-            // --- NEW: Layout Math Overlap ---
-            // We have 4 slots, but Primary (0) and Secondary (1) share a single position. 
-            // So visually, we only space out (NumSlots - 1) nodes.
-            int visualNodes = NumSlots > 1 ? NumSlots - 1 : 1;
-            float angleStep = visualNodes > 1 ? (effectiveEnd - effectiveStart) / (visualNodes - 1) : 0f;
+            // FIXED: Standard O(N) linear distribution of nodes
+            float angleStep = NumSlots > 1 ? (effectiveEnd - effectiveStart) / (NumSlots - 1) : 0f;
 
             if (m_instancedNeuralMaterial != null)
                 m_instancedNeuralMaterial.SetFloat(s_NodeCount, m_spellSlots.Count);
+            
+            // --- Position and constraint the Background Image ---
+            if (m_backgroundImageElement != null)
+            {
+                // 1. Constrain size using the independent BackgroundSize property
+                m_backgroundImageElement.style.width = BackgroundSize;
+                m_backgroundImageElement.style.height = BackgroundSize;
 
+                // 2. Clear old anchors to prevent stretching
+                m_backgroundImageElement.style.top = StyleKeyword.Null;
+                m_backgroundImageElement.style.bottom = StyleKeyword.Null;
+                m_backgroundImageElement.style.left = StyleKeyword.Null;
+                m_backgroundImageElement.style.right = StyleKeyword.Null;
+
+                // 3. Pin to the active corner and apply the tuning offset
+                switch (Corner)
+                {
+                    case ScreenCorner.TopLeft:
+                        m_backgroundImageElement.style.top = BackgroundOffset.y;
+                        m_backgroundImageElement.style.left = BackgroundOffset.x;
+                        break;
+                    case ScreenCorner.TopRight:
+                        m_backgroundImageElement.style.top = BackgroundOffset.y;
+                        m_backgroundImageElement.style.right = BackgroundOffset.x;
+                        break;
+                    case ScreenCorner.BottomLeft:
+                        m_backgroundImageElement.style.bottom = BackgroundOffset.y;
+                        m_backgroundImageElement.style.left = BackgroundOffset.x;
+                        break;
+                    case ScreenCorner.BottomRight:
+                        m_backgroundImageElement.style.bottom = BackgroundOffset.y;
+                        m_backgroundImageElement.style.right = BackgroundOffset.x;
+                        break;
+                }
+            }
+            
             for (int i = 0; i < m_spellSlots.Count; i++)
             {
-                // Force Slot 0 and Slot 1 to share Layout Index 0.
-                // Dash (2) becomes Layout Index 1. Special (3) becomes Layout Index 2.
-                int layoutIndex = (i == 0 || i == 1) ? 0 : i - 1;
-
-                float currentAngle = visualNodes > 1 
-                    ? effectiveStart + (layoutIndex * angleStep) 
+                float currentAngle = NumSlots > 1 
+                    ? effectiveStart + (i * angleStep) 
                     : (startAngle + endAngle) / 2f; 
 
                 float angleRad = currentAngle * Mathf.Deg2Rad;
@@ -217,13 +282,12 @@ private void PositionChildElements()
                 float x = center.x + (Mathf.Cos(angleRad) * Radius);
                 float y = center.y + (Mathf.Sin(angleRad) * Radius);
 
-                m_spellSlots[i].style.width = SlotSize; // Assuming you added SlotSize from the previous fix
+                m_spellSlots[i].style.width = SlotSize;
                 m_spellSlots[i].style.height = SlotSize;
                 m_spellSlots[i].style.left = x;
                 m_spellSlots[i].style.top = y;
                 m_spellSlots[i].style.rotate = new Rotate(currentAngle + 90f);
 
-                // Pass UV data to shader (Y axis is inverted between UI Toolkit and Shader Graph)
                 float uvX = x / width;
                 float uvY = 1f - (y / height); 
 
@@ -233,13 +297,24 @@ private void PositionChildElements()
                 }
             }
 
-            // 4. Position Ammo Display (Centered at half-radius)
+// 4. Position Ammo Display (Centered at half-radius)
             float centralAngleRad = (startAngle + endAngle) / 2f * Mathf.Deg2Rad;
             float ammoX = center.x + (Mathf.Cos(centralAngleRad) * (Radius * 0.5f));
             float ammoY = center.y + (Mathf.Sin(centralAngleRad) * (Radius * 0.5f));
             
             m_ammoDisplay.style.left = ammoX;
             m_ammoDisplay.style.top = ammoY;
+
+            // 5. Position Skip Button (Centered slightly deeper into the corner)
+            float skipX = center.x + (Mathf.Cos(centralAngleRad) * (Radius * 0.25f));
+            float skipY = center.y + (Mathf.Sin(centralAngleRad) * (Radius * 0.25f));
+
+            m_skipTurnButton.style.left = skipX;
+            m_skipTurnButton.style.top = skipY;
+            // Center the button's pivot point so it perfectly aligns with the math
+            m_skipTurnButton.style.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent));
+            
+
         }
     }
 

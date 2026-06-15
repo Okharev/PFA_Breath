@@ -18,6 +18,6 @@
             <ui:Label text="1/9" name="Nmb_Door" style="height: 25px; width: 25px; top: 34px; right: 117px; position: absolute; align-self: center; align-content: flex-end; align-items: stretch; aspect-ratio: auto; -unity-font-definition: url(&quot;project://database/Assets/Scripts/UI/UI_2D/Aharoni/ahronbd.ttf?fileID=12800000&amp;guid=6fd4b862a7d761c439c8aca702c2ae14&amp;type=3#ahronbd&quot;); -unity-text-align: middle-center; font-size: 32px;"/>
             <ui:Image name="Icon_Door" style="background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Flower_Icon.png?fileID=2800000&amp;guid=dacb728e3b15f7147be261e5ba560277&amp;type=3#Flower_Icon&quot;); right: 49px; top: 17px; position: absolute; height: 45px; width: 45px; color: rgb(0, 0, 0); background-color: rgba(255, 0, 0, 0); -unity-background-image-tint-color: rgb(255, 0, 255);"/>
         </ui:Image>
-        <Ability.NewAbilitySystem.UI.ArcHudPanel radius="236.8" neural-material="" name="ArcHudPanel" angular-padding="11.8" corner="BottomLeft" slot-size="75.4" style="rotate: 0;"/>
+        <Ability.NewAbilitySystem.UI.ArcHudPanel radius="239" neural-material="" name="ArcHudPanel" angular-padding="12.14" corner="BottomLeft" slot-size="73.3" background-image="project://database/Assets/Scripts/UI/UI_2D/InGame_UI/Skill%20wheel_V2.png?fileID=2800000&amp;guid=d90370ec85f0f214bbdd20c8b02842f3&amp;type=3#Skill wheel_V2" background-size="282.6" style="rotate: 0; top: -2px; left: 3px;"/>
     </ui:VisualElement>
 </ui:UXML>

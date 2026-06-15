@@ -22,6 +22,13 @@ namespace Ability.NewAbilitySystem.UI
             _arcHud = _uiDocument.rootVisualElement.Q<ArcHudPanel>();
             if (_arcHud == null) return;
 
+            // --- NEW: Bind Skip Button ---
+            var skipButton = _arcHud.GetSkipTurnButton();
+            if (skipButton != null)
+            {
+                skipButton.clicked += HandleSkipTurnClicked;
+            }
+
             // --- BIND EVENTS ---
 
             if (_ammoComponent != null)
@@ -44,9 +51,26 @@ namespace Ability.NewAbilitySystem.UI
                 _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Special))?.SetHotkey("R");
             }
         }
+        
+        private static void HandleSkipTurnClicked()
+        {
+            // Observer Check: Ensure we are actually in Combat and a turn isn't currently running
+            if (GameModeManager.Instance.CurrentMode == GameMode.Combat && !TurnManager.Instance.IsExecuting)
+            {
+                // Progress the turn manager by 1 tick
+                TurnManager.Instance.RequestTurns(1);
+            }
+        }
 
         private void OnDisable()
         {
+            // --- Unbind Skip Button ---
+            var skipButton = _arcHud?.GetSkipTurnButton();
+            if (skipButton != null)
+            {
+                skipButton.clicked -= HandleSkipTurnClicked;
+            }
+            
             // Prevent memory leaks when the scene unloads or object is destroyed
             if (_ammoComponent != null)
                 _ammoComponent.OnAmmoChanged -= HandleAmmoChanged;
@@ -65,23 +89,16 @@ namespace Ability.NewAbilitySystem.UI
 
             if (primarySlot == null || secondarySlot == null) return;
 
+            // Use standard .selected highlighting rather than physics/stacking overrides
             if (activeSlot == AbilitySlot.Primary)
             {
-                primarySlot.RemoveFromClassList("stacked-inactive");
-                primarySlot.AddToClassList("stacked-active");
-                primarySlot.BringToFront(); // Pops to the top of the render stack
-
-                secondarySlot.RemoveFromClassList("stacked-active");
-                secondarySlot.AddToClassList("stacked-inactive");
+                primarySlot.AddToClassList("selected");
+                secondarySlot.RemoveFromClassList("selected");
             }
-            else // Secondary is Active
+            else 
             {
-                secondarySlot.RemoveFromClassList("stacked-inactive");
-                secondarySlot.AddToClassList("stacked-active");
-                secondarySlot.BringToFront(); 
-
-                primarySlot.RemoveFromClassList("stacked-active");
-                primarySlot.AddToClassList("stacked-inactive");
+                secondarySlot.AddToClassList("selected");
+                primarySlot.RemoveFromClassList("selected");
             }
         }
 

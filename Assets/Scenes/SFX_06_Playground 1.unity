@@ -25949,157 +25949,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 507787037}
   m_Mesh: {fileID: 937135985027215108, guid: 17063a22707712f42b1c55e677a53eef, type: 3}
---- !u!1 &508533441
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 508533442}
-  - component: {fileID: 508533444}
-  - component: {fileID: 508533443}
-  m_Layer: 0
-  m_Name: AudioManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &508533442
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 508533441}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1388809936}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &508533443
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 508533441}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1d70055b28ad074479f2f62ae7977135, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AmbienceMusic
-  timeToFade: 0.25
-  explorationMusic: exploration
-  combatMusic: combat
---- !u!114 &508533444
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 508533441}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 272ee2be7b5564a4b994454594669e92, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
-  sounds:
-  - nameMusic: exploration
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: 65ecb5bd3ac4ae94e8a2a5404ecb4cd9, type: 3}
-    mixer: {fileID: -6103896839496543522, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.442
-    pitch: 1
-    spatialBlend: 0
-    loop: 1
-    playOnAwake: 0
-    minDistance: 1
-    source: {fileID: 0}
-  - nameMusic: combat
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: c7722c6b8f8145b4c8b432ed91750457, type: 3}
-    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.411
-    pitch: 1
-    spatialBlend: 0
-    loop: 1
-    playOnAwake: 0
-    minDistance: 1
-    source: {fileID: 0}
-  - nameMusic: hitPlayer
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: f85300bd1815418429594e7d1a71c320, type: 3}
-    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.523
-    pitch: 1.01
-    spatialBlend: 0
-    loop: 0
-    playOnAwake: 1
-    minDistance: 1
-    source: {fileID: 0}
-  - nameMusic: hitEnemy
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: 73c31dccd4d6da740bd9c33aef9bb4e8, type: 3}
-    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.193
-    pitch: 1
-    spatialBlend: 0
-    loop: 0
-    playOnAwake: 0
-    minDistance: 1
-    source: {fileID: 0}
-  - nameMusic: enterRoom
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: 74e50756d61ffab4f9158c2fee7a862b, type: 3}
-    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.589
-    pitch: 1
-    spatialBlend: 0
-    loop: 0
-    playOnAwake: 0
-    minDistance: 1
-    source: {fileID: 0}
-  - nameMusic: clearRoom
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: eec1e47a8aa57d94fbe47b598af4f31a, type: 3}
-    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.533
-    pitch: 1
-    spatialBlend: 0
-    loop: 0
-    playOnAwake: 0
-    minDistance: 1
-    source: {fileID: 0}
-  - nameMusic: deathEnemy
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: e30592d26f0157d419b5078eed2dc1b9, type: 3}
-    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.513
-    pitch: 1
-    spatialBlend: 0
-    loop: 0
-    playOnAwake: 0
-    minDistance: 1
-    source: {fileID: 0}
-  - nameMusic: clicButton
-    typeMusic: 0
-    clip: {fileID: 8300000, guid: ed7b42c3c5b51ee4f9699e2ba921ad27, type: 3}
-    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-    volume: 0.5
-    pitch: 1
-    spatialBlend: 0
-    loop: 0
-    playOnAwake: 0
-    minDistance: 1
-    source: {fileID: 0}
-  audioMixer: {fileID: 24100000, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
-  ambienceMusic: 
 --- !u!1 &508646502
 GameObject:
   m_ObjectHideFlags: 0
@@ -55919,8 +55768,8 @@ MonoBehaviour:
   windDirection: {x: -2.4001737, y: -12.000868}
   phillipsAmplitude: 0.002
   choppiness: 0.94
-  displacementMap: {fileID: 1854250930}
-  derivativeMap: {fileID: 1330395867}
+  displacementMap: {fileID: 1751974069}
+  derivativeMap: {fileID: 2032020657}
 --- !u!114 &985686180
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -73197,43 +73046,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1330221003}
   m_Mesh: {fileID: 966429838681507039, guid: 17063a22707712f42b1c55e677a53eef, type: 3}
---- !u!84 &1330395867
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 48
-  m_MipMap: 1
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &1330496068
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -76276,7 +76088,7 @@ Transform:
   - {fileID: 1702341624}
   - {fileID: 2091549965}
   - {fileID: 489392903}
-  - {fileID: 508533442}
+  - {fileID: 1623146846}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1389139915
@@ -86904,6 +86716,157 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1621184158}
   m_Mesh: {fileID: -8481701316541884425, guid: 428e715746a64b241b9ba01a685d629e, type: 3}
+--- !u!1 &1623146845
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1623146846}
+  - component: {fileID: 1623146848}
+  - component: {fileID: 1623146847}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1623146846
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623146845}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1388809936}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1623146847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623146845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d70055b28ad074479f2f62ae7977135, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AmbienceMusic
+  timeToFade: 0.25
+  explorationMusic: exploration
+  combatMusic: combat
+--- !u!114 &1623146848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1623146845}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 272ee2be7b5564a4b994454594669e92, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  sounds:
+  - nameMusic: exploration
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: 65ecb5bd3ac4ae94e8a2a5404ecb4cd9, type: 3}
+    mixer: {fileID: -6103896839496543522, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.515
+    pitch: 1
+    spatialBlend: 0
+    loop: 1
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: combat
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: c7722c6b8f8145b4c8b432ed91750457, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.515
+    pitch: 1
+    spatialBlend: 0
+    loop: 1
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: hitPlayer
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: f85300bd1815418429594e7d1a71c320, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.351
+    pitch: 1.01
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 1
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: hitEnemy
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: 73c31dccd4d6da740bd9c33aef9bb4e8, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.669
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: enterRoom
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: 74e50756d61ffab4f9158c2fee7a862b, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.669
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: clearRoom
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: eec1e47a8aa57d94fbe47b598af4f31a, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.5
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: deathEnemy
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: e30592d26f0157d419b5078eed2dc1b9, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.5
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  - nameMusic: clicButton
+    typeMusic: 0
+    clip: {fileID: 8300000, guid: ed7b42c3c5b51ee4f9699e2ba921ad27, type: 3}
+    mixer: {fileID: 2612073715218715390, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+    volume: 0.5
+    pitch: 1
+    spatialBlend: 0
+    loop: 0
+    playOnAwake: 0
+    minDistance: 1
+    source: {fileID: 0}
+  audioMixer: {fileID: 24100000, guid: f4ce2a133565e464fa163046d261ce8c, type: 2}
+  ambienceMusic: 
 --- !u!1001 &1623442634
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -92548,6 +92511,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f02207c07e4f7a246bfe7f794f084ee4, type: 3}
   m_PrefabInstance: {fileID: 1750762323}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &1751974069
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &1752219776
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -97898,43 +97898,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 11895f309665fb048978b65f5432e617, type: 3}
   m_PrefabInstance: {fileID: 1852713603}
   m_PrefabAsset: {fileID: 0}
---- !u!84 &1854250930
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 512
-  m_Height: 512
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &1855639395
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -106093,6 +106056,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 56a8f72595f8dc94993a0ad747f62adf, type: 3}
   m_PrefabInstance: {fileID: 2028893712}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &2032020657
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 512
+  m_Height: 512
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 48
+  m_MipMap: 1
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &2033599850
 PrefabInstance:
   m_ObjectHideFlags: 0
