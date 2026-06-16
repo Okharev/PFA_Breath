@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Skills.SkillTreeGraph
   AllNodes:
   - rid: 6047565780272807999
+  - rid: 3664170125683851547
   - rid: 3664170125683851553
   - rid: 3664170125683851550
   - rid: 3664170125683851552
-  - rid: 3664170125683851551
   - rid: 3664170125683851549
-  - rid: 3664170125683851547
-  - rid: 6047565780272808000
+  - rid: 3664170125683851551
   - rid: 3664170125683851548
-  - rid: 6047565780272808001
   - rid: 6047565780272808002
+  - rid: 6047565780272808000
+  - rid: 6047565780272808001
   references:
     version: 2
     RefIds:
@@ -54,7 +54,12 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Dash
-        Description: 
+        Description: 'Allows you to perform a double dash in the same turn
+
+          A
+          first normal dash
+
+          A second, shorter dash'
         PrerequisiteGUIDs:
         - a075b31f-a34a-41e2-959b-ee5023ce9684
         RequiredEmotion: 2
@@ -175,7 +180,10 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Primary
-        Description: 
+        Description: 'Allow to Fires several projectiles in rapid succession
+
+          in
+          front of him '
         PrerequisiteGUIDs:
         - a075b31f-a34a-41e2-959b-ee5023ce9684
         RequiredEmotion: 2
@@ -198,7 +206,7 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Secondary
-        Description: 
+        Description: Allow to Fire two salvos of two projectiles at the flanks
         PrerequisiteGUIDs:
         - 70b1c0af-e121-40ac-91ed-4b1d4682b80e
         - 12473ced-b977-4da5-a774-58b2e9c61797
@@ -222,7 +230,8 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Ultimate
-        Description: 
+        Description: Allows you to recall all fired projectiles, dealing damage to
+          enemies along their path
         PrerequisiteGUIDs:
         - 6a863c82-76d7-4c94-90fb-05ec62a09b00
         - b4f2c024-0790-4498-806c-f2f4a42bd19d
