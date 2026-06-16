@@ -1,8 +1,9 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Scripts/Dialogues/UI/DialogueStyles.uss?fileID=7433441132597879392&amp;guid=671d6913c9f158b459093b5a57a2cdeb&amp;type=3#DialogueStyles"/>
     <ui:VisualElement name="RootContainer" class="root-container" style="padding-bottom: 0; margin-bottom: 50px;">
+        <ui:Image name="BackGround_Dialogue" style="background-image: url(&quot;project://database/Assets/Scripts/UI/UI_2D/Codex/Codex_Box.png?fileID=2800000&amp;guid=d115bf30509011a49850fc9aaa47c34b&amp;type=3#Codex_Box&quot;); position: absolute; height: 428px; top: 724px; width: 1924px; left: -3px; align-self: center; align-items: center; align-content: flex-end;"/>
         <ui:VisualElement name="SpeakersContainer" class="speakers-container"/>
-        <ui:VisualElement name="DialogueBox" class="dialogue-box">
+        <ui:VisualElement name="DialogueBox" class="dialogue-box" style="height: 22%;">
             <ui:Label name="SpeakerName" text="Speaker Name" class="speaker-name"/>
             <ui:VisualElement name="DialogueText" class="dialogue-text-container"/>
             <ui:Button name="NextButton" text="Next ▶" class="next-button"/>
