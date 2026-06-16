@@ -14,11 +14,52 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
         // --- EXPOSED UI BUILDER PROPERTIES ---
 
         private ScreenCorner _corner = ScreenCorner.BottomRight;
+        
         [UxmlAttribute("corner")]
         public ScreenCorner Corner 
         { 
             get => _corner; 
             set { _corner = value; UpdateLayout(); } 
+        }
+        
+        [UxmlAttribute("inner-radius-multiplier")]
+        public float InnerRadiusMultiplier 
+        { 
+            get => _innerRadiusMultiplier; 
+            set { _innerRadiusMultiplier = value; UpdateLayout(); } 
+        }
+        private float _innerRadiusMultiplier = 0.6f;
+
+        [UxmlAttribute("ammo-width")]
+        public float AmmoWidth 
+        { 
+            get => _ammoWidth; 
+            set { _ammoWidth = value; UpdateLayout(); } 
+        }
+        private float _ammoWidth = 120f;
+
+        [UxmlAttribute("skip-button-size")]
+        public float SkipButtonSize 
+        { 
+            get => _skipButtonSize; 
+            set { _skipButtonSize = value; UpdateLayout(); } 
+        }
+        private float _skipButtonSize = 60f;
+
+        [UxmlAttribute("element-padding")]
+        public float ElementPadding 
+        { 
+            get => _elementPadding; 
+            set { _elementPadding = value; UpdateLayout(); } 
+        }
+        private float _elementPadding = 15f;
+        
+        private Texture2D _skipIcon;
+        [UxmlAttribute("skip-icon")]
+        public Texture2D SkipIcon
+        {
+            get => _skipIcon;
+            set { _skipIcon = value; UpdateSkipIcon(); }
         }
 
         private float _radius = 200f;
@@ -85,7 +126,7 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
 
         private readonly List<SpellSlot> m_spellSlots = new List<SpellSlot>();
         private AmmoDisplay m_ammoDisplay;
-        private Button m_skipTurnButton;
+        private VisualElement m_skipTurnButton;
         
         private VisualElement m_neuralBackground;
         private VisualElement m_backgroundImageElement; // NEW
@@ -132,8 +173,7 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
         }
         
         public AmmoDisplay GetAmmoDisplay() => m_ammoDisplay;
-        public Button GetSkipTurnButton() => m_skipTurnButton;
-
+        public VisualElement GetSkipTurnButton() => m_skipTurnButton;
         private void SetupNeuralBackground()
         {
             m_neuralBackground = new VisualElement();
@@ -158,16 +198,47 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
             UpdateLayout();
         }
 
+// Add this variable near your other UI element variables at the top of ArcHudPanel
+        private VisualElement m_actionContainer;
+
         private void CreateAmmoDisplay()
         {
+            // 1. Create a FlexBox Row Wrapper
+            m_actionContainer = new VisualElement { name = "action-container" };
+            m_actionContainer.style.position = Position.Absolute;
+            m_actionContainer.style.flexDirection = FlexDirection.Row;
+            m_actionContainer.style.alignItems = Align.Center; // Vertically center them to each other
+    
+            // 2. Setup Ammo Display
             m_ammoDisplay = new AmmoDisplay();
-            Add(m_ammoDisplay);
-
-            // NEW: Create and add the skip turn button
-            m_skipTurnButton = new Button { text = "SKIP", name = "skip-turn-button" };
+            // Override the USS Absolute/Translate rules so it obeys the FlexBox
+            m_ammoDisplay.style.position = Position.Relative;
+            m_ammoDisplay.style.translate = new Translate(0, 0); 
+    
+            // 3. Setup Skip Button
+            m_skipTurnButton = new VisualElement { name = "skip-turn-button" };
             m_skipTurnButton.AddToClassList("skip-turn-button");
-            m_skipTurnButton.style.position = Position.Absolute;
-            Add(m_skipTurnButton);
+            // Override Absolute positioning and add a clean gap between Ammo and Skip
+            m_skipTurnButton.style.position = Position.Relative;
+            m_skipTurnButton.style.marginLeft = 15f; 
+
+            // 4. Build the hierarchy
+            m_actionContainer.Add(m_ammoDisplay);
+            m_actionContainer.Add(m_skipTurnButton);
+            Add(m_actionContainer);
+    
+            UpdateSkipIcon();
+        }
+
+        private void UpdateSkipIcon()
+        {
+            if (m_skipTurnButton != null)
+            {
+                // UI Toolkit requires StyleBackground to map Texture2D to backgrounds
+                m_skipTurnButton.style.backgroundImage = _skipIcon != null 
+                    ? new StyleBackground(_skipIcon) 
+                    : new StyleBackground(StyleKeyword.Null);
+            }
         }
 
         // NEW: Updates the UI Toolkit background image dynamically
@@ -282,11 +353,18 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
                 float x = center.x + (Mathf.Cos(angleRad) * Radius);
                 float y = center.y + (Mathf.Sin(angleRad) * Radius);
 
+                float rotationAngle = currentAngle + 90f;
+
                 m_spellSlots[i].style.width = SlotSize;
                 m_spellSlots[i].style.height = SlotSize;
                 m_spellSlots[i].style.left = x;
                 m_spellSlots[i].style.top = y;
-                m_spellSlots[i].style.rotate = new Rotate(currentAngle + 90f);
+                
+                // Keep the root pivot rotated so USS translate physics work
+                m_spellSlots[i].style.rotate = new Rotate(rotationAngle);
+                
+                // NEW: Pass the rotation down to counter-rotate the inner visual box
+                m_spellSlots[i].SetCounterRotation(rotationAngle);
 
                 float uvX = x / width;
                 float uvY = 1f - (y / height); 
@@ -296,31 +374,49 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
                     m_instancedNeuralMaterial.SetVector(s_NodeIDs[i], new Vector4(uvX, uvY, 0, 0));
                 }
             }
+                    
+        // 4. Position Ammo Display (Centered)
+            float centralAngleDeg = (startAngle + endAngle) / 2f;
+            float centralAngleRad = centralAngleDeg * Mathf.Deg2Rad;
+            
+            // Use the exposed multiplier to adjust how far out the inner elements sit
+            float innerRadius = Radius * InnerRadiusMultiplier; 
 
-// 4. Position Ammo Display (Centered at half-radius)
-            float centralAngleRad = (startAngle + endAngle) / 2f * Mathf.Deg2Rad;
-            float ammoX = center.x + (Mathf.Cos(centralAngleRad) * (Radius * 0.5f));
-            float ammoY = center.y + (Mathf.Sin(centralAngleRad) * (Radius * 0.5f));
+            float ammoX = center.x + (Mathf.Cos(centralAngleRad) * innerRadius);
+            float ammoY = center.y + (Mathf.Sin(centralAngleRad) * innerRadius);
             
             m_ammoDisplay.style.left = ammoX;
             m_ammoDisplay.style.top = ammoY;
+            
+            // Force the Ammo width so the UI matches the Builder property
+            m_ammoDisplay.style.width = AmmoWidth;
 
-            // 5. Position Skip Button (Centered slightly deeper into the corner)
-            float skipX = center.x + (Mathf.Cos(centralAngleRad) * (Radius * 0.25f));
-            float skipY = center.y + (Mathf.Sin(centralAngleRad) * (Radius * 0.25f));
+            // 5. Position Skip Button (Side-by-side with Ammo Display)
+            // Force the Skip button size so the UI matches the Builder property
+            m_skipTurnButton.style.width = SkipButtonSize;
+            m_skipTurnButton.style.height = SkipButtonSize;
+
+            // Calculate the required arc distance (s) using exposed properties
+            float requiredArcDistance = (AmmoWidth / 2f) + (SkipButtonSize / 2f) + ElementPadding;
+            float angularOffsetDeg = innerRadius > 0f ? (requiredArcDistance / innerRadius) * Mathf.Rad2Deg : 45f;
+            float skipAngleRad = (centralAngleDeg - angularOffsetDeg) * Mathf.Deg2Rad; 
+
+            // Calculate exact pixel position
+            float skipX = center.x + (Mathf.Cos(skipAngleRad) * innerRadius) - (SkipButtonSize / 2f);
+            float skipY = center.y + (Mathf.Sin(skipAngleRad) * innerRadius) - (SkipButtonSize / 2f);
 
             m_skipTurnButton.style.left = skipX;
             m_skipTurnButton.style.top = skipY;
-            // Center the button's pivot point so it perfectly aligns with the math
-            m_skipTurnButton.style.translate = new Translate(new Length(-50, LengthUnit.Percent), new Length(-50, LengthUnit.Percent));
-            
+
+            // Guarantee it renders on top of the background layers
+            m_skipTurnButton.BringToFront();
 
         }
     }
 
     // --- MODULAR SUB-COMPONENTS ---
 
-    [UxmlElement]
+[UxmlElement]
     public partial class SpellSlot : VisualElement
     {
         public const string s_className = "spell-slot";
@@ -328,6 +424,8 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
         [UxmlAttribute("slot-index")]
         public int SlotIndex { get; set; }
 
+        private VisualElement m_visualContainer;
+        private Image m_iconImage; // USE DEDICATED UI TOOLKIT IMAGE CONTROL
         private Label m_hotkeyLabel;
         private Label m_cooldownLabel;
         private VisualElement m_channelProgress;
@@ -336,24 +434,60 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
         {
             AddToClassList(s_className);
 
+            // 1. VISUAL CONTAINER
+            m_visualContainer = new VisualElement { name = "visual-container" };
+            m_visualContainer.AddToClassList("spell-slot-visual");
+            
+            // Force layout natively so it cannot collapse inside the rotated parent
+            m_visualContainer.style.position = Position.Absolute;
+            m_visualContainer.style.width = Length.Percent(100);
+            m_visualContainer.style.height = Length.Percent(100);
+            Add(m_visualContainer);
+
+            // 2. DEDICATED IMAGE CONTROL
+            m_iconImage = new Image { name = "ability-icon" };
+            
+            // Force Absolute Anchors to guarantee it matches the 60x60 parent size
+            m_iconImage.style.position = Position.Absolute;
+            m_iconImage.style.width = Length.Percent(100);
+            m_iconImage.style.height = Length.Percent(100);
+            m_iconImage.scaleMode = ScaleMode.ScaleToFit;
+            
+            // Match the 12px border radius from your USS so the sprite doesn't clip the corners
+            m_iconImage.style.borderTopLeftRadius = 12;
+            m_iconImage.style.borderTopRightRadius = 12;
+            m_iconImage.style.borderBottomLeftRadius = 12;
+            m_iconImage.style.borderBottomRightRadius = 12;
+            m_visualContainer.Add(m_iconImage);
+
+            // 3. LABELS
             m_hotkeyLabel = new Label { name = "hotkey-label" }; 
             m_hotkeyLabel.AddToClassList("hotkey-text");
-            Add(m_hotkeyLabel);
+            m_visualContainer.Add(m_hotkeyLabel); 
 
             m_cooldownLabel = new Label { text = "" };
             m_cooldownLabel.AddToClassList("cooldown-text");
             m_cooldownLabel.style.display = DisplayStyle.None;
-            Add(m_cooldownLabel);
+            m_visualContainer.Add(m_cooldownLabel); 
 
             m_channelProgress = new VisualElement();
             m_channelProgress.AddToClassList("channel-progress");
             m_channelProgress.style.display = DisplayStyle.None;
-            Add(m_channelProgress);
+            m_visualContainer.Add(m_channelProgress); 
         }
 
         public void SetAbility(Sprite icon)
         {
-            style.backgroundImage = icon != null ? new StyleBackground(icon) : null;
+            // Assign directly to the Image component's sprite property
+            m_iconImage.sprite = icon;
+            
+            // Hide the image element entirely if there's no sprite to ensure the grey slot looks clean
+            m_iconImage.style.display = icon != null ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        public void SetCounterRotation(float parentRotation)
+        {
+            m_visualContainer.style.rotate = new Rotate(-parentRotation);
         }
 
         public void SetHotkey(string text)

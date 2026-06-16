@@ -54,7 +54,11 @@ namespace Ability.NewAbilitySystem.UI
             var skipButton = _arcHud.GetSkipTurnButton();
             if (skipButton != null)
             {
-                skipButton.clicked += HandleSkipTurnClicked;
+                // Register standard click logic
+                skipButton.RegisterCallback<ClickEvent>(HandleSkipTurnClicked);
+                
+                // NEW: Intercept the raw pointer press before the game world raycasts it
+                skipButton.RegisterCallback<PointerDownEvent>(HandlePointerDown);
             }
 
             if (_ammoComponent != null)
@@ -97,11 +101,11 @@ namespace Ability.NewAbilitySystem.UI
 
         private void OnDisable()
         {
-            // --- Unbind Skip Button ---
             var skipButton = _arcHud?.GetSkipTurnButton();
             if (skipButton != null)
             {
-                skipButton.clicked -= HandleSkipTurnClicked;
+                skipButton.UnregisterCallback<ClickEvent>(HandleSkipTurnClicked);
+                skipButton.UnregisterCallback<PointerDownEvent>(HandlePointerDown);
             }
             
             // Prevent memory leaks when the scene unloads or object is destroyed
@@ -112,6 +116,26 @@ namespace Ability.NewAbilitySystem.UI
             {
                 _playerController.OnLoadoutChanged -= HandleLoadoutChanged;
                 _playerController.OnActiveSlotChanged -= HandleActiveSlotChanged; // Prevent memory leak
+            }
+        }
+        
+        // 1. Intercept the physical mouse press immediately (O(1) block)
+        private static void HandlePointerDown(PointerDownEvent evt)
+        {
+            // Stops the event from falling through to the 3D scene raycasters
+            evt.StopPropagation(); 
+        }
+        
+        private static void HandleSkipTurnClicked(ClickEvent evt)
+        {
+            Debug.Log("SkipTurnClicked");
+            
+            // Stops the event from bubbling up/down to other overlapping UI elements
+            evt.StopPropagation();
+
+            if (GameModeManager.Instance.CurrentMode == GameMode.Combat && !TurnManager.Instance.IsExecuting)
+            {
+                TurnManager.Instance.RequestTurns(1);
             }
         }
         
@@ -159,7 +183,7 @@ namespace Ability.NewAbilitySystem.UI
         }
 
         // --- EVENT CALLBACKS ---
-
+        //
         private void HandleAmmoChanged(int current, int max)
         {
             _arcHud?.GetAmmoDisplay()?.UpdateAmmo(current, max);
