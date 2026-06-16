@@ -15,7 +15,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: We remember now, darling.
   nextNode: {fileID: 6134418517932860179}
-  position: {x: 9726.4, y: 123.2}
+  position: {x: 9726, y: 123}
   choices: []
   enterEffects: []
   references:
@@ -37,7 +37,7 @@ MonoBehaviour:
   text: We were so vulnerable, so naive - that's for sure. We couldn't understand
     any of her words
   nextNode: {fileID: -8198676143173291210}
-  position: {x: 4663.2, y: -108}
+  position: {x: 4663, y: -108}
   choices: []
   enterEffects: []
   references:
@@ -58,7 +58,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: We understood enough
   nextNode: {fileID: 6630447162507982862}
-  position: {x: 4990.4, y: -96}
+  position: {x: 4990, y: -96}
   choices: []
   enterEffects: []
   references:
@@ -79,7 +79,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: The weight of her words was.. - is too heavy (and it lasted for too long)
   nextNode: {fileID: 2342070150350140103}
-  position: {x: 6759.2, y: 443.19998}
+  position: {x: 6759, y: 443}
   choices: []
   enterEffects: []
   references:
@@ -100,7 +100,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: Dear lord, they doesn't even understand that we are making fun of them
   nextNode: {fileID: 4629634379720026383}
-  position: {x: 2391.2, y: -332}
+  position: {x: 2391, y: -332}
   choices: []
   enterEffects: []
   references:
@@ -122,7 +122,7 @@ MonoBehaviour:
   text: "Okay okay \u2013 (we made it) (we\u2026we really made it\u2026 we made it
     ) \u2013 Why are we always stuck with them"
   nextNode: {fileID: 239986929819240627}
-  position: {x: 300.8, y: -392}
+  position: {x: 301, y: -392}
   choices: []
   enterEffects: []
   references:
@@ -144,7 +144,7 @@ MonoBehaviour:
   text: It sounds like the one we trusted the most, darling. The one who was there
     since the beginning
   nextNode: {fileID: 6630447162507982862}
-  position: {x: 5170.4, y: -320}
+  position: {x: 5170, y: -320}
   choices: []
   enterEffects: []
   references:
@@ -166,12 +166,18 @@ MonoBehaviour:
   text: "To be precise \u2013 what happened was not proportionate. What she said
     was not proportionate. Just to be clear."
   nextNode: {fileID: -5081964050124599491}
-  position: {x: 7526.4, y: 267.19998}
+  position: {x: 7526, y: 267}
   choices: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160373
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160373
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.2
+        transitionDuration: 4
 --- !u!114 &-7443042583086837187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -188,7 +194,7 @@ MonoBehaviour:
   text: But that was a long time ago, right? (a time that feels like an eternity)
     Like 25 or 30 years ago?
   nextNode: {fileID: 0}
-  position: {x: 5224, y: 267.19998}
+  position: {x: 5224, y: 267}
   choices:
   - choiceText: It all started there then
     nextNode: {fileID: 8358162289068783906}
@@ -214,7 +220,7 @@ MonoBehaviour:
   text: "What you can\u2019t control shouldn\u2019t consume your mind\u2026 My old
     bones know that now."
   nextNode: {fileID: 0}
-  position: {x: 10054.4, y: 697.6}
+  position: {x: 10054, y: 698}
   choices: []
   enterEffects:
   - rid: 1439626082788048983
@@ -241,7 +247,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: Ha ! Still a dopey ! (always a dopey)
   nextNode: {fileID: 0}
-  position: {x: 2002.4, y: -336.80002}
+  position: {x: 2002, y: -337}
   choices:
   - choiceText: Yeah ! What a moron !
     nextNode: {fileID: -7916406074744434783}
@@ -263,8 +269,8 @@ MonoBehaviour:
     - rid: 8373033203755909193
       type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
       data:
-        targetBlend: 0.8
-        transitionDuration: 6
+        targetBlend: 0.5
+        transitionDuration: 3
 --- !u!114 &-5413193645968946017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -280,7 +286,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: Life is suffering, sweetie.
   nextNode: {fileID: 459842292936755284}
-  position: {x: 6238.4, y: 435.19998}
+  position: {x: 6238, y: 435}
   choices: []
   enterEffects: []
   references:
@@ -302,7 +308,7 @@ MonoBehaviour:
   text: "(so it\u2019s not \u2013 ) ( it wasn\u2019t our fault \u2013 ) (they  didn\u2019t
     \u2013 )"
   nextNode: {fileID: 1279663892571197784}
-  position: {x: 7967.2, y: 268.8}
+  position: {x: 7967, y: 269}
   choices: []
   enterEffects: []
   references:
@@ -323,7 +329,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
   text: The Runner is spiraling. Noted.
   nextNode: {fileID: -1082711602763072820}
-  position: {x: 4656.8, y: 47.999996}
+  position: {x: 4657, y: 48}
   choices: []
   enterEffects: []
   references:
@@ -344,7 +350,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
   text: I remember now.
   nextNode: {fileID: -2595067308948512309}
-  position: {x: 9207.2, y: 269.59998}
+  position: {x: 9207, y: 270}
   choices: []
   enterEffects: []
   references:
@@ -365,7 +371,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: (I remember now) (I remember) (okay) (okay I remember)
   nextNode: {fileID: -9192126808095726057}
-  position: {x: 9431.2, y: 268.8}
+  position: {x: 9431, y: 269}
   choices: []
   enterEffects: []
   references:
@@ -386,7 +392,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: You can stop now. It can stop carrying that.
   nextNode: {fileID: -4382067789770049585}
-  position: {x: 8895.2, y: 265.59998}
+  position: {x: 8895, y: 266}
   choices: []
   enterEffects: []
   references:
@@ -407,12 +413,18 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: Words are powerful tools. And hers were used like venom
   nextNode: {fileID: 1495004392423455859}
-  position: {x: 5780.8, y: 148.8}
+  position: {x: 5781, y: 149}
   choices: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160372
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160372
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.4
+        transitionDuration: 2
 --- !u!114 &-1188792411803009951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -449,7 +461,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: "We ain\u2019t do any shit."
   nextNode: {fileID: 4502452123373370566}
-  position: {x: 4888, y: 52.8}
+  position: {x: 4888, y: 53}
   choices: []
   enterEffects: []
   references:
@@ -485,7 +497,7 @@ MonoBehaviour:
   text: "I\u2019d like to acknowledge that, they handled this fight particularly
     poorly today. "
   nextNode: {fileID: 5459601144110497776}
-  position: {x: 635.2, y: -390.40002}
+  position: {x: 635, y: -390}
   choices: []
   enterEffects: []
   references:
@@ -507,7 +519,7 @@ MonoBehaviour:
   text: "Come on ! We gotta put that in our skull. That ain\u2019t something they
     did."
   nextNode: {fileID: -8122447831435277622}
-  position: {x: 6482.4, y: 439.19998}
+  position: {x: 6482, y: 439}
   choices: []
   enterEffects: []
   references:
@@ -529,7 +541,7 @@ MonoBehaviour:
   text: "What you can\u2019t control shouldn\u2019t consume your mind\u2026 My old
     bones know that now."
   nextNode: {fileID: 0}
-  position: {x: 10044.8, y: 508.8}
+  position: {x: 10045, y: 509}
   choices: []
   enterEffects:
   - rid: 1439626082788048982
@@ -557,7 +569,7 @@ MonoBehaviour:
   text: "Not who they said you were. Who you actually are. When it\u2019s quiet.
     When there\u2019s no one to perform for."
   nextNode: {fileID: 5400940460920305629}
-  position: {x: 6210.4, y: 267.19998}
+  position: {x: 6210, y: 267}
   choices: []
   enterEffects: []
   references:
@@ -579,7 +591,7 @@ MonoBehaviour:
   text: "What you can\u2019t control shouldn\u2019t consume your mind\u2026 My old
     bones know that now."
   nextNode: {fileID: 0}
-  position: {x: 10058.4, y: 368.8}
+  position: {x: 10058, y: 369}
   choices: []
   enterEffects:
   - rid: 1439626082788048981
@@ -607,7 +619,7 @@ MonoBehaviour:
   text: Yeah..... She said things like- you could do better.... You're not enough...
     ( - My life would've be better off without you - )
   nextNode: {fileID: 8965521862946440058}
-  position: {x: 4656, y: -332.80002}
+  position: {x: 4656, y: -333}
   choices: []
   enterEffects: []
   references:
@@ -628,7 +640,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: No, big boy, it wasn't. They were still a child.
   nextNode: {fileID: 8444337585681523258}
-  position: {x: 8275.2, y: 279.19998}
+  position: {x: 8275, y: 279}
   choices: []
   enterEffects: []
   references:
@@ -649,7 +661,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: Words are powerful tools. And hers were used like venom
   nextNode: {fileID: 0}
-  position: {x: 5806.4, y: 260}
+  position: {x: 5806, y: 260}
   choices:
   - choiceText: Who are you when no one is watching ?
     nextNode: {fileID: 909127346484799768}
@@ -678,7 +690,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: 'Darling, do you remember the room? '
   nextNode: {fileID: 6630447162507982862}
-  position: {x: 3975.2, y: -464}
+  position: {x: 3975, y: -464}
   choices: []
   enterEffects: []
   references:
@@ -700,7 +712,7 @@ MonoBehaviour:
   text: "Everything\u2019s my fault (my fault my fault) \u2013 wait is it ? (I don\u2019t
     know I don\u2019t know) "
   nextNode: {fileID: -4802534212580627363}
-  position: {x: 4344, y: 45.600002}
+  position: {x: 4344, y: 46}
   choices: []
   enterEffects:
   - rid: 1439626082788048975
@@ -726,7 +738,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: It sounded like a voice. I can still here it in my sleep
   nextNode: {fileID: 1240125181595040913}
-  position: {x: 4340, y: -319.2}
+  position: {x: 4340, y: -319}
   choices: []
   enterEffects:
   - rid: 1439626082788048973
@@ -752,7 +764,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
   text: The source of the problem was external. That is the conclusion.
   nextNode: {fileID: -7464063208194761149}
-  position: {x: 7100.8, y: 492.8}
+  position: {x: 7101, y: 493}
   choices: []
   enterEffects: []
   references:
@@ -794,7 +806,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: "Darling, think about it. We did all these things \u2013 "
   nextNode: {fileID: 5125019159183375188}
-  position: {x: 5098.4, y: 48.8}
+  position: {x: 5098, y: 49}
   choices: []
   enterEffects: []
   references:
@@ -815,7 +827,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: That scumbag gets that we are talking about them. Always craving for attention
   nextNode: {fileID: 9008906166777296329}
-  position: {x: 2692, y: -336.80002}
+  position: {x: 2692, y: -337}
   choices: []
   enterEffects: []
   references:
@@ -837,7 +849,7 @@ MonoBehaviour:
   text: "What you can\u2019t control shouldn\u2019t consume your mind\u2026 My old
     bones know that now."
   nextNode: {fileID: 0}
-  position: {x: 10052, y: 252.00002}
+  position: {x: 10052, y: 252}
   choices: []
   enterEffects:
   - rid: 1439626082788048980
@@ -865,7 +877,7 @@ MonoBehaviour:
   text: "It ain\u2019t right. What she said. It ain\u2019t right and nobody said
     it out loud."
   nextNode: {fileID: 6630447162507982862}
-  position: {x: 5411.2, y: 37.600002}
+  position: {x: 5411, y: 38}
   choices: []
   enterEffects: []
   references:
@@ -886,7 +898,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: Ha ! Still a dopey ! (always a dopey)
   nextNode: {fileID: -6515669326490238659}
-  position: {x: 1680, y: -290.4}
+  position: {x: 1680, y: -290}
   choices: []
   enterEffects: []
   references:
@@ -907,7 +919,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: "It\u2019s been confusing us for a long time"
   nextNode: {fileID: 2691924116526998096}
-  position: {x: 6484, y: 268.8}
+  position: {x: 6484, y: 269}
   choices: []
   enterEffects: []
   references:
@@ -929,7 +941,7 @@ MonoBehaviour:
   text: Those jellyfishes are just basic shit. My say is that they are just not good
     enough
   nextNode: {fileID: 7049736355655339621}
-  position: {x: 967.2, y: -339.2}
+  position: {x: 967, y: -339}
   choices: []
   enterEffects: []
   references:
@@ -950,7 +962,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: Why does it matter (it matters somehow)
   nextNode: {fileID: -8722761486438013041}
-  position: {x: 4334.4, y: -106.4}
+  position: {x: 4334, y: -106}
   choices: []
   enterEffects:
   - rid: 1439626082788048974
@@ -976,7 +988,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: We remember now, darling.
   nextNode: {fileID: 0}
-  position: {x: 9748, y: 271.19998}
+  position: {x: 9748, y: 271}
   choices:
   - choiceText: "It was real\_"
     nextNode: {fileID: 4850406903235412256}
@@ -994,10 +1006,16 @@ MonoBehaviour:
     nextNode: {fileID: -6577812087765937966}
     conditions: []
     choiceEffects: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160374
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160374
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0
+        transitionDuration: 2
 --- !u!114 &6623323843121513767
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1014,12 +1032,18 @@ MonoBehaviour:
   text: (I remember) Yeah yeah. I remember a land full of flowers and sunny meadows
     (just like eternal spring)
   nextNode: {fileID: 7104862815152863897}
-  position: {x: 4350.4, y: 268}
+  position: {x: 4350, y: 268}
   choices: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160371
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160371
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.5
+        transitionDuration: 4
 --- !u!114 &6630447162507982862
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1035,7 +1059,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: 'Darling, do you remember the room? '
   nextNode: {fileID: 0}
-  position: {x: 3987.2, y: -328}
+  position: {x: 3987, y: -330}
   choices:
   - choiceText: I remember the sound
     nextNode: {fileID: 2060474685966364918}
@@ -1056,7 +1080,8 @@ MonoBehaviour:
     - rid: 1439626082788048977
     - rid: 1439626082788048978
     choiceEffects: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160370
   references:
     version: 2
     RefIds:
@@ -1075,6 +1100,11 @@ MonoBehaviour:
       data:
         requiredChoiceId: Phase2_Fault
         invertCheck: 0
+    - rid: 1439626132401160370
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.8
+        transitionDuration: 2
 --- !u!114 &6845426189693812469
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1090,7 +1120,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
   text: The sea didn't flood the ground either. I remember we could walk everywhere.
   nextNode: {fileID: -7443042583086837187}
-  position: {x: 4936.8, y: 268}
+  position: {x: 4937, y: 268}
   choices: []
   enterEffects: []
   references:
@@ -1133,7 +1163,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: 'That sweetheart always gets it in the end but needs to be told several times '
   nextNode: {fileID: 5250684827076087375}
-  position: {x: 1327.2, y: -343.2}
+  position: {x: 1327, y: -343}
   choices: []
   enterEffects: []
   references:
@@ -1154,7 +1184,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: a16b1aa75a9227743a738bb8fc595bf2, type: 2}
   text: No shattered bridges! No broken lands!
   nextNode: {fileID: 6845426189693812469}
-  position: {x: 4647.2, y: 265.59998}
+  position: {x: 4647, y: 266}
   choices: []
   enterEffects: []
   references:
@@ -1175,7 +1205,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
   text: Her words shaped the world
   nextNode: {fileID: -1194227825649039922}
-  position: {x: 5576.8, y: 264}
+  position: {x: 5577, y: 264}
   choices: []
   enterEffects: []
   references:
@@ -1197,7 +1227,7 @@ MonoBehaviour:
   text: "To keep others warm, you don\u2019t have to set yourself on fire, sweetie.
     You never did."
   nextNode: {fileID: -2527679137432085443}
-  position: {x: 8576, y: 265.59998}
+  position: {x: 8576, y: 266}
   choices: []
   enterEffects: []
   references:
@@ -1218,7 +1248,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: 05d8191cc2e06d44bb2a85359d8959a1, type: 2}
   text: I'm confused. Whose voice is that?
   nextNode: {fileID: -7593017064855121714}
-  position: {x: 4944, y: -318.40002}
+  position: {x: 4944, y: -318}
   choices: []
   enterEffects: []
   references:
@@ -1239,7 +1269,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: No I think something's wrong. (are they lost ?) they're looking for something.
   nextNode: {fileID: 6909589231726435963}
-  position: {x: 3082.4, y: -336}
+  position: {x: 3082, y: -336}
   choices: []
   enterEffects: []
   references:
