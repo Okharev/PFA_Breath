@@ -3,7 +3,12 @@ guid: 8650dcd8b1bca6e48a4374e7487864af
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: T_Plants_Pots_fontaine_small
+    second: {fileID: 2100000, guid: 0cb0149433aaa9342a5025bd33891553, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

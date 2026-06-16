@@ -168,10 +168,16 @@ MonoBehaviour:
   nextNode: {fileID: -5081964050124599491}
   position: {x: 7526, y: 267}
   choices: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160373
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160373
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.2
+        transitionDuration: 4
 --- !u!114 &-7443042583086837187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -255,10 +261,16 @@ MonoBehaviour:
     nextNode: {fileID: -7916406074744434783}
     conditions: []
     choiceEffects: []
-  enterEffects: []
+  enterEffects:
+  - rid: 8373033203755909193
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 8373033203755909193
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.5
+        transitionDuration: 3
 --- !u!114 &-5413193645968946017
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -403,10 +415,16 @@ MonoBehaviour:
   nextNode: {fileID: 1495004392423455859}
   position: {x: 5781, y: 149}
   choices: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160372
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160372
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.4
+        transitionDuration: 2
 --- !u!114 &-1188792411803009951
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -988,10 +1006,16 @@ MonoBehaviour:
     nextNode: {fileID: -6577812087765937966}
     conditions: []
     choiceEffects: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160374
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160374
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0
+        transitionDuration: 2
 --- !u!114 &6623323843121513767
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1010,10 +1034,16 @@ MonoBehaviour:
   nextNode: {fileID: 7104862815152863897}
   position: {x: 4350, y: 268}
   choices: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160371
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 1439626132401160371
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.5
+        transitionDuration: 4
 --- !u!114 &6630447162507982862
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1029,7 +1059,7 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: b7f3cfd0c7b90b844b1a440812b055a7, type: 2}
   text: 'Darling, do you remember the room? '
   nextNode: {fileID: 0}
-  position: {x: 3987, y: -328}
+  position: {x: 3987, y: -330}
   choices:
   - choiceText: I remember the sound
     nextNode: {fileID: 2060474685966364918}
@@ -1050,7 +1080,8 @@ MonoBehaviour:
     - rid: 1439626082788048977
     - rid: 1439626082788048978
     choiceEffects: []
-  enterEffects: []
+  enterEffects:
+  - rid: 1439626132401160370
   references:
     version: 2
     RefIds:
@@ -1069,6 +1100,11 @@ MonoBehaviour:
       data:
         requiredChoiceId: Phase2_Fault
         invertCheck: 0
+    - rid: 1439626132401160370
+      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
+      data:
+        targetBlend: 0.8
+        transitionDuration: 2
 --- !u!114 &6845426189693812469
 MonoBehaviour:
   m_ObjectHideFlags: 0
