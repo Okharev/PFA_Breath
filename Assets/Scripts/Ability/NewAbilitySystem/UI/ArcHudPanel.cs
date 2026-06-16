@@ -167,7 +167,6 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
             m_skipTurnButton = new Button { text = "SKIP", name = "skip-turn-button" };
             m_skipTurnButton.AddToClassList("skip-turn-button");
             m_skipTurnButton.style.position = Position.Absolute;
-            
             Add(m_skipTurnButton);
         }
 
@@ -382,22 +381,18 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
     public partial class AmmoDisplay : VisualElement
     {
         public const string s_className = "ammo-display";
-        private Label m_ammoLabel_current;
-        private Label m_ammoLabel_max;
+        private Label m_ammoLabel;
 
         public AmmoDisplay()
         {
             AddToClassList(s_className);
-            m_ammoLabel_current = new Label { text = "--", name = "ammo-text-current" };
-            Add(m_ammoLabel_current);
-            m_ammoLabel_max = new Label { text = "--", name = "ammo-text-max" };
-            Add(m_ammoLabel_max);
+            m_ammoLabel = new Label { text = "--/--", name = "ammo-text" };
+            Add(m_ammoLabel);
         }
 
         public void UpdateAmmo(int current, int max)
         {
-            m_ammoLabel_current.text = $"{current}";
-            m_ammoLabel_max.text = $"{max}";
+            m_ammoLabel.text = $"{current}/{max}";
         }
     }
 }

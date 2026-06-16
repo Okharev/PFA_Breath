@@ -2,7 +2,7 @@
 }
 
 .Button {
-    width: 170px;
+    width: 120px;
     height: 45px;
     align-self: center;
     align-items: center;
@@ -11,7 +11,7 @@
     color: rgb(255, 255, 255);
     -unity-font-definition: url("project://database/Assets/Scripts/UI/UI_2D/Aharoni/ahronbd.ttf?fileID=12800000&guid=6fd4b862a7d761c439c8aca702c2ae14&type=3#ahronbd");
     -unity-background-image-tint-color: rgb(173, 2, 2);
-    background-image: url("project://database/Assets/Scripts/UI/UI_2D/Ui_MainMenu/Main%20menu/Mainmenu_button.png?fileID=2800000&guid=82ed56c64075b64449215029ea44e3d0&type=3#Mainmenu_button");
+    background-image: url("project://database/Assets/Scripts/UI/UI_2D/Ui_MainMenu/Main%20menu/Mainmenu_button.png?fileID=21300000&guid=82ed56c64075b64449215029ea44e3d0&type=3#Mainmenu_button");
     -unity-slice-scale: 0;
     background-color: rgba(0, 0, 0, 0);
 }
@@ -21,6 +21,9 @@
     transition-duration: 0.5s;
     transition-timing-function: ease;
     transition-delay: 0s;
-    width: 180px;
-    height: 55px;
+    width: 130px;
+    height: 50px;
+    background-image: url("project://database/Assets/Scripts/UI/UI_2D/Ui_MainMenu/Main%20menu/Mainmenu_Selectedbutton.png?fileID=21300000&guid=b5104e2c2a667d341a18ed132293ee78&type=3#Mainmenu_Selectedbutton");
+    -unity-background-image-tint-color: rgba(255, 255, 255, 255);
+    background-color: rgb(255, 255, 255);
 }
