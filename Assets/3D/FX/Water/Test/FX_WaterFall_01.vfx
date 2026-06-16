@@ -1625,7 +1625,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614916}
   - {fileID: 8926484042661614917}
   m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 0
+  m_UICollapsed: 1
   m_UISuperCollapsed: 0
   m_MasterSlot: {fileID: 8926484042661614915}
   m_MasterData:
@@ -1634,7 +1634,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.0,"y":0.05000000074505806}'
+      m_SerializableObject: '{"x":0.0,"y":-0.05000000074505806}'
     m_Space: -1
   m_Property:
     name: _MainTexSpeed
@@ -2948,7 +2948,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.0,"y":0.10000000149011612}'
+      m_SerializableObject: '{"x":0.0,"y":-0.10000000149011612}'
     m_Space: -1
   m_Property:
     name: _MainTexSpeed
@@ -5920,7 +5920,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: UnityEngine.Vector2, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"x":0.0,"y":0.14000000059604646}'
+      m_SerializableObject: '{"x":0.0,"y":-0.14000000059604646}'
     m_Space: -1
   m_Property:
     name: _MainTexSpeed

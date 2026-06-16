@@ -110,6 +110,8 @@ namespace RoomBuilding
                     float3 m1 = math.lerp(data.DestroyedState.Position, controlPoint, easeT);
                     float3 m2 = math.lerp(controlPoint, data.CleanState.Position, easeT);
 
+                    Debug.Log(i);
+
                     data.PropTransform.position = math.lerp(m1, m2, easeT);
                 }
                 else
