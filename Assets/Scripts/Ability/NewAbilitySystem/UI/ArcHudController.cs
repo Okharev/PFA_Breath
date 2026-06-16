@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Dialogues;
 using Skills;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -16,20 +17,45 @@ namespace Ability.NewAbilitySystem.UI
         private ArcHudPanel _arcHud;
         private Dictionary<AbilitySlot, AbilityData> _trackedLoadout = new();
 
+        private void HandleDialogueStarted(Conversation c)
+        {
+            if (_arcHud != null)
+            {
+                // DisplayStyle.None removes the element from the layout engine entirely
+                _arcHud.style.display = DisplayStyle.None;
+            }
+        }
+
+        private void HandleDialogueEnded()
+        {
+            if (_arcHud != null)
+            {
+                // DisplayStyle.Flex returns it to the layout engine
+                _arcHud.style.display = DisplayStyle.Flex;
+            }
+        }
+        
+        // 2. ADD THIS: Bind to the global singleton in Start
+        private void Start()
+        {
+            if (DialogueManager.Instance != null)
+            {
+                DialogueManager.Instance.OnConversationStarted += HandleDialogueStarted;
+                DialogueManager.Instance.OnConversationEnded += HandleDialogueEnded;
+            }
+        }
+
         private void OnEnable()
         {
             if (_uiDocument == null) return;
             _arcHud = _uiDocument.rootVisualElement.Q<ArcHudPanel>();
             if (_arcHud == null) return;
 
-            // --- NEW: Bind Skip Button ---
             var skipButton = _arcHud.GetSkipTurnButton();
             if (skipButton != null)
             {
                 skipButton.clicked += HandleSkipTurnClicked;
             }
-
-            // --- BIND EVENTS ---
 
             if (_ammoComponent != null)
             {
@@ -40,15 +66,22 @@ namespace Ability.NewAbilitySystem.UI
             if (_playerController != null)
             {
                 _playerController.OnLoadoutChanged += HandleLoadoutChanged;
-                
-                // NEW: Listen to the swap event
                 _playerController.OnActiveSlotChanged += HandleActiveSlotChanged; 
             
-                // Setup hardcoded hotkeys (Note: You may want to dynamically change "RMB" based on the active stack)
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Primary))?.SetHotkey("1"); // Primary
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Secondary))?.SetHotkey("2"); // Secondary
+                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Primary))?.SetHotkey("1");
+                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Secondary))?.SetHotkey("2");
                 _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Dash))?.SetHotkey("SHF");
                 _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Special))?.SetHotkey("R");
+            }
+        }
+
+        // 3. ADD THIS: Prevent memory leaks by unsubscribing
+        private void OnDestroy() 
+        {
+            if (DialogueManager.Instance != null)
+            {
+                DialogueManager.Instance.OnConversationStarted -= HandleDialogueStarted;
+                DialogueManager.Instance.OnConversationEnded -= HandleDialogueEnded;
             }
         }
         

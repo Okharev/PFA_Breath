@@ -49,12 +49,15 @@
 .dialogue-box,
 .choices-box {
     width: 90%;
-    max-width: 1080px;
+    max-width: 1920px;
     background-color: rgba(15, 15, 15, 0.95);
     border-radius: 12px;
     padding: 25px;
     border-width: 2px;
     border-color: rgba(255, 255, 255, 0.1);
+    background-image: url("project://database/Assets/Scripts/UI/UI_2D/Dialogue/dialogueBG.png?fileID=2800000&guid=eb9c93761e225df4bb3dfb2a79afd326&type=3#dialogueBG");
+    max-height: 1080px;
+    height: 20%;
 }
 
 .speaker-name {
@@ -62,6 +65,9 @@
     -unity-font-style: bold;
     color: rgb(230, 180, 80);
     margin-bottom: 10px;
+    width: 15%;
+    align-self: auto;
+    align-items: center;
 }
 
 .dialogue-text-container {
