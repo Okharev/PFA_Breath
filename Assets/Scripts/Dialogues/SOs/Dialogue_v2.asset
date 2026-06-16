@@ -600,23 +600,13 @@ MonoBehaviour:
   speaker: {fileID: 11400000, guid: ebc351b868b44c14cb175d1c4ca66aea, type: 2}
   text: Yeah..... She said things like- you could do better.... You're not enough...
     ( - My life would've be better off without you - )
-  nextNode: {fileID: 0}
-  position: {x: 4654, y: -318}
-  choices:
-  - choiceText: 
-    nextNode: {fileID: 0}
-    conditions: []
-    choiceEffects:
-    - rid: 6047566103037870150
+  nextNode: {fileID: 8965521862946440058}
+  position: {x: 4656, y: -333}
+  choices: []
   enterEffects: []
   references:
     version: 2
-    RefIds:
-    - rid: 6047566103037870150
-      type: {class: SetWeatherBlendEffect, ns: Dialogues, asm: Assembly-CSharp}
-      data:
-        targetBlend: 0.357
-        transitionDuration: 2
+    RefIds: []
 --- !u!114 &1279663892571197784
 MonoBehaviour:
   m_ObjectHideFlags: 0

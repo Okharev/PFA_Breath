@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Skills.SkillTreeGraph
   AllNodes:
   - rid: 6047565780272807999
-  - rid: 3664170125683851548
-  - rid: 6047565780272808002
-  - rid: 6047565780272808001
-  - rid: 3664170125683851547
-  - rid: 6047565780272808000
   - rid: 3664170125683851553
-  - rid: 3664170125683851551
-  - rid: 3664170125683851549
   - rid: 3664170125683851550
   - rid: 3664170125683851552
+  - rid: 3664170125683851551
+  - rid: 3664170125683851549
+  - rid: 3664170125683851547
+  - rid: 6047565780272808002
+  - rid: 3664170125683851548
+  - rid: 6047565780272808001
+  - rid: 6047565780272808000
   references:
     version: 2
     RefIds:
@@ -42,7 +42,10 @@ MonoBehaviour:
         PrerequisiteGUIDs:
         - 517dfec0-487d-4a65-ab57-54a988a0e859
         GenericCost: 1
-        GrantedStats: []
+        GrantedStats:
+        - Stat: 0
+          Type: 100
+          Value: 5
     - rid: 3664170125683851548
       type: {class: EmotionNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
@@ -54,18 +57,29 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Dash
-        Description: 
+        Description: 'Allows you to perform a double dash in the same turn
+
+          A
+          first normal dash
+
+          A second, shorter dash'
         PrerequisiteGUIDs:
         - a075b31f-a34a-41e2-959b-ee5023ce9684
         RequiredEmotion: 2
-        BaseEmotionCost: 0
+        BaseEmotionCost: 1
         MaxLevel: 4
         OrbitRotation: 135
         OrbitSpan: 90
-        UnlocksAbility: 0
+        UnlocksAbility: 1
         GrantedAbility: {fileID: 11400000, guid: 514ab73a710a2214c97a3a7c120554ac, type: 2}
         IntendedSlot: 4
-        GrantedStats: []
+        GrantedStats:
+        - Stat: 0
+          Type: 100
+          Value: 0
+        - Stat: 0
+          Type: 100
+          Value: 0
     - rid: 3664170125683851549
       type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
@@ -82,9 +96,9 @@ MonoBehaviour:
         - 5839bfa4-fda9-47b7-9b6e-ebc2a9a9202d
         GenericCost: 1
         GrantedStats:
-        - Stat: 0
+        - Stat: 2
           Type: 100
-          Value: 0
+          Value: 1
     - rid: 3664170125683851550
       type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
@@ -95,12 +109,15 @@ MonoBehaviour:
           y: 725
           width: 161
           height: 77
-        NodeName: Health
+        NodeName: Ammo
         Description: 
         PrerequisiteGUIDs:
         - 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
         GenericCost: 1
-        GrantedStats: []
+        GrantedStats:
+        - Stat: 5
+          Type: 100
+          Value: 2
     - rid: 3664170125683851551
       type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
@@ -116,7 +133,10 @@ MonoBehaviour:
         PrerequisiteGUIDs:
         - 57e32a86-c687-43bb-8d04-3ca7ffc9fdaa
         GenericCost: 1
-        GrantedStats: []
+        GrantedStats:
+        - Stat: 0
+          Type: 100
+          Value: 2
     - rid: 3664170125683851552
       type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
@@ -132,7 +152,10 @@ MonoBehaviour:
         PrerequisiteGUIDs:
         - 8c3abeb7-bb2d-40fd-851c-a8b2af527572
         GenericCost: 1
-        GrantedStats: []
+        GrantedStats:
+        - Stat: 2
+          Type: 100
+          Value: 1
     - rid: 3664170125683851553
       type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
@@ -148,7 +171,10 @@ MonoBehaviour:
         PrerequisiteGUIDs:
         - a075b31f-a34a-41e2-959b-ee5023ce9684
         GenericCost: 1
-        GrantedStats: []
+        GrantedStats:
+        - Stat: 2
+          Type: 100
+          Value: 1
     - rid: 6047565780272807999
       type: {class: GenericNodeData, ns: Skills.Skills, asm: Assembly-CSharp}
       data:
@@ -159,7 +185,7 @@ MonoBehaviour:
           y: 800
           width: 161
           height: 77
-        NodeName: Test skill
+        NodeName: 
         Description: 
         PrerequisiteGUIDs: []
         GenericCost: 1
@@ -175,7 +201,10 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Primary
-        Description: 
+        Description: 'Allow to Fires several projectiles in rapid succession
+
+          in
+          front of him '
         PrerequisiteGUIDs:
         - a075b31f-a34a-41e2-959b-ee5023ce9684
         RequiredEmotion: 2
@@ -198,7 +227,7 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Secondary
-        Description: 
+        Description: Allow to Fire two salvos of two projectiles at the flanks
         PrerequisiteGUIDs:
         - 70b1c0af-e121-40ac-91ed-4b1d4682b80e
         - 12473ced-b977-4da5-a774-58b2e9c61797
@@ -222,7 +251,8 @@ MonoBehaviour:
           width: 161
           height: 77
         NodeName: Nevro Ultimate
-        Description: 
+        Description: Allows you to recall all fired projectiles, dealing damage to
+          enemies along their path
         PrerequisiteGUIDs:
         - 6a863c82-76d7-4c94-90fb-05ec62a09b00
         - b4f2c024-0790-4498-806c-f2f4a42bd19d
