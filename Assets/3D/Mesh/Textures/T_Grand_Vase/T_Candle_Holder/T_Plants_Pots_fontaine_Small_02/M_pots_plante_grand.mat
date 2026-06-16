@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_LP_Pillar_Light_02
+  m_Name: M_pots_plante_grand
   m_Shader: {fileID: -6465566751694194690, guid: af0143a8e2c5e7247bc577787eaa80d8, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -25,7 +25,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _AO:
-        m_Texture: {fileID: 2800000, guid: 57560157ec0203543bc354c35d5aa892, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3e8ab055bd4e5a141a734fc73fc2d969, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
@@ -33,7 +33,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Basecolor:
-        m_Texture: {fileID: 2800000, guid: 61c45c829909e8645b4c1f85f8beed6a, type: 3}
+        m_Texture: {fileID: 2800000, guid: 11ae49f89d590bc4986c719843950fef, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -57,7 +57,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Emissive:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 3e8ab055bd4e5a141a734fc73fc2d969, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -65,7 +65,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Metalic:
-        m_Texture: {fileID: 2800000, guid: 57560157ec0203543bc354c35d5aa892, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3e8ab055bd4e5a141a734fc73fc2d969, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -73,11 +73,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: 70317554414f67a4ca71bc55bec2d7b6, type: 3}
+        m_Texture: {fileID: 2800000, guid: 5804eab8991d5c54bbf199bdf1d82153, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ORM_Oclusion_Roughtess_Metal:
-        m_Texture: {fileID: 2800000, guid: 57560157ec0203543bc354c35d5aa892, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3e8ab055bd4e5a141a734fc73fc2d969, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OasisMaskSubgraph_7f4d5479bc274dc2b9bcea5abd0f39a2_NoiseMap_81740598_Texture2D:
@@ -97,7 +97,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Smoothness:
-        m_Texture: {fileID: 2800000, guid: 57560157ec0203543bc354c35d5aa892, type: 3}
+        m_Texture: {fileID: 2800000, guid: 3e8ab055bd4e5a141a734fc73fc2d969, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
@@ -138,8 +138,8 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
-    - _MettalicValue: 1
-    - _NOAO: 1
+    - _MettalicValue: 0
+    - _NOAO: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueControl: 0
@@ -147,17 +147,17 @@ Material:
     - _ReceiveShadows: 1
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SmoothnessValue: 1
+    - _SmoothnessValue: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _UseAO: 1
+    - _UseAO: 0
     - _UseBaseColor: 1
     - _UseEmissive: 0
-    - _UseMettalic: 1
-    - _UseSmoothness: 1
-    - _Use_ORM: 1
+    - _UseMettalic: 0
+    - _UseSmoothness: 0
+    - _Use_ORM: 0
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
