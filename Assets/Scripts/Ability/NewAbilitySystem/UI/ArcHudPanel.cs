@@ -435,7 +435,6 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
 
         private VisualElement m_visualContainer;
         private Image m_iconImage; // USE DEDICATED UI TOOLKIT IMAGE CONTROL
-        private Label m_hotkeyLabel;
         private Label m_cooldownLabel;
         private VisualElement m_channelProgress;
 
@@ -469,10 +468,7 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
             m_iconImage.style.borderBottomRightRadius = 12;
             m_visualContainer.Add(m_iconImage);
 
-            // 3. LABELS
-            m_hotkeyLabel = new Label { name = "hotkey-label" }; 
-            m_hotkeyLabel.AddToClassList("hotkey-text");
-            m_visualContainer.Add(m_hotkeyLabel); 
+
 
             m_cooldownLabel = new Label { text = "" };
             m_cooldownLabel.AddToClassList("cooldown-text");
@@ -499,10 +495,7 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
             m_visualContainer.style.rotate = new Rotate(-parentRotation);
         }
 
-        public void SetHotkey(string text)
-        {
-            m_hotkeyLabel.text = text;
-        }
+
 
         public void SetCooldown(int remainingTurns)
         {

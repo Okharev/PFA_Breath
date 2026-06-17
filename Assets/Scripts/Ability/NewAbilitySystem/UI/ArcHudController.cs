@@ -71,11 +71,7 @@ namespace Ability.NewAbilitySystem.UI
             {
                 _playerController.OnLoadoutChanged += HandleLoadoutChanged;
                 _playerController.OnActiveSlotChanged += HandleActiveSlotChanged; 
-            
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Primary))?.SetHotkey("1");
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Secondary))?.SetHotkey("2");
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Dash))?.SetHotkey("SHF");
-                _arcHud.GetSlot(MapSlotToIndex(AbilitySlot.Special))?.SetHotkey("R");
+
             }
         }
 
