@@ -87,46 +87,48 @@
     -unity-text-align: middle-center;
 }
 
+/* --- 1. THE STRUCTURAL BUTTON (White Circle) --- */
 .skip-turn-button {
     position: absolute;
-    /* ... existing properties ... */
-
-    -unity-background-scale-mode: scale-to-fit;
-    -unity-background-image-tint-color: #FFFFFF;
-
-    /* ADD THESE TWO LINES: Forces strict geometric centering in the background quad */
-    -unity-background-position-x: center;
-    -unity-background-position-y: center;
-
-    transition-property: scale, background-color, border-color;
-
     width: 60px;
     height: 60px;
     border-radius: 30px;
     overflow: hidden;
-    
+
+    /* Centers the child icon perfectly inside the circle */
+    align-items: center;
     justify-content: center;
 
-    background-color: rgba(10, 10, 10, 0.9);
+    /* Base Styling */
+    background-color: rgba(255, 255, 255, 0.95);
     border-width: 2px;
     border-color: #ffaa00;
-
-    -unity-background-scale-mode: scale-to-fit;
-    -unity-background-image-tint-color: #FFFFFF;
 
     transition-property: scale, background-color, border-color;
     transition-duration: 0.15s;
     transition-timing-function: ease-out-back;
 }
 
+/* --- 2. THE FOREGROUND ICON (Black Hourglass) --- */
+.skip-turn-icon {
+    /* Set to 60% so the icon breathes nicely inside the button padding */
+    width: 60%;
+    height: 60%;
+
+    -unity-background-scale-mode: scale-to-fit;
+    /* Tints your transparent PNG graphic to a dark slate color */
+    -unity-background-image-tint-color: #1A1A1A;
+}
+
+/* --- 3. INTERACTION STATES --- */
 .skip-turn-button:hover {
     scale: 1.15;
-    background-color: rgba(30, 30, 30, 0.9);
-    border-color: #FFFFFF;
+    background-color: rgba(230, 230, 230, 1);
+    border-color: #ffaa00;
 }
 
 .skip-turn-button:active {
     scale: 0.95;
-    background-color: rgba(0, 0, 0, 0.9);
-    border-color: #ffaa00;
+    background-color: rgba(200, 200, 200, 1);
+    border-color: #cc8800;
 }

@@ -127,6 +127,7 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
         private readonly List<SpellSlot> m_spellSlots = new List<SpellSlot>();
         private AmmoDisplay m_ammoDisplay;
         private VisualElement m_skipTurnButton;
+        private Image m_skipIconImage;
         
         private VisualElement m_neuralBackground;
         private VisualElement m_backgroundImageElement; // NEW
@@ -145,6 +146,8 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
         {
             AddToClassList(s_className);
     
+            pickingMode = PickingMode.Ignore;
+            
             SetupBackgroundImage(); // NEW: Must be created first so it sits at the back
             SetupNeuralBackground();
             CreateAmmoDisplay();
@@ -152,16 +155,14 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
 
             RegisterCallback<GeometryChangedEvent>(evt => PositionChildElements());
         }
-        
         private void SetupBackgroundImage()
         {
             m_backgroundImageElement = new VisualElement();
+            
+            // 2. ADD THIS: Let clicks pass through the background image layer
+            m_backgroundImageElement.pickingMode = PickingMode.Ignore; 
+            
             m_backgroundImageElement.style.position = Position.Absolute;
-    
-            // Optional: Add a subtle scaling transition if you want it to pop in
-            // m_backgroundImageElement.style.transitionProperty = new List<StylePropertyName> { new StylePropertyName("scale") };
-            // m_backgroundImageElement.style.transitionDuration = new List<TimeValue> { new TimeValue(0.2f, TimeUnit.Second) };
-
             Insert(0, m_backgroundImageElement); 
         }
 
@@ -177,12 +178,15 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
         private void SetupNeuralBackground()
         {
             m_neuralBackground = new VisualElement();
+            
+            // 3. ADD THIS: Let clicks pass through the neural shader layer
+            m_neuralBackground.pickingMode = PickingMode.Ignore; 
+            
             m_neuralBackground.style.position = Position.Absolute;
             m_neuralBackground.style.width = Length.Percent(100);
             m_neuralBackground.style.height = Length.Percent(100);
             Insert(0, m_neuralBackground); 
         }
-
         private void RebuildSlots()
         {
             foreach (SpellSlot slot in m_spellSlots) Remove(slot);
@@ -201,26 +205,31 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
 // Add this variable near your other UI element variables at the top of ArcHudPanel
         private VisualElement m_actionContainer;
 
+
         private void CreateAmmoDisplay()
         {
             // 1. Create a FlexBox Row Wrapper
             m_actionContainer = new VisualElement { name = "action-container" };
             m_actionContainer.style.position = Position.Absolute;
             m_actionContainer.style.flexDirection = FlexDirection.Row;
-            m_actionContainer.style.alignItems = Align.Center; // Vertically center them to each other
+            m_actionContainer.style.alignItems = Align.Center; 
     
             // 2. Setup Ammo Display
             m_ammoDisplay = new AmmoDisplay();
-            // Override the USS Absolute/Translate rules so it obeys the FlexBox
             m_ammoDisplay.style.position = Position.Relative;
             m_ammoDisplay.style.translate = new Translate(0, 0); 
     
-            // 3. Setup Skip Button
+            // 3. Setup Skip Button (The White Structural Container)
             m_skipTurnButton = new VisualElement { name = "skip-turn-button" };
             m_skipTurnButton.AddToClassList("skip-turn-button");
-            // Override Absolute positioning and add a clean gap between Ammo and Skip
             m_skipTurnButton.style.position = Position.Relative;
             m_skipTurnButton.style.marginLeft = 15f; 
+
+            // NEW: Setup the Foreground Icon (The Hourglass)
+            m_skipIconImage = new Image { name = "skip-icon-image" };
+            m_skipIconImage.AddToClassList("skip-turn-icon");
+            m_skipIconImage.pickingMode = PickingMode.Ignore; // Crucial: Let the parent catch clicks
+            m_skipTurnButton.Add(m_skipIconImage);
 
             // 4. Build the hierarchy
             m_actionContainer.Add(m_ammoDisplay);
@@ -232,15 +241,15 @@ public enum ScreenCorner { TopLeft, TopRight, BottomLeft, BottomRight }
 
         private void UpdateSkipIcon()
         {
-            if (m_skipTurnButton != null)
+            if (m_skipIconImage != null)
             {
-                // UI Toolkit requires StyleBackground to map Texture2D to backgrounds
-                m_skipTurnButton.style.backgroundImage = _skipIcon != null 
-                    ? new StyleBackground(_skipIcon) 
-                    : new StyleBackground(StyleKeyword.Null);
+                // Assign the texture directly to the Image component, bypassing USS background properties
+                m_skipIconImage.image = _skipIcon;
+        
+                // Hide the image element entirely if there's no texture assigned
+                m_skipIconImage.style.display = _skipIcon != null ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
-
         // NEW: Updates the UI Toolkit background image dynamically
         private void UpdateBackgroundImage()
         {
