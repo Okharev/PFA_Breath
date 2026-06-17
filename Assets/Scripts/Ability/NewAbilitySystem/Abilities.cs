@@ -141,19 +141,19 @@ namespace Ability.NewAbilitySystem
     {
         [HideInInspector] public string name = "Spawn Laser Hazard";
 
-        [Tooltip("Prefab containing a BoxCollider (IsTrigger), HazardVolume, and TurnBasedLifetime")]
+        [Tooltip("Prefab containing a BoxCollider (IsTrigger), HazardVolume, and LineRenderer")]
         public GameObject laserHazardPrefab;
 
         [Tooltip("If true, the laser will be strictly horizontal, ignoring the target's Y elevation.")]
         public bool forcePlanar = true;
 
+        [Tooltip("Width of the laser beam (Visual) and its collision box (Physics)")]
+        public float laserWidth = 0.2f;
+
         public void Execute(AbilityContext context)
         {
             // Determine origin, falling back to source position if Origin is missing
             Vector3 origin = context.Origin != null ? context.Origin.position : context.Source.transform.position;
-
-            // Crucial: We use context.TargetPosition, NOT context.Target.transform.position.
-            // This ensures we shoot at the locked coordinate, allowing the player to dodge during the delay!
             Vector3 target = context.TargetPosition;
 
             // Flatten the vertical axis to create a strictly horizontal plane
@@ -165,16 +165,45 @@ namespace Ability.NewAbilitySystem
             // Prevent instantiation errors if the target and origin occupy the exact same spatial coordinate
             if (distance <= Mathf.Epsilon) return;
 
-            // Instantiate at the midpoint between the sniper and the target
-            Vector3 spawnPosition = origin + direction / 2f;
+            // 1. Instantiate at the exact origin, aimed directly at the target.
+            // We no longer spawn at the midpoint.
+            GameObject laser = Object.Instantiate(laserHazardPrefab, origin, Quaternion.LookRotation(direction));
 
-            GameObject laser = Object.Instantiate(laserHazardPrefab, spawnPosition, Quaternion.LookRotation(direction));
+            // 2. Configure the LineRenderer (Visuals)
+            if (laser.TryGetComponent(out LineRenderer lineRenderer))
+            {
+                lineRenderer.useWorldSpace = false; // Keep it locally aligned with our LookRotation
+                lineRenderer.positionCount = 2;
+                lineRenderer.SetPosition(0, Vector3.zero); // Start at barrel
+                lineRenderer.SetPosition(1, new Vector3(0f, 0f, distance)); // End at target
+                
+                lineRenderer.startWidth = laserWidth;
+                lineRenderer.endWidth = laserWidth;
+            }
+            else
+            {
+                Debug.LogWarning($"[SpawnLaserHazardEffect] Missing LineRenderer on {laserHazardPrefab.name}!");
+            }
 
-            // Assuming the laser prefab is a basic 1x1x1 cube geometry, scaling Z stretches it to the target
-            laser.transform.localScale = new Vector3(0.2f, 0.2f, distance);
+            // 3. Configure the BoxCollider (Physics)
+            if (laser.TryGetComponent(out BoxCollider boxCollider))
+            {
+                // Size matches the exact reach of the laser
+                boxCollider.size = new Vector3(laserWidth, laserWidth, distance);
+                
+                // Shift the center of the box forward by half the distance so it sits perfectly over the line
+                boxCollider.center = new Vector3(0f, 0f, distance / 2f); 
+            }
+            else
+            {
+                Debug.LogWarning($"[SpawnLaserHazardEffect] Missing BoxCollider on {laserHazardPrefab.name}!");
+            }
 
             // Assign the source so the HazardVolume knows who dealt the damage
-            if (laser.TryGetComponent(out HazardVolume hazard)) hazard.Source = context.Source;
+            if (laser.TryGetComponent(out HazardVolume hazard)) 
+            {
+                hazard.Source = context.Source;
+            }
         }
 
         public void DrawPreview(AbilityContext context, IntentDrawer drawer)

@@ -75,7 +75,7 @@ namespace Ability.NewAbilitySystem.UI
             }
         }
 
-        // 3. ADD THIS: Prevent memory leaks by unsubscribing
+        // 3. Prevent memory leaks by unsubscribing
         private void OnDestroy() 
         {
             if (DialogueManager.Instance != null)
