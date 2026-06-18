@@ -19,7 +19,8 @@ MonoBehaviour:
   cooldownTurns: 0
   channelTurns: 0
   executionDelayFraction: 0
-  conditions: []
+  conditions:
+  - rid: 8373033249041547334
   effects:
   - rid: 996992785912430663
   references:
@@ -48,3 +49,8 @@ MonoBehaviour:
       data:
         name: Consume Oxygen
         oxygenCost: 5
+    - rid: 8373033249041547334
+      type: {class: EnoughAmmoCondition, ns: Ability.NewAbilitySystem, asm: Assembly-CSharp}
+      data:
+        name: Ammo Requirement
+        requiredAmmo: 4
