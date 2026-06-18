@@ -21,6 +21,26 @@ namespace Ability.NewAbilitySystem
             return distance <= maxRange;
         }
     }
+    
+    [Serializable]
+    public class EnoughAmmoCondition : IAbilityCondition
+    {
+        [HideInInspector] public string name = "Ammo Requirement";
+
+        [Tooltip("How much ammo is required to even attempt casting this?")]
+        public int requiredAmmo = 1;
+
+        public bool CanExecute(AbilityContext context)
+        {
+            // If the unit breathes oxygen, check their tank
+            if (context.Source.TryGetComponent(out AmmoComponent ammoComponent))
+                return ammoComponent.HasAmmo(requiredAmmo);
+
+            // If the unit doesn't have an OxygenComponent (e.g., a Robot enemy), 
+            // they cannot cast abilities that strictly require oxygen.
+            return false;
+        }
+    }
 
     [Serializable]
     public class OxygenCondition : IAbilityCondition
